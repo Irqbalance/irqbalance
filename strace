@@ -1,0 +1,573 @@
+execve("./irqbalance", ["./irqbalance", "debug"], [/* 32 vars */]) = 0
+brk(0)                                  = 0x605000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x2b3a8b1b5000
+uname({sys="Linux", node="benny", ...}) = 0
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY)      = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=171080, ...}) = 0
+mmap(NULL, 171080, PROT_READ, MAP_PRIVATE, 3, 0) = 0x2b3a8b1b6000
+close(3)                                = 0
+open("/lib64/libglib-2.0.so.0", O_RDONLY) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0`\0!\347"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=1839568, ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x2b3a8b1e0000
+mmap(0x38e7200000, 2743240, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x38e7200000
+mprotect(0x38e729d000, 2093056, PROT_NONE) = 0
+mmap(0x38e749c000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x9c000) = 0x38e749c000
+close(3)                                = 0
+open("/lib64/libc.so.6", O_RDONLY)      = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0@\333\1\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=1672888, ...}) = 0
+mmap(NULL, 3461304, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x2b3a8b3b6000
+mprotect(0x2b3a8b4fa000, 2097152, PROT_NONE) = 0
+mmap(0x2b3a8b6fa000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x144000) = 0x2b3a8b6fa000
+mmap(0x2b3a8b6ff000, 16568, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x2b3a8b6ff000
+close(3)                                = 0
+open("/lib64/librt.so.1", O_RDONLY)     = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\300#\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=50320, ...}) = 0
+mmap(NULL, 2132968, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x2b3a8b704000
+mprotect(0x2b3a8b70c000, 2093056, PROT_NONE) = 0
+mmap(0x2b3a8b90b000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x2b3a8b90b000
+close(3)                                = 0
+open("/lib64/libpthread.so.0", O_RDONLY) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0`X\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=138080, ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x2b3a8b90d000
+mmap(NULL, 2200432, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x2b3a8b90e000
+mprotect(0x2b3a8b923000, 2093056, PROT_NONE) = 0
+mmap(0x2b3a8bb22000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x14000) = 0x2b3a8bb22000
+mmap(0x2b3a8bb24000, 13168, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x2b3a8bb24000
+close(3)                                = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x2b3a8bb28000
+arch_prctl(ARCH_SET_FS, 0x2b3a8bb286f0) = 0
+mprotect(0x2b3a8bb22000, 4096, PROT_READ) = 0
+mprotect(0x2b3a8b90b000, 4096, PROT_READ) = 0
+mprotect(0x2b3a8b6fa000, 16384, PROT_READ) = 0
+mprotect(0x2b3a8b3b4000, 4096, PROT_READ) = 0
+munmap(0x2b3a8b1b6000, 171080)          = 0
+set_tid_address(0x2b3a8bb28780)         = 3829
+syscall_273(0x2b3a8bb28790, 0x18, 0x7fff1f90e200, 0x2b3a8b19b4a0, 0x2b3a8bb286f0, 0x2b3a8b1b52b8, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2) = 0
+rt_sigaction(SIGRTMIN, {0x2b3a8b9134a0, [], SA_RESTORER|SA_SIGINFO, 0x2b3a8b91bde0}, NULL, 8) = 0
+rt_sigaction(SIGRT_1, {0x2b3a8b9133f0, [], SA_RESTORER|SA_RESTART|SA_SIGINFO, 0x2b3a8b91bde0}, NULL, 8) = 0
+rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM_INFINITY}) = 0
+open("/sys/devices/system/cpu", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl(3, F_SETFD, FD_CLOEXEC)           = 0
+brk(0)                                  = 0x605000
+brk(0x627000)                           = 0x627000
+getdents(3, /* 11 entries */, 4096)     = 288
+open("/sys/devices/system/cpu/cpu7/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu7/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu7/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu7/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu6/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu6/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu6/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu6/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu5/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu5/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu5/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu5/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu4/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu4/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu4/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu4/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu3/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu3/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu3/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu3/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu2/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu2/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu2/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu2/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu1/online", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0600, st_size=4096, ...}) = 0
+read(4, "1\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu1/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu1/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu0/online", O_RDONLY) = -1 ENOENT (No such file or directory)
+open("/sys/devices/system/cpu/cpu0/topology/core_siblings", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu0/cache/index1/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/devices/system/cpu/cpu0/cache/index2/shared_cpu_map", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+getdents(3, /* 0 entries */, 4096)      = 0
+close(3)                                = 0
+fstat(1, {st_mode=S_IFREG|0644, st_size=11425, ...}) = 0
+open("/proc/interrupts", O_RDONLY)      = 3
+fstat(3, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(3, "           CPU0       CPU1      "..., 1024) = 1024
+open("/proc/irq/0", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 3 entries */, 1024)      = 80
+open("/proc/irq/0/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+read(3, "  0   IO-APIC-edge      i8042\n 1"..., 1024) = 1024
+open("/proc/irq/12", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 4 entries */, 1024)      = 112
+open("/proc/irq/12/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+open("/proc/irq/14", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 4 entries */, 1024)      = 104
+open("/proc/irq/14/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+open("/proc/irq/16", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 4 entries */, 1024)      = 112
+open("/proc/irq/16/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+open("/proc/irq/19", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 5 entries */, 1024)      = 152
+open("/proc/irq/19/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+open("/proc/irq/8408", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 4 entries */, 1024)      = 104
+open("/proc/irq/8408/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+open("/proc/irq/8409", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 4
+fstat(4, {st_mode=S_IFDIR|0555, st_size=0, ...}) = 0
+fcntl(4, F_SETFD, FD_CLOEXEC)           = 0
+getdents(4, /* 4 entries */, 1024)      = 104
+open("/proc/irq/8409/smp_affinity", O_RDONLY) = 5
+fstat(5, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+read(5, "00000000,00000000,00000000,00000"..., 1024) = 72
+close(5)                                = 0
+getdents(4, /* 0 entries */, 1024)      = 0
+close(4)                                = 0
+close(3)                                = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+rt_sigaction(SIGCHLD, NULL, {SIG_DFL}, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+nanosleep({2, 0}, {2, 0})               = 0
+open("/proc/interrupts", O_RDONLY)      = 3
+fstat(3, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(3, "           CPU0       CPU1      "..., 1024) = 1024
+read(3, "  0   IO-APIC-edge      i8042\n 1"..., 1024) = 1024
+close(3)                                = 0
+open("/sys/bus/pci/devices", O_RDONLY|O_NONBLOCK|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl(3, F_SETFD, FD_CLOEXEC)           = 0
+getdents(3, /* 35 entries */, 4096)     = 1104
+open("/sys/bus/pci/devices/0000:0b:01.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "11\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:0b:01.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x030000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:0b:01.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.1/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8408\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.1/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x020000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.1/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8409\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x020000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:06:00.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.1/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "17\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.1/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x010000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.1/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "16\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x010000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:04:02.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:03:00.2/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:03:00.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:02.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8410\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:02.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:02.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:00.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8411\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:00.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:02:00.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:01:00.3/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:01:00.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "16\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:01:00.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:01:00.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.3/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "19\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.3/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x0c0500\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.3/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.2/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "19\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.2/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x010601\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.2/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.1/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "18\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.1/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x01018a\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.1/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1f.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1e.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.7/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "17\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.7/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x0c0320\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.7/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.2/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "18\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.2/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x0c0300\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.2/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.1/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "19\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.1/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x0c0300\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.1/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "17\n", 4096)                   = 3
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x0c0300\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1d.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1c.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8412\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1c.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:1c.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:16.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:15.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:13.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:11.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:10.2/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:10.1/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:10.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:08.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "9\n", 4096)                    = 2
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:08.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x088000\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:08.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:06.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8413\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:06.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:06.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:04.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8414\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:04.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:04.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:02.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "8415\n", 4096)                 = 5
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:02.0/class", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0x060400\n", 4096)             = 9
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:02.0/local_cpus", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "00000000,00000000,00000000,00000"..., 4096) = 72
+close(4)                                = 0
+open("/sys/bus/pci/devices/0000:00:00.0/irq", O_RDONLY) = 4
+fstat(4, {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+read(4, "0\n", 4096)                    = 2
+close(4)                                = 0
+getdents(3, /* 0 entries */, 4096)      = 0
+rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
+rt_sigaction(SIGCHLD, NULL, {SIG_DFL}, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+nanosleep({10, 0},  <unfinished ...>
