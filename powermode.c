@@ -18,6 +18,7 @@
  * 51 Franklin Street, Fifth Floor, 
  * Boston, MA 02110-1301 USA
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,7 +37,8 @@ static unsigned int hysteresis;
 void check_power_mode(void)
 {
 	FILE *file;
-	char line[4096];
+	char *line = NULL;
+	size_t size = 0;
 	char *c;
 	uint64_t dummy, irq, softirq;
 	line[0]=0;
@@ -44,9 +46,11 @@ void check_power_mode(void)
 	file = fopen("/proc/stat", "r");
 	if (!file)
 		return;
-	if (fgets(line, 4095, file)==NULL)
-		memset(line,0, 4096);
+	if (getline(&line, &size, file)==0)
+		size=0;
 	fclose(file);
+	if (!line)
+		return;
 	c=&line[4];
 	dummy = strtoull(c, &c, 10); /* user */
 	dummy = strtoull(c, &c, 10); /* nice */
@@ -71,5 +75,6 @@ void check_power_mode(void)
 		hysteresis = 0;
 	}
 	previous = irq;
+	free(line);
 }
 

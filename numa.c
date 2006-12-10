@@ -24,6 +24,7 @@
  * In addition the PCI class information is used to refine the classification
  * of interrupt sources 
  */
+#define _GNU_SOURCE
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

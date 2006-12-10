@@ -18,6 +18,7 @@
  * 51 Franklin Street, Fifth Floor, 
  * Boston, MA 02110-1301 USA
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,16 +33,18 @@
 void parse_proc_interrupts(void)
 {
 	FILE *file;
-	char line[LINESIZE+1];
+	char *line = NULL;
+	size_t size = 0;
 
-	line[LINESIZE] = 0;
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
 		return;
 
 	/* first line is the header we don't need; nuke it */
-	if (fgets(line, LINESIZE, file)==NULL)
+	if (getline(&line, &size, file)==0) {
+		free(line);
 		return;
+	}
 
 	while (!feof(file)) {
 		cpumask_t present;
@@ -50,7 +53,7 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 
-		if (fgets(line, LINESIZE, file)==NULL)
+		if (getline(&line, &size, file)==0)
 			break;
 
 
@@ -85,4 +88,5 @@ void parse_proc_interrupts(void)
 		set_interrupt_count(number, count, &present);
 	}		
 	fclose(file);
+	free(line);
 }

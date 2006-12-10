@@ -142,7 +142,7 @@ static void do_one_cpu(char *path)
 	file = fopen(new_path, "r");
 	if (file) {
 		char *line = NULL;
-		size_t size=0;
+		size_t size = 0;
 		if (getline(&line, &size, file)==0)
 			return;
 		fclose(file);
@@ -176,8 +176,8 @@ static void do_one_cpu(char *path)
 	file = fopen(new_path, "r");
 	cpu_set(cpu->number, cpu->package_mask);
 	if (file) {
-		char *line;
-		size_t size;
+		char *line = NULL;
+		size_t size = 0;
 		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->package_mask);
 		fclose(file);
@@ -190,8 +190,8 @@ static void do_one_cpu(char *path)
 	snprintf(new_path, PATH_MAX, "%s/cache/index1/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
-		char *line;
-		size_t size;
+		char *line = NULL;
+		size_t size = 0;
 		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
 		fclose(file);
@@ -200,8 +200,8 @@ static void do_one_cpu(char *path)
 	snprintf(new_path, PATH_MAX, "%s/cache/index2/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
-		char *line;
-		size_t size;
+		char *line = NULL;
+		size_t size = 0;
 		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
 		fclose(file);

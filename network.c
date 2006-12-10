@@ -24,6 +24,7 @@
  * even though the amount of work is high; this file is there to compensate for this
  * by adding actual package counts to the calculated amount of work of interrupts
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -123,15 +124,20 @@ void account_for_nic_stats(void)
 {
 	struct nic *nic;
 	FILE *file;
-	char line[8192];
+	char *line = NULL;
+	size_t size = 0;
 	file = fopen("/proc/net/dev", "r");
 	if (!file)
 		return;
 	/* first two lines are headers */
-	if (fgets(line, 8191, file)==NULL)
+	if (getline(&line, &size, file)==0) {
+		free(line);
 		return;
-	if (fgets(line, 8191, file)==NULL)
+	}
+	if (getline(&line, &size, file)==0) {
+		free(line);
 		return;
+	}
 
 	while (!feof(file)) {
 		uint64_t rxcount;
@@ -139,7 +145,9 @@ void account_for_nic_stats(void)
 		uint64_t delta;
 		int dummy;
 		char *c, *c2;
-		if (fgets(line, 8191, file)==NULL)
+		if (getline(&line, &size, file)==0)
+			break;
+		if (line==NULL)
 			break;
 		c = strchr(line, ':');
 		if (c==NULL) /* header line */
@@ -172,4 +180,5 @@ void account_for_nic_stats(void)
 		
 	}
 	fclose(file);
+	free(line);
 }
