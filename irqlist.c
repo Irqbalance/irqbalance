@@ -22,6 +22,7 @@
 /*
  * This file has the basic functions to manipulate interrupt metadata
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -52,17 +53,21 @@ static void investigate(struct interrupt *irq, int number)
 		if (!entry)
 			break;
 		if (strcmp(entry->d_name,"smp_affinity")==0) {
+			char *line = NULL;
+			size_t size = 0;
 			FILE *file;
 			sprintf(buf, "/proc/irq/%i/smp_affinity", number);
 			file = fopen(buf, "r");
 			if (!file)
 				continue;
-			if (fgets(buf, PATH_MAX, file)==NULL) {
+			if (getline(&line, &size, file)==0) {
+				free(line);
 				fclose(file);
 				continue;
 			}
-			cpumask_parse_user(buf, strlen(buf), irq->mask);
+			cpumask_parse_user(line, strlen(line), irq->mask);
 			fclose(file);
+			free(line);
 		} else {
 			irq->class = find_class(irq, entry->d_name);
 		}
