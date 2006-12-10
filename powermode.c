@@ -41,8 +41,6 @@ void check_power_mode(void)
 	size_t size = 0;
 	char *c;
 	uint64_t dummy, irq, softirq;
-	line[0]=0;
-	line[4095]=0;
 	file = fopen("/proc/stat", "r");
 	if (!file)
 		return;
