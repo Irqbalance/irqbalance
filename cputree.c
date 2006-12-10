@@ -23,6 +23,9 @@
  * This file contains the code to construct and manipulate a hierarchy of processors,
  * cache domains and processor cores.
  */
+
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -138,13 +141,16 @@ static void do_one_cpu(char *path)
 	snprintf(new_path, PATH_MAX, "%s/online", path);
 	file = fopen(new_path, "r");
 	if (file) {
-		char line[4096];
-		line[4095]=0;
-		if (fgets(line, 4095, file)==NULL)
-			line[0]='1';
-		fclose(file);
-		if (line[0]=='0')
+		char *line = NULL;
+		size_t size=0;
+		if (getline(&line, &size, file)==0)
 			return;
+		fclose(file);
+		if (line && line[0]=='0') {
+			free(line);
+			return;
+		}
+		free(line);
 	}
 
 	cpu = malloc(sizeof(struct cpu_core));
@@ -170,11 +176,12 @@ static void do_one_cpu(char *path)
 	file = fopen(new_path, "r");
 	cpu_set(cpu->number, cpu->package_mask);
 	if (file) {
-		char line[4096];
-		line[4095]=0;
-		if (fgets(line, 4095, file)) 
+		char *line;
+		size_t size;
+		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->package_mask);
 		fclose(file);
+		free(line);
 	}
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
@@ -183,20 +190,22 @@ static void do_one_cpu(char *path)
 	snprintf(new_path, PATH_MAX, "%s/cache/index1/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
-		char line[4096];
-		line[4095]=0;
-		if (fgets(line, 4095, file)) 
+		char *line;
+		size_t size;
+		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
 		fclose(file);
+		free(line);
 	}
 	snprintf(new_path, PATH_MAX, "%s/cache/index2/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
-		char line[4096];
-		line[4095]=0;
-		if (fgets(line, 4095, file)) 
+		char *line;
+		size_t size;
+		if (getline(&line, &size, file)) 
 			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
 		fclose(file);
+		free(line);
 	}
 
 	/* 

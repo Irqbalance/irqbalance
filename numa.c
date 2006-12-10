@@ -49,7 +49,7 @@ void pci_numa_scan(void)
 		int type;
 		entry = readdir(dir);
 		if (!entry)
-			return;
+			break;
 		if (strlen(entry->d_name)<3)
 			continue;
 
