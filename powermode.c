@@ -58,7 +58,9 @@ void check_power_mode(void)
 	irq = strtoull(c, &c, 10); /* irq */
 	softirq = strtoull(c, &c, 10); /* softirq */
 
+
 	irq += softirq;
+	printf("IRQ delta is %lu \n", (unsigned long)(irq - previous) );
 	if (irq - previous <  POWER_MODE_SOFTIRQ_THRESHOLD)  {
 		hysteresis++;
 		if (hysteresis > POWER_MODE_HYSTERESIS) {
