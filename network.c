@@ -57,6 +57,9 @@ static int dev_to_irq(char *devname)
 	struct ethtool_value ethtool; 
 	struct ethtool_drvinfo driver;
 	FILE *file;
+	char *line =  NULL;
+	size_t size;
+	int val;
 
 	char buffer[PATH_MAX];
 
@@ -79,10 +82,17 @@ static int dev_to_irq(char *devname)
 	file = fopen(buffer, "r");
 	if (!file)
 		return 0;
-	if (fgets(buffer, PATH_MAX, file)==NULL)
-		strcpy(buffer,"0");
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		fclose(file);
+		return 0;
+	}
 	fclose(file);
-	return strtoul(buffer, NULL, 10);
+	val = 0;
+	if (line)
+		val = strtoul(buffer, NULL, 10);
+	free(line);
+	return val;
 }
 
 static struct nic *new_nic(char *name)
