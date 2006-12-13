@@ -85,7 +85,7 @@ static char *ethernet_modules[] = {
 	"eth",
 	"e100",
 	"eepro100",
-	"orinico_cs",
+	"orinoco_cs",
 	"wvlan_cs",
 	"3c5",	
 	"HiSax",
