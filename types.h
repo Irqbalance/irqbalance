@@ -78,6 +78,7 @@ struct interrupt {
 	
 
 	cpumask_t	numa_mask;
+	cpumask_t	allowed_mask;
 };
 
 

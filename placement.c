@@ -56,6 +56,10 @@ static uint64_t package_cost_func(struct interrupt *irq, struct package *package
 	if (package->class_count[irq->class]>=maxcount && !power_mode)
 		bonus += 300000;
 
+	/* if the package has no cpus in the allowed mask.. just block */
+	if (!cpus_intersects(irq->allowed_mask, package->mask))
+		bonus += 600000;
+
 	return irq->workload + bonus;
 }
 
@@ -77,6 +81,10 @@ static uint64_t cache_domain_cost_func(struct interrupt *irq, struct cache_domai
 
 	/* pay 6000 for each previous interrupt of the same class */
 	bonus += CLASS_VIOLATION_PENTALTY * cache_domain->class_count[irq->class];
+
+	/* if the cache domain has no cpus in the allowed mask.. just block */
+	if (!cpus_intersects(irq->allowed_mask, cache_domain->mask))
+		bonus += 600000;
 
 	return irq->workload + bonus;
 }
@@ -102,11 +110,13 @@ static uint64_t cpu_cost_func(struct interrupt *irq, struct cpu_core *cpu)
 	 */
 	if (first_cpu(cpu->cache_mask)==cpu->number)
 		bonus++;
-        
-
 
 	/* pay 6000 for each previous interrupt of the same class */
 	bonus += CLASS_VIOLATION_PENTALTY * cpu->class_count[irq->class];
+
+	/* if the core  has no cpus in the allowed mask.. just block */
+	if (!cpus_intersects(irq->allowed_mask, cpu->mask))
+		bonus += 600000;
 
 	return irq->workload + bonus;
 }

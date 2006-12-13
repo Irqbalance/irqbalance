@@ -44,7 +44,7 @@ static void investigate(struct interrupt *irq, int number)
 	DIR *dir;
 	struct dirent *entry;
 	char *c, *c2;
-	int nr;
+	int nr , count = 0;
 	char buf[PATH_MAX];
 	sprintf(buf, "/proc/irq/%i", number);
 	dir = opendir(buf);
@@ -68,6 +68,22 @@ static void investigate(struct interrupt *irq, int number)
 			cpumask_parse_user(line, strlen(line), irq->mask);
 			fclose(file);
 			free(line);
+		} else if (strcmp(entry->d_name,"allowed_affinity")==0) {
+			char *line = NULL;
+			size_t size = 0;
+			FILE *file;
+			sprintf(buf, "/proc/irq/%i/allowed_affinity", number);
+			file = fopen(buf, "r");
+			if (!file)
+				continue;
+			if (getline(&line, &size, file)==0) {
+				free(line);
+				fclose(file);
+				continue;
+			}
+			cpumask_parse_user(line, strlen(line), irq->allowed_mask);
+			fclose(file);
+			free(line);
 		} else {
 			irq->class = find_class(irq, entry->d_name);
 		}
@@ -75,6 +91,15 @@ static void investigate(struct interrupt *irq, int number)
 	} while (entry);
 	closedir(dir);	
 	irq->balance_level = map_class_to_level[irq->class];
+
+	for (nr = 0; nr < NR_CPUS; nr++)
+		if (cpu_isset(nr, irq->allowed_mask))
+			count++;
+
+	/* if there is no choice in the allowed mask, don't bother to balance */
+	if (count<2)
+		 irq->balance_level = BALANCE_NONE;
+		
 
 	/* next, check the IRQBALANCE_BANNED_INTERRUPTS env variable for blacklisted irqs */
 	c = getenv("IRQBALANCE_BANNED_INTERRUPTS");
@@ -120,6 +145,7 @@ void set_interrupt_count(int number, uint64_t count, cpumask_t *mask)
 	memset(irq, 0, sizeof(struct interrupt));
 	irq->number = number;
 	irq->count = count;
+	irq->allowed_mask = CPU_MASK_ALL;
 	investigate(irq, number);
 	if (irq->balance_level == BALANCE_NONE)
 		irq->mask = *mask;
