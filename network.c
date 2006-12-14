@@ -90,7 +90,7 @@ static int dev_to_irq(char *devname)
 	fclose(file);
 	val = 0;
 	if (line)
-		val = strtoul(buffer, NULL, 10);
+		val = strtoul(line, NULL, 10);
 	free(line);
 	return val;
 }
