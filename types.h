@@ -15,6 +15,8 @@
 #define IRQ_SCSI        2
 #define IRQ_TIMER       3
 #define IRQ_ETH         4
+#define IRQ_RXETH	5
+#define IRQ_TXETH	6
 
 
 struct package {

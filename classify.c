@@ -12,12 +12,13 @@ char *classes[] = {
 	"storage",
 	"timer",
 	"ethernet",
-	"fasteth",
+	"rx",
+	"tx",
 	0
 };
 
 int map_class_to_level[7] = 
-{ BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE };
+{ BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
 
 int class_counts[7];
@@ -114,8 +115,13 @@ int find_class(struct interrupt *irq, char *moduletext)
 			guess = IRQ_TIMER;
 			
 	for (i=0; ethernet_modules[i]; i++)
-		if (strstr(moduletext, ethernet_modules[i]))
+		if (strstr(moduletext, ethernet_modules[i])) {
 			guess = IRQ_ETH;
+			if (strstr(moduletext, "-rx"))
+				guess = IRQ_RXETH;
+			if (strstr(moduletext, "-tx"))
+				guess = IRQ_TXETH;
+		}
 
 	if (guess == IRQ_OTHER && irq->number==0)
 		guess = IRQ_TIMER;
