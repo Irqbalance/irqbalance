@@ -12,8 +12,8 @@ char *classes[] = {
 	"storage",
 	"timer",
 	"ethernet",
-	"rx",
-	"tx",
+	"gbit-ethernet",
+	"10gbit-ethernet",
 	0
 };
 
@@ -118,9 +118,9 @@ int find_class(struct interrupt *irq, char *moduletext)
 		if (strstr(moduletext, ethernet_modules[i])) {
 			guess = IRQ_ETH;
 			if (strstr(moduletext, "-rx"))
-				guess = IRQ_RXETH;
+				guess = IRQ_GETH;
 			if (strstr(moduletext, "-tx"))
-				guess = IRQ_TXETH;
+				guess = IRQ_TGETH;
 		}
 
 	if (guess == IRQ_OTHER && irq->number==0)
