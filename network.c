@@ -182,7 +182,9 @@ void account_for_nic_stats(void)
 		delta = (txcount+rxcount-nic->prev_pkt)/2;
 		/* add the RX and TX packets to the irq count, but only for 50%;
 		   many packets generate another IRQ anyway and we don't want to
-		   overweigh this too much */
+		   overweigh this too much. Also limit this to 100.000 max */
+		if (delta>100000)
+			delta = 100000;
 		if (delta>0 && nic->prev_pkt != 0)
 			add_interrupt_count(nic->irq, delta, IRQ_ETH);
 		nic->prev_pkt = rxcount + txcount;
