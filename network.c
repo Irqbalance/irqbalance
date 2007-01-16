@@ -29,7 +29,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <linux/types.h>
+/* some distros (Debian / SLES) ship a totally broken ethtool.h */
+/* work around the breakage some */
+#define u32 __u32
+#define u16 __u16
+#define u8 __u8
+#define u64 __u64
 #include <linux/ethtool.h>
+#undef u8
+#undef u16
+#undef u32
+#undef u64
 #include <glib.h>
 #include <net/if.h>
 #include <linux/sockios.h>
