@@ -41,7 +41,10 @@ void activate_mapping(void)
 		irq = iter->data;
 		iter = g_list_next(iter);
 
-		if (!cpus_equal(irq->mask, irq->old_mask)) {
+		/* don't set the level if it's a NONE irq, or if there is
+		 * no change */
+		if (irq->balance_level != BALANCE_NONE && 
+			!cpus_equal(irq->mask, irq->old_mask)) {
 			char buf[PATH_MAX];
 			FILE *file;
 			sprintf(buf, "/proc/irq/%i/smp_affinity", irq->number);
