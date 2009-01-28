@@ -29,7 +29,7 @@ extern GList *interrupts;
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
 extern void parse_proc_interrupts(void);
-extern void set_interrupt_count(int number, uint64_t count, cpumask_t *mask);
+extern void set_interrupt_count(int number, uint64_t count);
 extern void add_interrupt_count(int number, uint64_t count, int type);
 extern int find_class(struct interrupt *irq, char *string);
 extern void add_interrupt_numa(int number, cpumask_t mask, int type);

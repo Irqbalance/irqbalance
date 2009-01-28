@@ -47,7 +47,6 @@ void parse_proc_interrupts(void)
 	}
 
 	while (!feof(file)) {
-		cpumask_t present;
 		int cpunr;
 		int	 number;
 		uint64_t count;
@@ -66,7 +65,6 @@ void parse_proc_interrupts(void)
 		*c = 0;
 		c++;
 		number = strtoul(line, NULL, 10);
-		cpus_clear(present);
 		count = 0;
 		cpunr = 0;
 
@@ -78,14 +76,12 @@ void parse_proc_interrupts(void)
 				break;
 			count += C;
 			c=c2;
-			if (C)
-				cpu_set(cpunr, present);
 			cpunr++;
 		}
 		if (cpunr != core_count) 
 			need_cpu_rescan = 1;
 		
-		set_interrupt_count(number, count, &present);
+		set_interrupt_count(number, count);
 	}		
 	fclose(file);
 	free(line);

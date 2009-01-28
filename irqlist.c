@@ -102,15 +102,15 @@ static void investigate(struct interrupt *irq, int number)
 		
 
 	/* next, check the IRQBALANCE_BANNED_INTERRUPTS env variable for blacklisted irqs */
-	c = getenv("IRQBALANCE_BANNED_INTERRUPTS");
+	c = c2 = getenv("IRQBALANCE_BANNED_INTERRUPTS");
 	if (!c)
 		return;
 
 	do {
+		c = c2;
 		nr = strtoul(c, &c2, 10);
 		if (c!=c2 && nr == number)
 			irq->balance_level = BALANCE_NONE;
-		c = c2;
 	} while (c!=c2 && c2!=NULL);
 }
 
@@ -119,7 +119,7 @@ static void investigate(struct interrupt *irq, int number)
  * Set the number of interrupts received for a specific irq;
  * create the irq metadata if there is none yet
  */
-void set_interrupt_count(int number, uint64_t count, cpumask_t *mask)
+void set_interrupt_count(int number, uint64_t count)
 {
 	GList *item;
 	struct interrupt *irq;
@@ -147,9 +147,6 @@ void set_interrupt_count(int number, uint64_t count, cpumask_t *mask)
 	irq->count = count;
 	irq->allowed_mask = CPU_MASK_ALL;
 	investigate(irq, number);
-	if (irq->balance_level == BALANCE_NONE)
-		irq->mask = *mask;
-
 	interrupts = g_list_append(interrupts, irq);
 }
 
