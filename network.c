@@ -24,7 +24,7 @@
  * even though the amount of work is high; this file is there to compensate for this
  * by adding actual package counts to the calculated amount of work of interrupts
  */
-#define _GNU_SOURCE
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

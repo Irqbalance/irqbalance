@@ -18,12 +18,15 @@
  * 51 Franklin Street, Fifth Floor, 
  * Boston, MA 02110-1301 USA
  */
+#include "config.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/time.h>
-
+#ifdef HAVE_LIBCAP_NG
+#include <cap-ng.h>
+#endif
 #include "irqbalance.h"
 
 int one_shot_mode;
@@ -81,6 +84,13 @@ int main(int argc, char** argv)
 	if (!debug_mode)
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
+
+#ifdef HAVE_LIBCAP_NG
+	// Drop capabilities
+	capng_clear(CAPNG_SELECT_BOTH);
+	capng_lock();
+	capng_apply(CAPNG_SELECT_BOTH);
+#endif
 
 	parse_proc_interrupts();
 	sleep(SLEEP_INTERVAL/4);

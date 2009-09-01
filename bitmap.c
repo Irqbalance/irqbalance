@@ -11,7 +11,7 @@ This file is taken from the Linux kernel and minimally adapted for use in usersp
  * This source code is licensed under the GNU General Public License,
  * Version 2.  See the file COPYING for more details.
  */
-
+#include "config.h"
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>

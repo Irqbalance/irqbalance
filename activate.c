@@ -23,6 +23,7 @@
  * This file contains the code to communicate a selected distribution / mapping
  * of interrupts to the kernel.
  */
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

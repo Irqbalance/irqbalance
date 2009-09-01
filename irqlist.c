@@ -22,7 +22,7 @@
 /*
  * This file has the basic functions to manipulate interrupt metadata
  */
-#define _GNU_SOURCE
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
