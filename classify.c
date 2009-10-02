@@ -91,6 +91,8 @@ static char *ethernet_modules[] = {
 	"wvlan_cs",
 	"3c5",	
 	"HiSax",
+	"skge",
+	"sky2",
 	0
 };
 
