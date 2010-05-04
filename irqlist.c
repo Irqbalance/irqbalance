@@ -36,6 +36,26 @@ GList *interrupts;
 
 
 
+void get_affinity_hint(struct interrupt *irq, int number)
+{
+	char buf[PATH_MAX];
+	char *line = NULL;
+	size_t size = 0;
+	FILE *file;
+	sprintf(buf, "/proc/irq/%i/affinity_hint", number);
+	file = fopen(buf, "r");
+	if (!file)
+		return;
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		fclose(file);
+		return;
+	}
+	cpumask_parse_user(line, strlen(line), irq->node_mask);
+	fclose(file);
+	free(line);
+}
+
 /*
  * This function classifies and reads various things from /proc about a specific irq 
  */
@@ -84,6 +104,8 @@ static void investigate(struct interrupt *irq, int number)
 			cpumask_parse_user(line, strlen(line), irq->allowed_mask);
 			fclose(file);
 			free(line);
+		} else if (strcmp(entry->d_name,"affinity_hint")==0) {
+			get_affinity_hint(irq, number);
 		} else {
 			irq->class = find_class(irq, entry->d_name);
 		}
@@ -134,6 +156,8 @@ void set_interrupt_count(int number, uint64_t count)
 
 		if (irq->number == number) {
 			irq->count = count;
+			/* see if affinity_hint changed */
+			get_affinity_hint(irq, number);
 			return;
 		}
 		item = g_list_next(item);

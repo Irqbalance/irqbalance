@@ -257,6 +257,30 @@ static void place_packages(GList *list)
 }
 
 
+static void place_affinity_hint(GList *list)
+{
+	/* still need to balance best workload within the affinity_hint mask */
+	GList *iter;
+	struct interrupt *irq;
+
+	iter = g_list_first(list);
+	while (iter) {
+		irq = iter->data;
+		if (irq->balance_level == BALANCE_NONE) {
+			iter = g_list_next(iter);
+			continue;
+		}
+		if ((!cpus_empty(irq->node_mask)) &&
+		    (!cpus_equal(irq->mask, irq->node_mask)) &&
+		    (!cpus_full(irq->node_mask))) {
+			irq->old_mask = irq->mask;
+			irq->mask = irq->node_mask;
+		}
+
+		iter = g_list_next(iter);
+	}
+}
+
 
 static void do_unroutables(void)
 {
@@ -276,7 +300,8 @@ static void do_unroutables(void)
 		iter = g_list_first(packages);
 		while (iter) {
 			package = iter->data;
-			if (cpus_intersects(package->mask, irq->mask))
+			if (cpus_intersects(package->mask, irq->node_mask) ||
+			    cpus_intersects(package->mask, irq->mask))
 				package->workload += irq->workload;
 			iter = g_list_next(iter);
 		}
@@ -284,14 +309,16 @@ static void do_unroutables(void)
 		iter = g_list_first(cache_domains);
 		while (iter) {
 			cache_domain = iter->data;
-			if (cpus_intersects(cache_domain->mask, irq->mask))
+			if (cpus_intersects(cache_domain->mask, irq->node_mask)
+			    || cpus_intersects(cache_domain->mask, irq->mask))
 				cache_domain->workload += irq->workload;
 			iter = g_list_next(iter);
 		}
 		iter = g_list_first(cpus);
 		while (iter) {
 			cpu = iter->data;
-			if (cpus_intersects(cpu->mask, irq->mask))
+			if (cpus_intersects(cpu->mask, irq->node_mask) ||
+			    cpus_intersects(cpu->mask, irq->mask))
 				cpu->workload += irq->workload;
 			iter = g_list_next(iter);
 		}
@@ -323,4 +350,10 @@ void calculate_placement(void)
 		place_core(cache_domain);
 		iter = g_list_next(iter);
 	}
+	/*
+	 * if affinity_hint is populated on irq and is not set to
+	 * all CPUs (meaning it's initialized), honor that above
+	 * anything in the package locality/workload.
+	 */
+	place_affinity_hint(interrupts);
 }

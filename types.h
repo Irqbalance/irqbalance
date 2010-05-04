@@ -81,6 +81,9 @@ struct interrupt {
 
 	cpumask_t	numa_mask;
 	cpumask_t	allowed_mask;
+
+	/* user/driver provided for smarter balancing */
+	cpumask_t	node_mask;
 };
 
 
