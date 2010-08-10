@@ -47,6 +47,7 @@ int core_count;
 /* Users want to be able to keep interrupts away from some cpus; store these in a cpumask_t */
 cpumask_t banned_cpus;
 
+cpumask_t cpu_possible_map;
 
 /* 
    it's convenient to have the complement of banned_cpus available so that 
@@ -158,6 +159,8 @@ static void do_one_cpu(char *path)
 	memset(cpu, 0, sizeof(struct cpu_core));
 
 	cpu->number = strtoul(&path[27], NULL, 10);
+
+	cpu_set(cpu->number, cpu_possible_map);
 	
 	cpu_set(cpu->number, cpu->mask);
 

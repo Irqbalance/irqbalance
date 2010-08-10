@@ -272,7 +272,7 @@ static void place_affinity_hint(GList *list)
 		}
 		if ((!cpus_empty(irq->node_mask)) &&
 		    (!cpus_equal(irq->mask, irq->node_mask)) &&
-		    (!cpus_full(irq->node_mask))) {
+		    (!__cpus_full(&irq->node_mask, num_possible_cpus()))) {
 			irq->old_mask = irq->mask;
 			irq->mask = irq->node_mask;
 		}

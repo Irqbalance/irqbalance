@@ -39,6 +39,7 @@ GList *interrupts;
 void get_affinity_hint(struct interrupt *irq, int number)
 {
 	char buf[PATH_MAX];
+	cpumask_t tempmask;
 	char *line = NULL;
 	size_t size = 0;
 	FILE *file;
@@ -51,7 +52,9 @@ void get_affinity_hint(struct interrupt *irq, int number)
 		fclose(file);
 		return;
 	}
-	cpumask_parse_user(line, strlen(line), irq->node_mask);
+	cpumask_parse_user(line, strlen(line), tempmask);
+	if (!__cpus_full(&tempmask, num_possible_cpus()))
+		irq->node_mask = tempmask;
 	fclose(file);
 	free(line);
 }
