@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include "types.h"
 #include "irqbalance.h"
@@ -67,7 +68,7 @@ static void investigate(struct interrupt *irq, int number)
 	DIR *dir;
 	struct dirent *entry;
 	char *c, *c2;
-	int nr , count = 0;
+	int nr , count = 0, can_set = 1;
 	char buf[PATH_MAX];
 	sprintf(buf, "/proc/irq/%i", number);
 	dir = opendir(buf);
@@ -80,7 +81,7 @@ static void investigate(struct interrupt *irq, int number)
 			size_t size = 0;
 			FILE *file;
 			sprintf(buf, "/proc/irq/%i/smp_affinity", number);
-			file = fopen(buf, "r");
+			file = fopen(buf, "r+");
 			if (!file)
 				continue;
 			if (getline(&line, &size, file)==0) {
@@ -89,7 +90,13 @@ static void investigate(struct interrupt *irq, int number)
 				continue;
 			}
 			cpumask_parse_user(line, strlen(line), irq->mask);
-			fclose(file);
+			/*
+			 * Check that we can write the affinity, if
+			 * not take it out of the list.
+			 */
+			fputs(line, file);
+			if (fclose(file) && errno == EIO)
+				can_set = 0;
 			free(line);
 		} else if (strcmp(entry->d_name,"allowed_affinity")==0) {
 			char *line = NULL;
@@ -122,7 +129,7 @@ static void investigate(struct interrupt *irq, int number)
 			count++;
 
 	/* if there is no choice in the allowed mask, don't bother to balance */
-	if (count<2)
+	if ((count<2) || (can_set == 0))
 		 irq->balance_level = BALANCE_NONE;
 		
 
