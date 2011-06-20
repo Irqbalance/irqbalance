@@ -222,15 +222,15 @@ static void do_one_cpu(char *path)
 	core_count++;
 }
 
-static void dump_irqs(int spaces, GList *interrupts)
+static void dump_irqs(int spaces, GList *dump_interrupts)
 {
 	struct interrupt *irq;
-	while (interrupts) {
+	while (dump_interrupts) {
 		int i;
-		for (i=0; i<spaces;i++) printf(" ");
-		irq = interrupts->data;
+		for (i=0; i<spaces; i++) printf(" ");
+		irq = dump_interrupts->data;
 		printf("Interrupt %i (%s/%u) \n", irq->number, classes[irq->class], (unsigned int)irq->workload);
-		interrupts = g_list_next(interrupts);
+		dump_interrupts = g_list_next(dump_interrupts);
 	}
 }
 

@@ -40,7 +40,8 @@ void check_power_mode(void)
 	char *line = NULL;
 	size_t size = 0;
 	char *c;
-	uint64_t dummy, irq, softirq;
+	uint64_t dummy __attribute__((unused));
+	uint64_t irq, softirq;
 	file = fopen("/proc/stat", "r");
 	if (!file)
 		return;

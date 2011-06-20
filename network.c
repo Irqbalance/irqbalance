@@ -160,10 +160,8 @@ void account_for_nic_stats(void)
 	}
 
 	while (!feof(file)) {
-		uint64_t rxcount;
-		uint64_t txcount;
-		uint64_t delta;
-		int dummy;
+		uint64_t dummy __attribute__((unused));
+		uint64_t rxcount, txcount, delta;
 		char *c, *c2;
 		if (getline(&line, &size, file)==0)
 			break;
