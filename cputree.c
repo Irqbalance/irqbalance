@@ -55,6 +55,39 @@ cpumask_t cpu_possible_map;
 */
 static cpumask_t unbanned_cpus;
 
+static int search_numa_node(cpumask_t mask)
+{
+	int node_num, ret;
+	struct bitmask *node_mask;
+	cpumask_t cpu_node_mask;
+
+	node_num = numa_num_configured_nodes();
+
+	if (node_num < 1)
+		return -1;
+
+	node_mask = numa_allocate_cpumask();
+
+	node_num--; /* indexing from zero */
+
+	while (node_num >= 0) {
+		ret = numa_node_to_cpus(node_num, node_mask);
+		if (ret) {
+			node_num--;
+			continue;
+		}
+		memcpy(cpu_node_mask.bits, node_mask->maskp, BITS_TO_LONGS(node_mask->size)*sizeof(unsigned long));
+		if (cpus_intersects(mask, cpu_node_mask)) {
+			numa_free_cpumask(node_mask);
+			return node_num; 
+		}
+		node_num--;
+	}
+
+	numa_free_cpumask(node_mask);
+	return node_num;
+}
+
 static void fill_packages(void)
 {
 	GList *entry;
@@ -76,6 +109,7 @@ static void fill_packages(void)
 		memset(package, 0, sizeof(struct package));
 		package->mask = cache->package_mask;
 		package->number = cache->number;
+		package->node_num = search_numa_node(package->mask);
 		while (entry2) {
 			struct cache_domain *cache2;
 			cache2 = entry2->data;
@@ -113,6 +147,7 @@ static void fill_cache_domain(void)
 		cache->mask = cpu->cache_mask;
 		cache->package_mask = cpu->package_mask;
 		cache->number = cpu->number;
+		cache->node_num = search_numa_node(cache->mask);
 		cache_domains = g_list_append(cache_domains, cache);
 		cache_domain_count++;
 		while (entry2) {
@@ -163,6 +198,9 @@ static void do_one_cpu(char *path)
 	cpu_set(cpu->number, cpu_possible_map);
 	
 	cpu_set(cpu->number, cpu->mask);
+
+	/* set numa node of cpu */
+	cpu->node_num = search_numa_node(cpu->mask);
 
 	/* if the cpu is on the banned list, just don't add it */
 	if (cpus_intersects(cpu->mask, banned_cpus)) {
@@ -229,7 +267,7 @@ static void dump_irqs(int spaces, GList *dump_interrupts)
 		int i;
 		for (i=0; i<spaces; i++) printf(" ");
 		irq = dump_interrupts->data;
-		printf("Interrupt %i (%s/%u) \n", irq->number, classes[irq->class], (unsigned int)irq->workload);
+		printf("Interrupt %i node_num is %d (%s/%u) \n", irq->number, irq->node_num, classes[irq->class], (unsigned int)irq->workload);
 		dump_interrupts = g_list_next(dump_interrupts);
 	}
 }
@@ -246,18 +284,18 @@ void dump_tree(void)
 	while (p_iter) {
 		package = p_iter->data;
 		cpumask_scnprintf(buffer, 4096, package->mask);
-		printf("Package %i:  cpu mask is %s (workload %lu)\n", package->number, buffer, (unsigned long)package->workload);
+		printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", package->number, package->node_num, buffer, (unsigned long)package->workload);
 		c_iter = g_list_first(package->cache_domains);
 		while (c_iter) {
 			cache_domain = c_iter->data;
 			c_iter = g_list_next(c_iter);
 			cpumask_scnprintf(buffer, 4095, cache_domain->mask);
-			printf("        Cache domain %i: cpu mask is %s  (workload %lu) \n", cache_domain->number, buffer, (unsigned long)cache_domain->workload);
+			printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (workload %lu) \n", cache_domain->number, cache_domain->node_num, buffer, (unsigned long)cache_domain->workload);
 			cp_iter = cache_domain->cpu_cores;
 			while (cp_iter) {
 				cpu = cp_iter->data;
 				cp_iter = g_list_next(cp_iter);
-				printf("                CPU number %i  (workload %lu)\n", cpu->number, (unsigned long)cpu->workload);
+				printf("                CPU number %i  numa_node is %d (workload %lu)\n", cpu->number, cpu->node_num , (unsigned long)cpu->workload);
 				dump_irqs(18, cpu->interrupts);
 			}
 			dump_irqs(10, cache_domain->interrupts);

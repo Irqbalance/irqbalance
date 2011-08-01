@@ -146,6 +146,31 @@ static void investigate(struct interrupt *irq, int number)
 	} while (c!=c2 && c2!=NULL);
 }
 
+/* Set numa node number for MSI interrupt;
+ * Assumes existing irq metadata
+ */
+void set_msi_interrupt_numa(int number, char *devname)
+{
+	GList *item;
+	struct interrupt *irq;
+	int node;
+
+	node = dev_to_node(devname);
+	if (node < 0)
+		return;
+
+	item = g_list_first(interrupts);
+	while (item) {
+		irq = item->data;
+
+		if (irq->number == number) {
+			irq->node_num = node;
+			irq->msi = 1;
+			return;
+		}
+		item = g_list_next(item);
+	}
+}
 
 /*
  * Set the number of interrupts received for a specific irq;
@@ -177,6 +202,7 @@ void set_interrupt_count(int number, uint64_t count)
 	if (!irq)
 		return;
 	memset(irq, 0, sizeof(struct interrupt));
+	irq->node_num = -1;
 	irq->number = number;
 	irq->count = count;
 	irq->allowed_mask = CPU_MASK_ALL;
@@ -217,7 +243,7 @@ void add_interrupt_count(int number, uint64_t count, int type)
  * is metadata for the interrupt; do nothing if no such data
  * exists.
  */
-void add_interrupt_numa(int number, cpumask_t mask, int type)
+void add_interrupt_numa(int number, cpumask_t mask, int node_num, int type)
 {
 	GList *item;
 	struct interrupt *irq;
@@ -229,6 +255,7 @@ void add_interrupt_numa(int number, cpumask_t mask, int type)
 
 		if (irq->number == number) {
 			cpus_or(irq->numa_mask, irq->numa_mask, mask);
+			irq->node_num = node_num;
 			if (irq->class < type && irq->balance_level != BALANCE_NONE)  {
 				irq->class = type;
 				irq->balance_level = map_class_to_level[irq->class];
@@ -281,7 +308,7 @@ void dump_workloads(void)
 		irq = item->data;
 		item = g_list_next(item);
 
-		printf("Interrupt %i (class %s) has workload %lu \n", irq->number, classes[irq->class], (unsigned long)irq->workload);
+		printf("Interrupt %i node_num %d (class %s) has workload %lu \n", irq->number, irq->node_num, classes[irq->class], (unsigned long)irq->workload);
 
 	}
 }

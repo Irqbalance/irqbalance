@@ -41,6 +41,7 @@ void pci_numa_scan(void)
 	char line[PATH_MAX];
 	FILE *file;
 	int irq;
+	int node_num;
 	unsigned int class;
 
 	dir = opendir("/sys/bus/pci/devices");
@@ -83,6 +84,15 @@ void pci_numa_scan(void)
 		fclose(file);
 		cpumask_parse_user(line, strlen(line), mask);
 
+		/* Add numa_node file support */ 
+		sprintf(line,"/sys/bus/pci/devices/%s/numa_node", entry->d_name);
+		file = fopen(line, "r");
+		if (!file)
+			continue;
+		if (fgets(line, PATH_MAX, file)==NULL)
+			line[0]=0;
+		node_num = strtol(line, NULL, 10);
+
 		type = IRQ_OTHER;
 		if ((class>>16) == 0x01)
 			type = IRQ_SCSI;
@@ -95,7 +105,7 @@ void pci_numa_scan(void)
 		if ((class>>16) >= 0x03 && (class>>16) <= 0x0C)
 			type = IRQ_LEGACY;
 
-		add_interrupt_numa(irq, mask, type);
+		add_interrupt_numa(irq, mask, node_num, type);
 		
 	} while (entry);
 	closedir(dir);	

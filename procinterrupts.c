@@ -82,6 +82,22 @@ void parse_proc_interrupts(void)
 			need_cpu_rescan = 1;
 		
 		set_interrupt_count(number, count);
+
+		/* is interrupt MSI based? */
+		while (*c && *c == ' ')
+			c++;
+		if (strstr(c, "PCI-MSI") != NULL) {
+			while (*c && *c != ' ')
+				c++;
+			while (*c && *c == ' ')
+				c++;
+			if (c) {
+				/* Set numa node for irq if it was MSI */
+				if (debug_mode)
+					printf("Set MSI interrupt for %d\n", number);
+				set_msi_interrupt_numa(number, c);
+			}
+		}
 	}		
 	fclose(file);
 	free(line);

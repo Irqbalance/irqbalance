@@ -24,6 +24,7 @@ struct package {
 	int	number;
 
 	cpumask_t	mask;
+	int	node_num;
 
 	int class_count[7];
 
@@ -36,6 +37,7 @@ struct cache_domain {
 	int	number;
 
 	int marker;
+	int	node_num;
 
 	cpumask_t	mask;
 
@@ -53,6 +55,7 @@ struct cpu_core {
 	int	number;
 
 	int	marker;
+	int	node_num;
 
 	int class_count[7];
 
@@ -70,6 +73,8 @@ struct interrupt {
 
 	int	number;
 	int	class;
+	int	node_num;
+	int	msi;
 
 	uint64_t	count;
 	uint64_t	old_count;

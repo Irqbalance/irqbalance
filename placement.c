@@ -36,13 +36,19 @@ static uint64_t package_cost_func(struct interrupt *irq, struct package *package
 {
 	int bonus = 0;
 	int maxcount;
+	int dist;
 	/* moving to a cold package/cache/etc gets you a 3000 penalty */
 	if (!cpus_intersects(irq->old_mask, package->mask))
 		bonus = CROSS_PACKAGE_PENALTY;
 
 	/* do a little numa affinity */
-	if (!cpus_intersects(irq->numa_mask, package->mask))
-		bonus += NUMA_PENALTY;
+	if (irq->node_num != package->node_num) {
+		if (irq->node_num >= 0 && package->node_num >= 0) {
+			dist = numa_distance(irq->node_num, package->node_num);
+			/* moving to a distant numa node results into penalty */
+			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
+		}
+	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -67,13 +73,20 @@ static uint64_t package_cost_func(struct interrupt *irq, struct package *package
 static uint64_t cache_domain_cost_func(struct interrupt *irq, struct cache_domain *cache_domain)
 {
 	int bonus = 0;
+	int dist;
+
 	/* moving to a cold cache gets you a 1500 penalty */
 	if (!cpus_intersects(irq->old_mask, cache_domain->mask))
 		bonus = CROSS_PACKAGE_PENALTY/2;
 
 	/* do a little numa affinity */
-	if (!cpus_intersects(irq->numa_mask, cache_domain->mask))
-		bonus += NUMA_PENALTY;
+	if (irq->node_num != cache_domain->node_num) {
+		if (irq->node_num >= 0 && cache_domain->node_num >= 0) {
+			dist = numa_distance(irq->node_num, cache_domain->node_num);
+			/* moving to a distant numa node results into penalty */
+			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
+		}
+	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -82,6 +95,11 @@ static uint64_t cache_domain_cost_func(struct interrupt *irq, struct cache_domai
 
 	/* pay 6000 for each previous interrupt of the same class */
 	bonus += CLASS_VIOLATION_PENTALTY * cache_domain->class_count[irq->class];
+
+	/* try to avoid having a lot of MSI interrupt (globally, no by devide id) on
+	 * cache domain */
+	if (irq->msi == 1) 
+		bonus += MSI_CACHE_PENALTY * cache_domain->class_count[irq->class];
 
 	/* if the cache domain has no cpus in the allowed mask.. just block */
 	if (!cpus_intersects(irq->allowed_mask, cache_domain->mask))
@@ -93,13 +111,20 @@ static uint64_t cache_domain_cost_func(struct interrupt *irq, struct cache_domai
 static uint64_t cpu_cost_func(struct interrupt *irq, struct cpu_core *cpu)
 {
 	int bonus = 0;
+	int dist;
+
 	/* moving to a colder core gets you a 1000 penalty */
 	if (!cpus_intersects(irq->old_mask, cpu->mask))
 		bonus = CROSS_PACKAGE_PENALTY/3;
 
 	/* do a little numa affinity */
-	if (!cpus_intersects(irq->numa_mask, cpu->mask))
-		bonus += NUMA_PENALTY;
+	if (irq->node_num != cpu->node_num) {
+		if (irq->node_num >= 0 && cpu->node_num >= 0) {
+			dist = numa_distance(irq->node_num, cpu->node_num);
+			/* moving to a distant numa node results into penalty */
+			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
+		}
+	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)

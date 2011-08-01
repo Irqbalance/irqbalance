@@ -59,26 +59,19 @@ struct nic {
 
 static GList *nics;
 
-
-static int dev_to_irq(char *devname)
+static int dev_to_bus(char *devname, char *busname)
 {
 	int sock, ret;
 	struct ifreq ifr;
 	struct ethtool_value ethtool; 
 	struct ethtool_drvinfo driver;
-	FILE *file;
-	char *line =  NULL;
-	size_t size;
-	int val;
-
-	char buffer[PATH_MAX];
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	memset(&ethtool, 0, sizeof(struct ethtool_value));
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock<0) 
-		return 0;
+		return -1;
 
 	strcpy(ifr.ifr_name, devname);
 
@@ -87,8 +80,24 @@ static int dev_to_irq(char *devname)
         ret = ioctl(sock, SIOCETHTOOL, &ifr);
 	close(sock);
 	if (ret<0)
+		return -1;
+	strncpy(busname,driver.bus_info,63);
+	return 0;
+}
+
+static int dev_to_irq(char *devname)
+{
+	FILE *file;
+	char *line =  NULL;
+	size_t size;
+	int val;
+	char busname[64];
+
+	char buffer[PATH_MAX];
+
+	if (dev_to_bus(devname, busname))
 		return 0;
-        sprintf(buffer,"/sys/bus/pci/devices/%s/irq", driver.bus_info);
+        sprintf(buffer,"/sys/bus/pci/devices/%s/irq", busname);
 	file = fopen(buffer, "r");
 	if (!file)
 		return 0;
@@ -103,6 +112,37 @@ static int dev_to_irq(char *devname)
 		val = strtoul(line, NULL, 10);
 	free(line);
 	return val;
+}
+
+int dev_to_node(char *devname) 
+{
+	int node, ret;
+	char *line = NULL;
+	FILE *file;
+	size_t size;
+
+	char busname[64];
+	char buffer[PATH_MAX];
+
+	ret = dev_to_bus(devname, busname);
+	if (ret)
+		return -1;
+
+	sprintf(buffer,"/sys/bus/pci/devices/%s/numa_node", busname);
+	file = fopen(buffer, "r");
+	if (!file)
+		return -1;
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		fclose(file);
+		return -1;
+	}
+	fclose(file);
+	node = 0;
+	if (line)
+		node = strtoul(line, NULL, 10);
+	free(line);
+	return node;
 }
 
 static struct nic *new_nic(char *name)

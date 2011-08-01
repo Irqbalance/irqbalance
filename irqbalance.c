@@ -31,6 +31,7 @@
 
 int one_shot_mode;
 int debug_mode;
+int numa_avail;
 
 int need_cpu_rescan;
 
@@ -69,6 +70,14 @@ int main(int argc, char** argv)
 
 	if (getenv("IRQBALANCE_DEBUG")) 
 		debug_mode=1;
+
+	if (numa_available() > -1) {
+		numa_avail = 1;
+	} else {
+		if (debug_mode)
+			printf("This machine seems not NUMA capable.\n");
+	}
+
 
 	parse_cpu_tree();
 
@@ -131,8 +140,7 @@ int main(int argc, char** argv)
 		/* to cope with dynamic configurations we scan for new numa information
 		 * once every 5 minutes
 		 */
-		if (counter % NUMA_REFRESH_INTERVAL == 16)
-			pci_numa_scan();
+		pci_numa_scan();
 
 		calculate_placement();
 		activate_mapping();

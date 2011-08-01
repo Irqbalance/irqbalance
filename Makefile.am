@@ -24,7 +24,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 EXTRA_DIST = README INSTALL COPYING autogen.sh cap-ng.m4
  
 INCLUDES = -I${top_srcdir} 
-LIBS = $(CAPNG_LDADD) $(GLIB_LIBS)
+LIBS = $(CAPNG_LDADD) $(GLIB_LIBS) -lnuma
 AM_CFLAGS = -g -Os -W -Wall -Wshadow -Wformat -Wundef $(GLIB_CFLAGS) -D_GNU_SOURCE
 noinst_HEADERS = bitmap.h constants.h cpumask.h irqbalance.h non-atomic.h \
 	types.h
