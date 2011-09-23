@@ -53,6 +53,9 @@ echo Checking for header files
 AC_HEADER_STDC
 AC_CHECK_HEADERS(linux/ethtool.h linux/sockios.h, [], [])
 
+AC_CHECK_FUNCS(getopt_long)
+
+
 AC_C_CONST
 AC_C_INLINE
 AM_PROG_CC_C_O

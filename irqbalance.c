@@ -25,6 +25,10 @@
 #include <malloc.h>
 #include <sys/time.h>
 #include <syslog.h>
+#include <unistd.h>
+#ifdef HAVE_GETOPT_LONG 
+#include <getopt.h>
+#endif
 
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
@@ -56,13 +60,53 @@ void sleep_approx(int seconds)
 	nanosleep(&ts, NULL);
 }
 
+#ifdef HAVE_GETOPT_LONG
+struct option lopts[] = {
+	{"oneshot", 0, NULL, 'o'},
+	{"debug", 0, NULL, 'd'},
+	{0, 0, 0, 0}
+};
+
+static void usage(void)
+{
+	printf("irqbalance [--oneshot | -o] [--debug | -d]");
+}
+
+static void parse_command_line(int argc, char **argv)
+{
+	int opt;
+	int longind;
+
+	while ((opt = getopt_long(argc, argv,
+		"",
+		lopts, &longind)) != -1) {
+
+		switch(opt) {
+			case '?':
+				usage();
+				exit(1);
+			case 'd':
+				debug_mode=1;
+				break;
+			case 'o':
+				one_shot_mode=1;
+				break;
+		}
+	}
+}
+#endif
+
 int main(int argc, char** argv)
 {
-	if (argc>1 && strstr(argv[1],"debug"))
-		debug_mode=1;
-	if (argc>1 && strstr(argv[1],"oneshot"))
-		one_shot_mode=1;
 
+#ifdef HAVE_GETOPT_LONG
+	parse_command_line(argc, argv);
+#else
+	if (argc>1 && strstr(argv[1],"--debug"))
+		debug_mode=1;
+	if (argc>1 && strstr(argv[1],"--oneshot"))
+		one_shot_mode=1;
+#endif
 	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
 		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
 	}
