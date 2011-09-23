@@ -24,17 +24,22 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <syslog.h>
 
 #include "cpumask.h"
 #include "irqbalance.h"
 
 #define LINESIZE 4096
 
+static int proc_int_has_msi = 0;
+static int msi_found_in_sysfs = 0;
+
 void parse_proc_interrupts(void)
 {
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
+	int int_type;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -55,6 +60,9 @@ void parse_proc_interrupts(void)
 		if (getline(&line, &size, file)==0)
 			break;
 
+		if (!proc_int_has_msi)
+			if (strstr(line, "MSI") != NULL)
+				proc_int_has_msi = 1;
 
 		/* lines with letters in front are special, like NMI count. Ignore */
 		if (!(line[0]==' ' || (line[0]>='0' && line[0]<='9')))
@@ -84,21 +92,24 @@ void parse_proc_interrupts(void)
 		set_interrupt_count(number, count);
 
 		/* is interrupt MSI based? */
-		while (*c && *c == ' ')
-			c++;
-		if (strstr(c, "PCI-MSI") != NULL) {
-			while (*c && *c != ' ')
-				c++;
-			while (*c && *c == ' ')
-				c++;
-			if (c) {
-				/* Set numa node for irq if it was MSI */
-				if (debug_mode)
-					printf("Set MSI interrupt for %d\n", number);
-				set_msi_interrupt_numa(number, c);
-			}
+		int_type = find_irq_integer_prop(number, IRQ_TYPE);
+		if ((int_type == IRQ_TYPE_MSI) || (int_type == IRQ_TYPE_MSIX)) {
+			msi_found_in_sysfs = 1;
+			/* Set numa node for irq if it was MSI */
+			if (debug_mode)
+				printf("Set MSI interrupt for %d\n", number);
+			set_msi_interrupt_numa(number, c);
 		}
 	}		
+	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {
+		syslog(LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");
+		syslog(LOG_WARNING, "But none found in sysfs, you need to update your kernel\n");
+		syslog(LOG_WARNING, "Until then, IRQs will be improperly classified\n");
+		/*
+ 		 * Set msi_foun_in_sysfs, so we don't get this error constantly
+ 		 */
+		msi_found_in_sysfs = 1;
+	}
 	fclose(file);
 	free(line);
 }

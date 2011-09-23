@@ -117,7 +117,7 @@ static void investigate(struct interrupt *irq, int number)
 		} else if (strcmp(entry->d_name,"affinity_hint")==0) {
 			get_affinity_hint(irq, number);
 		} else {
-			irq->class = find_class(irq, entry->d_name);
+			irq->class = find_irq_integer_prop(irq->number, IRQ_CLASS);
 		}
 
 	} while (entry);
@@ -155,7 +155,7 @@ void set_msi_interrupt_numa(int number, char *devname)
 	struct interrupt *irq;
 	int node;
 
-	node = dev_to_node(devname);
+	node = find_irq_integer_prop(number, IRQ_NUMA);
 	if (node < 0)
 		return;
 
@@ -208,34 +208,6 @@ void set_interrupt_count(int number, uint64_t count)
 	irq->allowed_mask = CPU_MASK_ALL;
 	investigate(irq, number);
 	interrupts = g_list_append(interrupts, irq);
-}
-
-/* 
- * Add extra irqs to a specific irq metadata structure;
- * if no such metadata exists, do nothing at all
- */
-void add_interrupt_count(int number, uint64_t count, int type)
-{
-	GList *item;
-	struct interrupt *irq;
-
-	if (!count)
-		return;
-
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-		item = g_list_next(item);
-
-		if (irq->number == number) {
-			irq->extra += count;
-			if (irq->class < type && irq->balance_level != BALANCE_NONE)  {
-				irq->class = type;
-				irq->balance_level = map_class_to_level[irq->class];
-			}
-			return;
-		}
-	}
 }
 
 /*

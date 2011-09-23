@@ -35,78 +35,22 @@
 
 void pci_numa_scan(void)
 {
-	DIR *dir;
-	struct dirent *entry;
+	int irq = -1;
 	cpumask_t mask;
-	char line[PATH_MAX];
-	FILE *file;
-	int irq;
 	int node_num;
-	unsigned int class;
-
-	dir = opendir("/sys/bus/pci/devices");
-	if (!dir) 
-		return;
 	do {
 		int type;
-		entry = readdir(dir);
-		if (!entry)
+		irq = get_next_irq(irq);
+		if (irq == -1)
 			break;
-		if (strlen(entry->d_name)<3)
-			continue;
 
-		sprintf(line,"/sys/bus/pci/devices/%s/irq", entry->d_name);
-		file = fopen(line, "r");
-		if (!file)
-			continue;
-		if (fgets(line, PATH_MAX, file)==NULL)
-			line[0]=0;
-		fclose(file);
-		irq = strtoul(line, NULL, 10);
-		if (!irq)
-			continue;
+		mask = find_irq_cpumask_prop(irq, IRQ_LCPU_MASK);
 
-		sprintf(line,"/sys/bus/pci/devices/%s/class", entry->d_name);
-		file = fopen(line, "r");
-		if (!file)
-			continue;
-		if (fgets(line, PATH_MAX, file)==NULL)
-			line[0]=0;
-		fclose(file);
-		class = strtoul(line, NULL, 16);
+		node_num = find_irq_integer_prop(irq, IRQ_NUMA);
 
-		sprintf(line,"/sys/bus/pci/devices/%s/local_cpus", entry->d_name);
-		file = fopen(line, "r");
-		if (!file)
-			continue;
-		if (fgets(line, PATH_MAX, file)==NULL)
-			line[0]=0;
-		fclose(file);
-		cpumask_parse_user(line, strlen(line), mask);
-
-		/* Add numa_node file support */ 
-		sprintf(line,"/sys/bus/pci/devices/%s/numa_node", entry->d_name);
-		file = fopen(line, "r");
-		if (!file)
-			continue;
-		if (fgets(line, PATH_MAX, file)==NULL)
-			line[0]=0;
-		node_num = strtol(line, NULL, 10);
-
-		type = IRQ_OTHER;
-		if ((class>>16) == 0x01)
-			type = IRQ_SCSI;
-/*
- * Ethernet gets the type via /proc/net/dev; in addition down'd interfaces
- * shouldn't boost interrupts 
-		if ((class>>16) == 0x02)
-			type = IRQ_ETH;
-*/
-		if ((class>>16) >= 0x03 && (class>>16) <= 0x0C)
-			type = IRQ_LEGACY;
+		type = find_irq_integer_prop(irq, IRQ_CLASS);
 
 		add_interrupt_numa(irq, mask, node_num, type);
 		
-	} while (entry);
-	closedir(dir);	
+	} while (irq != -1);
 }

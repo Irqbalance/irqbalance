@@ -29,12 +29,14 @@ extern GList *interrupts;
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
 extern void parse_proc_interrupts(void);
+extern void rebuild_irq_db(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number, char *devname);
-extern void add_interrupt_count(int number, uint64_t count, int type);
-extern int find_class(struct interrupt *irq, char *string);
+extern int get_next_irq(int irq);
+extern int find_irq_integer_prop(int irq, enum irq_prop prop);
+extern cpumask_t find_irq_cpumask_prop(int irq, enum irq_prop prop);
+
 extern void add_interrupt_numa(int number, cpumask_t mask, int node_num, int type);
-int dev_to_node(char *devname);
 
 void calculate_workload(void);
 void reset_counts(void);

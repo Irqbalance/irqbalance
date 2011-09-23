@@ -30,7 +30,7 @@ noinst_HEADERS = bitmap.h constants.h cpumask.h irqbalance.h non-atomic.h \
 	types.h
 sbin_PROGRAMS = irqbalance
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
-	irqlist.c network.c numa.c placement.c powermode.c procinterrupts.c
+	irqlist.c numa.c placement.c powermode.c procinterrupts.c
 dist_man_MANS = irqbalance.1
 
 CONFIG_CLEAN_FILES = debug*.list config/*

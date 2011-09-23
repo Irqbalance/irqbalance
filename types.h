@@ -10,14 +10,33 @@
 #define BALANCE_CACHE		2
 #define BALANCE_CORE		3
 
+/*
+ * IRQ Classes
+ */
 #define IRQ_OTHER       0
 #define IRQ_LEGACY      1
 #define IRQ_SCSI        2
 #define IRQ_TIMER       3
 #define IRQ_ETH         4
-#define IRQ_GETH	5
-#define IRQ_TGETH	6
 
+/*
+ * IRQ Types
+ */
+#define IRQ_TYPE_LEGACY 0
+#define IRQ_TYPE_MSI	1
+#define IRQ_TYPE_MSIX	2
+
+
+/*
+ * IRQ properties
+ */
+enum irq_prop {
+	IRQ_CLASS = 0,
+	IRQ_TYPE,
+	IRQ_NUMA,
+	IRQ_LCPU_MASK,
+	IRQ_MAX_PROPERTY
+};
 
 struct package {
 	uint64_t	workload;

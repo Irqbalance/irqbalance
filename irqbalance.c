@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/time.h>
+#include <syslog.h>
+
 #ifdef HAVE_LIBCAP_NG
 #include <cap-ng.h>
 #endif
@@ -79,6 +81,8 @@ int main(int argc, char** argv)
 	}
 
 
+	rebuild_irq_db();
+
 	parse_cpu_tree();
 
 
@@ -92,6 +96,8 @@ int main(int argc, char** argv)
 	if (!debug_mode)
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
+
+	openlog(argv[0], 0, LOG_DAEMON);
 
 #ifdef HAVE_LIBCAP_NG
 	// Drop capabilities
@@ -109,7 +115,7 @@ int main(int argc, char** argv)
 	sort_irq_list();
 	if (debug_mode)
 		dump_workloads();
-	
+
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);
 		if (debug_mode)
@@ -133,8 +139,6 @@ int main(int argc, char** argv)
 			parse_cpu_tree();
 		}
 
-		/* deal with NAPI */
-		account_for_nic_stats();
 		calculate_workload();
 
 		/* to cope with dynamic configurations we scan for new numa information
