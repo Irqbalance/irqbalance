@@ -1,0 +1,11 @@
+[Unit]
+Description=irqbalance daemon
+After=syslog.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/irqbalance
+Type=forking
+ExecStart=/usr/sbin/irqbalance $ONESHOT
+
+[Install]
+WantedBy=multi-user.target
