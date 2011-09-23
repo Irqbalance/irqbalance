@@ -361,6 +361,12 @@ void parse_cpu_tree(void)
 		entry = readdir(dir);
                 if (entry && strlen(entry->d_name)>3 && strstr(entry->d_name,"cpu")) {
 			char new_path[PATH_MAX];
+			/*
+ 			 * We only want to count real cpus, not cpufreq and
+ 			 * cpuidle
+ 			 */
+			if ((entry->d_name[3] < 0x30) | (entry->d_name[3] > 0x39))
+				continue;
 			sprintf(new_path, "/sys/devices/system/cpu/%s", entry->d_name);
 			do_one_cpu(new_path);
 		}
