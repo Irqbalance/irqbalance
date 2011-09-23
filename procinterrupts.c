@@ -98,7 +98,7 @@ void parse_proc_interrupts(void)
 			/* Set numa node for irq if it was MSI */
 			if (debug_mode)
 				printf("Set MSI interrupt for %d\n", number);
-			set_msi_interrupt_numa(number, c);
+			set_msi_interrupt_numa(number);
 		}
 	}		
 	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {

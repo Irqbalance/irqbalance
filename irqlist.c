@@ -149,7 +149,7 @@ static void investigate(struct interrupt *irq, int number)
 /* Set numa node number for MSI interrupt;
  * Assumes existing irq metadata
  */
-void set_msi_interrupt_numa(int number, char *devname)
+void set_msi_interrupt_numa(int number)
 {
 	GList *item;
 	struct interrupt *irq;
