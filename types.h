@@ -38,6 +38,14 @@ enum irq_prop {
 	IRQ_MAX_PROPERTY
 };
 
+struct numa_node {
+	uint64_t	workload;
+	int	number;
+	cpumask_t	local_cpus;
+	GList	*packages;
+	GList	*interrupts;
+};
+
 struct package {
 	uint64_t	workload;
 	int	number;
