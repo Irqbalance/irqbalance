@@ -60,5 +60,9 @@ extern void free_numa_node_list(void);
 extern void dump_numa_node_info(struct numa_node *node);
 extern void for_each_numa_node(void (*cb)(struct numa_node *node));
 extern void add_package_to_node(struct package *p, int nodeid);
+
+/*
+ * Package functions
+ */
 #endif
 

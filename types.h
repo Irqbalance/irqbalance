@@ -68,6 +68,8 @@ struct cache_domain {
 	int marker;
 	int	node_num;
 
+	struct package *package;
+
 	cpumask_t	mask;
 
 	cpumask_t	package_mask;
@@ -85,6 +87,7 @@ struct cpu_core {
 
 	int	marker;
 	int	node_num;
+	struct cache_domain *cache_domain;
 
 	int class_count[7];
 

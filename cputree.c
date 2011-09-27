@@ -116,6 +116,7 @@ static void fill_packages(void)
 			if (cpus_equal(cache->package_mask, cache2->package_mask)) {
 				cache2->marker = 1;
 				package->cache_domains = g_list_append(package->cache_domains, cache2);
+				cache->package = package;
 				if (package->number > cache2->number)
 					package->number = cache2->number;
 			}
