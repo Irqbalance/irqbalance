@@ -96,6 +96,33 @@ static void parse_command_line(int argc, char **argv)
 }
 #endif
 
+/*
+ * This builds our object tree.  The Heirarchy is pretty straightforward
+ * At the top are numa_nodes
+ * All CPU packages belong to a single numa_node
+ * All Cache domains belong to a CPU package
+ * All CPU cores belong to a cache domain
+ *
+ * Objects are built in that order (top down)
+ *
+ * Object workload is the aggregate sum of the
+ * workload of the objects below it
+ */
+static void build_object_tree()
+{
+	build_numa_node_list();
+}
+
+static void free_object_tree()
+{
+	free_numa_node_list();
+}
+
+static void dump_object_tree()
+{
+	for_each_numa_node(dump_numa_node_info);
+}
+
 int main(int argc, char** argv)
 {
 
@@ -124,6 +151,10 @@ int main(int argc, char** argv)
 			printf("This machine seems not NUMA capable.\n");
 	}
 
+
+	build_object_tree();
+	if (debug_mode)
+		dump_object_tree();
 
 	rebuild_irq_db();
 
@@ -199,5 +230,6 @@ int main(int argc, char** argv)
 			break;
 		counter++;
 	}
+	free_object_tree();
 	return EXIT_SUCCESS;
 }

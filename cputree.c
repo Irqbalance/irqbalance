@@ -122,6 +122,7 @@ static void fill_packages(void)
 			entry2 = g_list_next(entry2);
 		}
 		packages = g_list_append(packages, package);
+		add_package_to_node(package, search_numa_node(package->mask));
 		package_count++;
 	}
 }

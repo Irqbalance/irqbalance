@@ -51,4 +51,14 @@ void check_power_mode(void);
 void clear_cpu_tree(void);
 void pci_numa_scan(void);
 
+/*===================NEW BALANCER FUNCTIONS============================*/
+/*
+ * Numa node access routines
+ */
+extern void build_numa_node_list(void);
+extern void free_numa_node_list(void);
+extern void dump_numa_node_info(struct numa_node *node);
+extern void for_each_numa_node(void (*cb)(struct numa_node *node));
+extern void add_package_to_node(struct package *p, int nodeid);
 #endif
+

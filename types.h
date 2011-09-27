@@ -51,6 +51,8 @@ struct package {
 	int	number;
 
 	cpumask_t	mask;
+	struct numa_node *numa_node;
+
 	int	node_num;
 
 	int class_count[7];

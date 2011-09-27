@@ -33,7 +33,7 @@
 
 #include "irqbalance.h"
 
-#define SYSFS_NODE_PATH "sys/devices/system/node"
+#define SYSFS_NODE_PATH "/sys/devices/system/node"
 
 GList *numa_nodes = NULL;
 
@@ -59,7 +59,7 @@ void pci_numa_scan(void)
 	} while (irq != -1);
 }
 
-void add_one_node(const char *nodename)
+static void add_one_node(const char *nodename)
 {
 	char *path = alloca(strlen(SYSFS_NODE_PATH) + strlen(nodename) + 1);
 	struct numa_node *new;
@@ -98,7 +98,7 @@ void build_numa_node_list(void)
 		entry = readdir(dir);
 		if (!entry)
 			break;
-		if ((entry->d_type == DT_DIR) && (strstr("node", entry->d_name))) {
+		if ((entry->d_type == DT_DIR) && (strstr(entry->d_name, "node"))) {
 			add_one_node(entry->d_name);
 		}
 	} while (entry);
@@ -113,5 +113,56 @@ void free_numa_node_list(void)
 {
 	g_list_free_full(numa_nodes, free_numa_node);
 	numa_nodes = NULL;
+}
+
+static gint compare_node(gconstpointer a, gconstpointer b)
+{
+	const struct numa_node *ai = a;
+	const struct numa_node *bi = b;
+
+	return (ai->number == bi->number) ? 0 : 1;
+}
+
+void add_package_to_node(struct package *p, int nodeid)
+{
+	struct numa_node find, *node;
+	find.number = nodeid;
+	GList *entry;
+
+	find.number = nodeid;
+	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+
+	if (!entry) {
+		if (debug_mode)
+			printf("Could not find numa node for node id %d\n", nodeid);
+		return;
+	}
+
+	node = entry->data;
+
+	node->packages = g_list_append(node->packages, p);
+	p->numa_node = node;
+}
+
+void dump_numa_node_info(struct numa_node *node)
+{
+	char buffer[4096];
+
+	printf("NUMA NODE NUMBER: %d\n", node->number);
+	cpumask_scnprintf(buffer, 4096, node->local_cpus); 
+	printf("LOCAL CPU MASK: %s\n", buffer);
+	printf("\n");
+}
+
+void for_each_numa_node(void(*cb)(struct numa_node *node))
+{
+	GList *entry;
+
+	entry = g_list_first(numa_nodes);
+
+	while (entry) {
+		cb(entry->data);
+		entry = g_list_next(entry);
+	}
 }
 
