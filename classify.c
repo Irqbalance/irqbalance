@@ -187,6 +187,7 @@ assign_node:
 	} else {
 		cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
 				   new->property[IRQ_LCPU_MASK].imask_val);
+		free(lcpu_mask);
 	}
 out:
 	if (debug_mode)
