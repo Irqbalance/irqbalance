@@ -254,6 +254,10 @@ done:
 	return;
 }
 
+void free_irq_db(void)
+{
+	g_list_free_full(interrupts_db, free_int);
+}
 
 void rebuild_irq_db(void)
 {

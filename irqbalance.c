@@ -111,11 +111,15 @@ static void parse_command_line(int argc, char **argv)
 static void build_object_tree()
 {
 	build_numa_node_list();
+	parse_cpu_tree();
+	rebuild_irq_db();
 }
 
 static void free_object_tree()
 {
 	free_numa_node_list();
+	clear_cpu_tree();
+	free_irq_db();
 }
 
 static void dump_object_tree()
@@ -155,10 +159,6 @@ int main(int argc, char** argv)
 	build_object_tree();
 	if (debug_mode)
 		dump_object_tree();
-
-	rebuild_irq_db();
-
-	parse_cpu_tree();
 
 
 	/* On single core UP systems irqbalance obviously has no work to do */
@@ -210,8 +210,8 @@ int main(int argc, char** argv)
 			reset_counts();
 			clear_work_stats();
 
-			clear_cpu_tree();
-			parse_cpu_tree();
+			free_object_tree();
+			build_object_tree();
 		}
 
 		calculate_workload();

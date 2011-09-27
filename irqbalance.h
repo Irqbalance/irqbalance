@@ -29,7 +29,6 @@ extern GList *interrupts;
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
 extern void parse_proc_interrupts(void);
-extern void rebuild_irq_db(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
 extern int get_next_irq(int irq);
@@ -64,5 +63,11 @@ extern void add_package_to_node(struct package *p, int nodeid);
 /*
  * Package functions
  */
+
+/*
+ * irq db functions
+ */
+extern void rebuild_irq_db(void);
+extern void free_irq_db(void);
 #endif
 
