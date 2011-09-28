@@ -34,8 +34,10 @@ enum irq_prop {
 	IRQ_CLASS = 0,
 	IRQ_TYPE,
 	IRQ_NUMA,
+	IRQ_LEVEL,
 	IRQ_LCPU_MASK,
 	IRQ_INT_COUNT,
+	IRQ_LAST_INT_COUNT,
 	IRQ_MAX_PROPERTY
 };
 
@@ -104,7 +106,6 @@ struct interrupt {
 
 	uint64_t	count;
 	uint64_t	old_count;
-	uint64_t	extra;
 
 	cpumask_t	mask;
 	cpumask_t	old_mask;

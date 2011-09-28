@@ -83,8 +83,10 @@ static void init_new_irq(struct irq_info *new)
 	new->property[IRQ_CLASS].itype = INT_TYPE;
 	new->property[IRQ_TYPE].itype = INT_TYPE;
 	new->property[IRQ_NUMA].itype = INT_TYPE;
+	new->property[IRQ_LEVEL].itype = INT_TYPE;
 	new->property[IRQ_LCPU_MASK].itype = CPUMASK_TYPE;
 	new->property[IRQ_INT_COUNT].itype = INT_TYPE;
+	new->property[IRQ_LAST_INT_COUNT].itype = INT_TYPE;
 }
 
 static gint compare_ints(gconstpointer a, gconstpointer b)
@@ -161,6 +163,8 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 		goto get_numa_node;
 
 	new->property[IRQ_CLASS].iint_val = class_codes[class];
+	new->property[IRQ_LEVEL].iint_val = map_class_to_level[class_codes[class]];
+
 get_numa_node:
 	numa_node = -1;
 	sprintf(path, "%s/numa_node", devpath);

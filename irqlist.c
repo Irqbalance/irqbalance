@@ -252,10 +252,9 @@ void calculate_workload(void)
 		irq = item->data;
 		item = g_list_next(item);
 
-		irq->workload = irq->count - irq->old_count + irq->workload/3 + irq->extra;
+		irq->workload = irq->count - irq->old_count + irq->workload/3;
 		class_counts[irq->class]++;
 		irq->old_count = irq->count;
-		irq->extra = 0;
 	}
 }
 
@@ -267,9 +266,9 @@ void reset_counts(void)
 	while (item) {
 		irq = item->data;
 		item = g_list_next(item);
+		set_irq_integer_prop(irq->number, IRQ_LAST_INT_COUNT,
+				     find_irq_integer_prop(irq->number, IRQ_INT_COUNT));
 		irq->old_count = irq->count;
-		irq->extra = 0;
-
 	}
 }
 
