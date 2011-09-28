@@ -383,3 +383,16 @@ int get_next_irq(int irq)
 	irqp= entry->data;
 	return irqp->irq;
 }
+
+void for_each_irq(void (*cb)(int irq))
+{
+	struct irq_info *info;
+	GList *entry = g_list_first(interrupts_db);
+
+	while (entry) {
+		info = entry->data;
+		cb(info->irq);
+		entry = g_list_next(entry);
+	}
+}
+

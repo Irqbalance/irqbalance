@@ -37,26 +37,25 @@
 
 GList *numa_nodes = NULL;
 
-void pci_numa_scan(void)
+static void set_irq_numa(int irq)
 {
-	int irq = -1;
 	cpumask_t mask;
 	int node_num;
-	do {
-		int type;
-		irq = get_next_irq(irq);
-		if (irq == -1)
-			break;
+	int type;
 
-		mask = find_irq_cpumask_prop(irq, IRQ_LCPU_MASK);
+	mask = find_irq_cpumask_prop(irq, IRQ_LCPU_MASK);
 
-		node_num = find_irq_integer_prop(irq, IRQ_NUMA);
+	node_num = find_irq_integer_prop(irq, IRQ_NUMA);
 
-		type = find_irq_integer_prop(irq, IRQ_CLASS);
+	type = find_irq_integer_prop(irq, IRQ_CLASS);
 
-		add_interrupt_numa(irq, mask, node_num, type);
+	add_interrupt_numa(irq, mask, node_num, type);
 		
-	} while (irq != -1);
+}
+
+void pci_numa_scan(void)
+{
+	for_each_irq(set_irq_numa);
 }
 
 static void add_one_node(const char *nodename)
