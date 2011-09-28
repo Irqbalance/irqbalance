@@ -60,6 +60,19 @@ extern void add_package_to_node(struct package *p, int nodeid);
 /*
  * Package functions
  */
+#define package_numa_node(p) ((p)->numa_node)
+/*
+ * cache_domain functions
+ */
+#define cache_domain_package(c) ((c)->package)
+#define cache_domain_numa_node(c) (package_numa_node(cache_domain_package((c))))
+
+/*
+ * cpu core functions
+ */
+#define cpu_cache_domain(cpu) ((cpu)->cache_domain)
+#define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
+#define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
 
 /*
  * irq db functions

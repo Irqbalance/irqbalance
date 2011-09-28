@@ -88,91 +88,98 @@ static int search_numa_node(cpumask_t mask)
 	return node_num;
 }
 
-static void fill_packages(void)
+static struct package* add_cache_domain_to_package(struct cache_domain *cache, 
+						    cpumask_t package_mask)
 {
 	GList *entry;
+	struct package *package;
+	struct cache_domain *lcache; 
 
-	entry = g_list_first(cache_domains);
+	entry = g_list_first(packages);
+
 	while (entry) {
-		struct package *package;
-		struct cache_domain *cache = NULL;
-		GList *entry2;
-
-		cache = entry->data;
-		entry2 = entry;
-		entry = g_list_next(entry);
-		if (cache->marker) 
-			continue;
-		package = malloc(sizeof(struct package));
-		if (!package)
+		package = entry->data;
+		if (cpus_equal(package_mask, package->mask))
 			break;
-		memset(package, 0, sizeof(struct package));
-		package->mask = cache->package_mask;
-		package->number = cache->number;
-		package->node_num = search_numa_node(package->mask);
-		while (entry2) {
-			struct cache_domain *cache2;
-			cache2 = entry2->data;
-			if (cpus_equal(cache->package_mask, cache2->package_mask)) {
-				cache2->marker = 1;
-				package->cache_domains = g_list_append(package->cache_domains, cache2);
-				cache->package = package;
-				if (package->number > cache2->number)
-					package->number = cache2->number;
-			}
-			entry2 = g_list_next(entry2);
-		}
+		entry = g_list_next(entry);
+	}
+
+	if (!entry) {
+		package = calloc(sizeof(struct package), 1);
+		if (!package)
+			return NULL;
+		package->mask = package_mask;
 		packages = g_list_append(packages, package);
-		add_package_to_node(package, search_numa_node(package->mask));
 		package_count++;
 	}
-}
 
-static void fill_cache_domain(void)
+	entry = g_list_first(package->cache_domains);
+	while (entry) {
+		lcache = entry->data;
+		if (lcache == cache)
+			break;
+		entry = g_list_next(entry);
+	}
+
+	if (!entry) {
+		package->cache_domains = g_list_append(package->cache_domains, cache);
+		cache->package = package;
+	}
+
+	return package;
+}
+static struct cache_domain* add_cpu_to_cache_domain(struct cpu_core *cpu,
+						    cpumask_t cache_mask)
 {
 	GList *entry;
+	struct cache_domain *cache;
+	struct cpu_core *lcpu;
 
-	entry = g_list_first(cpus);
+	entry = g_list_first(cache_domains);
+
 	while (entry) {
-		struct cache_domain *cache = NULL;
-		struct cpu_core *cpu;
-		GList *entry2;
-		cpu = entry->data;
-		entry2 = entry;
-		entry = g_list_next(entry);
-		if (cpu->marker) 
-			continue;
-		cache = malloc(sizeof(struct cache_domain));
-		if (!cache)
+		cache = entry->data;
+		if (cpus_equal(cache_mask, cache->mask))
 			break;
-		memset(cache, 0, sizeof(struct cache_domain));
-		cache->mask = cpu->cache_mask;
-		cache->package_mask = cpu->package_mask;
-		cache->number = cpu->number;
-		cache->node_num = search_numa_node(cache->mask);
+		entry = g_list_next(entry);
+	}
+
+	if (!entry) {
+		cache = calloc(sizeof(struct cache_domain), 1);
+		if (!cache)
+			return NULL;
+		cache->mask = cache_mask;
 		cache_domains = g_list_append(cache_domains, cache);
 		cache_domain_count++;
-		while (entry2) {
-			struct cpu_core *cpu2;
-			cpu2 = entry2->data;
-			if (cpus_equal(cpu->cache_mask, cpu2->cache_mask) && 
-			    cpus_equal(cpu->package_mask, cpu2->package_mask)) {
-				cpu2->marker = 1;
-				cache->cpu_cores = g_list_append(cache->cpu_cores, cpu2);
-				if (cpu2->number < cache->number)
-					cache->number = cpu2->number;
-			}
-			entry2 = g_list_next(entry2);
-		}
 	}
+
+	entry = g_list_first(cache->cpu_cores);
+	while (entry) {
+		lcpu = entry->data;
+		if (lcpu == cpu)
+			break;
+		entry = g_list_next(entry);
+	}
+
+	if (!entry) {
+		cache->cpu_cores = g_list_append(cache->cpu_cores, cpu);
+		cpu->cache_domain = cache;
+	}
+
+	return cache;
 }
-
-
+ 
 static void do_one_cpu(char *path)
 {
 	struct cpu_core *cpu;
 	FILE *file;
 	char new_path[PATH_MAX];
+	cpumask_t cache_mask, package_mask;
+	struct cache_domain *cache;
+	struct package *package;
+	DIR *dir;
+	struct dirent *entry;
+	int nodeid;
 
 	/* skip offline cpus */
 	snprintf(new_path, PATH_MAX, "%s/online", path);
@@ -201,9 +208,6 @@ static void do_one_cpu(char *path)
 	
 	cpu_set(cpu->number, cpu->mask);
 
-	/* set numa node of cpu */
-	cpu->node_num = search_numa_node(cpu->mask);
-
 	/* if the cpu is on the banned list, just don't add it */
 	if (cpus_intersects(cpu->mask, banned_cpus)) {
 		free(cpu);
@@ -216,26 +220,26 @@ static void do_one_cpu(char *path)
 	/* try to read the package mask; if it doesn't exist assume solitary */
 	snprintf(new_path, PATH_MAX, "%s/topology/core_siblings", path);
 	file = fopen(new_path, "r");
-	cpu_set(cpu->number, cpu->package_mask);
+	cpu_set(cpu->number, package_mask);
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
 		if (getline(&line, &size, file)) 
-			cpumask_parse_user(line, strlen(line), cpu->package_mask);
+			cpumask_parse_user(line, strlen(line), package_mask);
 		fclose(file);
 		free(line);
 	}
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available so try index1 first, then index2 */
-	cpu_set(cpu->number, cpu->cache_mask);
+	cpu_set(cpu->number, cache_mask);
 	snprintf(new_path, PATH_MAX, "%s/cache/index1/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
 		if (getline(&line, &size, file)) 
-			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
+			cpumask_parse_user(line, strlen(line), cache_mask);
 		fclose(file);
 		free(line);
 	}
@@ -245,17 +249,34 @@ static void do_one_cpu(char *path)
 		char *line = NULL;
 		size_t size = 0;
 		if (getline(&line, &size, file)) 
-			cpumask_parse_user(line, strlen(line), cpu->cache_mask);
+			cpumask_parse_user(line, strlen(line), cache_mask);
 		fclose(file);
 		free(line);
 	}
 
+	nodeid=0;
+	dir = opendir(path);
+	do {
+		entry = readdir(dir);
+		if (!entry)
+			break;
+		if (strstr(entry->d_name, "node")) {
+			nodeid = strtoul(&entry->d_name[4], NULL, 10);
+			break;
+		}
+	} while (entry);
+	closedir(dir);
+
+	cache = add_cpu_to_cache_domain(cpu, cache_mask);
+	package = add_cache_domain_to_package(cache, package_mask);
+	add_package_to_node(package, nodeid);	
+ 
 	/* 
 	   blank out the banned cpus from the various masks so that interrupts
 	   will never be told to go there
 	 */
-	cpus_and(cpu->cache_mask, cpu->cache_mask, unbanned_cpus);
-	cpus_and(cpu->package_mask, cpu->package_mask, unbanned_cpus);
+	cpus_and(cpu_cache_domain(cpu)->mask, cpu_cache_domain(cpu)->mask, unbanned_cpus);
+	cpus_and(cpu_package(cpu)->mask, cpu_package(cpu)->mask, unbanned_cpus);
 	cpus_and(cpu->mask, cpu->mask, unbanned_cpus);
 
 	cpus = g_list_append(cpus, cpu);
@@ -286,7 +307,7 @@ void dump_tree(void)
 	while (p_iter) {
 		package = p_iter->data;
 		cpumask_scnprintf(buffer, 4096, package->mask);
-		printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", package->number, package->node_num, buffer, (unsigned long)package->workload);
+		printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", package->number, package_numa_node(package)->number, buffer, (unsigned long)package->workload);
 		c_iter = g_list_first(package->cache_domains);
 		while (c_iter) {
 			cache_domain = c_iter->data;
@@ -297,7 +318,7 @@ void dump_tree(void)
 			while (cp_iter) {
 				cpu = cp_iter->data;
 				cp_iter = g_list_next(cp_iter);
-				printf("                CPU number %i  numa_node is %d (workload %lu)\n", cpu->number, cpu->node_num , (unsigned long)cpu->workload);
+				printf("                CPU number %i  numa_node is %d (workload %lu)\n", cpu->number, cpu_numa_node(cpu)->number , (unsigned long)cpu->workload);
 				dump_irqs(18, cpu->interrupts);
 			}
 			dump_irqs(10, cache_domain->interrupts);
@@ -374,9 +395,6 @@ void parse_cpu_tree(void)
 		}
 	} while (entry);
 	closedir(dir);  
-
-	fill_cache_domain();
-	fill_packages();
 
 	if (debug_mode)
 		dump_tree();

@@ -54,8 +54,6 @@ struct package {
 	cpumask_t	mask;
 	struct numa_node *numa_node;
 
-	int	node_num;
-
 	int class_count[7];
 
 	GList	*cache_domains;
@@ -73,8 +71,6 @@ struct cache_domain {
 
 	cpumask_t	mask;
 
-	cpumask_t	package_mask;
-
 	int class_count[7];
 
 	GList	*cpu_cores;
@@ -87,13 +83,10 @@ struct cpu_core {
 	int	number;
 
 	int	marker;
-	int	node_num;
 	struct cache_domain *cache_domain;
 
 	int class_count[7];
 
-	cpumask_t	package_mask;
-	cpumask_t	cache_mask;
 	cpumask_t	mask;
 
 	GList 	*interrupts;

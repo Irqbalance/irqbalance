@@ -42,9 +42,9 @@ static uint64_t package_cost_func(struct interrupt *irq, struct package *package
 		bonus = CROSS_PACKAGE_PENALTY;
 
 	/* do a little numa affinity */
-	if (irq->node_num != package->node_num) {
-		if (irq->node_num >= 0 && package->node_num >= 0) {
-			dist = numa_distance(irq->node_num, package->node_num);
+	if (irq->node_num != package_numa_node(package)->number) {
+		if (irq->node_num >= 0 && package_numa_node(package)->number >= 0) {
+			dist = numa_distance(irq->node_num, package_numa_node(package)->number);
 			/* moving to a distant numa node results into penalty */
 			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
 		}
@@ -118,9 +118,9 @@ static uint64_t cpu_cost_func(struct interrupt *irq, struct cpu_core *cpu)
 		bonus = CROSS_PACKAGE_PENALTY/3;
 
 	/* do a little numa affinity */
-	if (irq->node_num != cpu->node_num) {
-		if (irq->node_num >= 0 && cpu->node_num >= 0) {
-			dist = numa_distance(irq->node_num, cpu->node_num);
+	if (irq->node_num != cpu_numa_node(cpu)->number) {
+		if (irq->node_num >= 0 && cpu_numa_node(cpu)->number >= 0) {
+			dist = numa_distance(irq->node_num, cpu_numa_node(cpu)->number);
 			/* moving to a distant numa node results into penalty */
 			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
 		}
@@ -134,7 +134,7 @@ static uint64_t cpu_cost_func(struct interrupt *irq, struct cpu_core *cpu)
 	 * since some chipsets only place at the first cpu, give a tiny preference to non-first
 	 * cpus for specifically placed interrupts 
 	 */
-	if (first_cpu(cpu->cache_mask)==cpu->number)
+	if (first_cpu(cpu_cache_domain(cpu)->mask)==cpu->number)
 		bonus++;
 
 	/* pay 6000 for each previous interrupt of the same class */
