@@ -35,6 +35,7 @@ enum irq_prop {
 	IRQ_TYPE,
 	IRQ_NUMA,
 	IRQ_LCPU_MASK,
+	IRQ_INT_COUNT,
 	IRQ_MAX_PROPERTY
 };
 

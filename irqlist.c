@@ -191,6 +191,7 @@ void set_interrupt_count(int number, uint64_t count)
 
 		if (irq->number == number) {
 			irq->count = count;
+			set_irq_integer_prop(number, IRQ_INT_COUNT, count);
 			/* see if affinity_hint changed */
 			get_affinity_hint(irq, number);
 			return;
@@ -207,6 +208,7 @@ void set_interrupt_count(int number, uint64_t count)
 	irq->count = count;
 	irq->allowed_mask = CPU_MASK_ALL;
 	investigate(irq, number);
+	set_irq_integer_prop(number, IRQ_INT_COUNT, count);
 	interrupts = g_list_append(interrupts, irq);
 }
 

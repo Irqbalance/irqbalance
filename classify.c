@@ -84,6 +84,7 @@ static void init_new_irq(struct irq_info *new)
 	new->property[IRQ_TYPE].itype = INT_TYPE;
 	new->property[IRQ_NUMA].itype = INT_TYPE;
 	new->property[IRQ_LCPU_MASK].itype = CPUMASK_TYPE;
+	new->property[IRQ_INT_COUNT].itype = INT_TYPE;
 }
 
 static gint compare_ints(gconstpointer a, gconstpointer b)
@@ -317,6 +318,27 @@ int find_irq_integer_prop(int irq, enum irq_prop prop)
 	result = entry->data;
 	assert(result->property[prop].itype == INT_TYPE);
 	return result->property[prop].iint_val;
+}
+
+int set_irq_integer_prop(int irq, enum irq_prop prop, int val)
+{
+	GList *entry;
+	struct irq_info find, *result;
+	
+	find.irq = irq;
+
+	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+
+	if (!entry) {
+		if (debug_mode)
+			printf("No entry for irq %d in the irq database, adding default entry\n", irq);
+		entry = add_misc_irq(irq);
+	}
+
+	result = entry->data;
+	assert(result->property[prop].itype == INT_TYPE);
+	result->property[prop].iint_val = val;
+	return 0;
 }
 
 cpumask_t find_irq_cpumask_prop(int irq, enum irq_prop prop)
