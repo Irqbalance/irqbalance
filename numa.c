@@ -37,26 +37,13 @@
 
 GList *numa_nodes = NULL;
 
-static void set_irq_numa(int irq)
-{
-	cpumask_t mask;
-	int node_num;
-	int type;
-
-	mask = find_irq_cpumask_prop(irq, IRQ_LCPU_MASK);
-
-	node_num = find_irq_integer_prop(irq, IRQ_NUMA);
-
-	type = find_irq_integer_prop(irq, IRQ_CLASS);
-
-	add_interrupt_numa(irq, mask, node_num, type);
-		
-}
-
-void pci_numa_scan(void)
-{
-	for_each_irq(set_irq_numa);
-}
+struct numa_node unspecified_node = {
+	.workload = 0,
+	.number = -1,
+	.mask = CPU_MASK_ALL,
+	.packages = NULL,
+	.interrupts = NULL,
+};
 
 static void add_one_node(const char *nodename)
 {
@@ -73,13 +60,13 @@ static void add_one_node(const char *nodename)
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
 	f = fopen(path, "r");
 	if (ferror(f)) {
-		cpus_clear(new->local_cpus);
+		cpus_clear(new->mask);
 	} else {
 		fscanf(f, "%as", &cpustr);
 		if (!cpustr) {
-			cpus_clear(new->local_cpus);
+			cpus_clear(new->mask);
 		} else {
-			cpumask_parse_user(cpustr, strlen(cpustr), new->local_cpus);
+			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
 			free(cpustr);
 		}
 	}
@@ -143,25 +130,40 @@ void add_package_to_node(struct package *p, int nodeid)
 	p->numa_node = node;
 }
 
-void dump_numa_node_info(struct numa_node *node)
+void dump_numa_node_info(struct numa_node *node, void *unused __attribute__((unused)))
 {
 	char buffer[4096];
 
 	printf("NUMA NODE NUMBER: %d\n", node->number);
-	cpumask_scnprintf(buffer, 4096, node->local_cpus); 
+	cpumask_scnprintf(buffer, 4096, node->mask); 
 	printf("LOCAL CPU MASK: %s\n", buffer);
 	printf("\n");
 }
 
-void for_each_numa_node(void(*cb)(struct numa_node *node))
+void for_each_numa_node(GList *list, void(*cb)(struct numa_node *node, void *data), void *data)
 {
-	GList *entry;
+	GList *entry, *next;
 
-	entry = g_list_first(numa_nodes);
+	entry = g_list_first(list ? list : numa_nodes);
 
 	while (entry) {
-		cb(entry->data);
-		entry = g_list_next(entry);
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
 	}
+}
+
+struct numa_node *get_numa_node(int nodeid)
+{
+	struct numa_node find;
+	GList *entry;
+
+	if (nodeid == -1)
+		return &unspecified_node;
+
+	find.number = nodeid;
+
+	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+	return entry ? entry->data : NULL;
 }
 

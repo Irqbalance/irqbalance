@@ -283,49 +283,47 @@ static void do_one_cpu(char *path)
 	core_count++;
 }
 
-static void dump_irqs(int spaces, GList *dump_interrupts)
+static void dump_irq(struct irq_info *info, void *data)
 {
-	struct interrupt *irq;
-	while (dump_interrupts) {
-		int i;
-		for (i=0; i<spaces; i++) printf(" ");
-		irq = dump_interrupts->data;
-		printf("Interrupt %i node_num is %d (%s/%u) \n", irq->number, irq->node_num, classes[irq->class], (unsigned int)irq->workload);
-		dump_interrupts = g_list_next(dump_interrupts);
-	}
+	int spaces = (long int)data;
+	int i;
+	for (i=0; i<spaces; i++) printf(" ");
+	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->workload);
+}
+
+static void dump_cpu_core(struct cpu_core *c, void *data __attribute__((unused)))
+{
+	printf("                CPU number %i  numa_node is %d (workload %lu)\n", c->number, cpu_numa_node(c)->number , (unsigned long)c->workload);
+	if (c->interrupts)
+		for_each_irq(c->interrupts, dump_irq, (void *)18);
+}
+
+static void dump_cache_domain(struct cache_domain *c, void *data)
+{
+	char *buffer = data;
+	cpumask_scnprintf(buffer, 4095, c->mask);
+	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (workload %lu) \n", c->number, cache_domain_numa_node(c)->number, buffer, (unsigned long)c->workload);
+	if (c->cpu_cores)
+		for_each_cpu_core(c->cpu_cores, dump_cpu_core, NULL);
+	if (c->interrupts)
+		for_each_irq(c->interrupts, dump_irq, (void *)10);
+}
+
+static void dump_package(struct package *p, void *data)
+{
+	char *buffer = data;
+	cpumask_scnprintf(buffer, 4096, p->mask);
+	printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", p->number, package_numa_node(p)->number, buffer, (unsigned long)p->workload);
+	if (p->cache_domains)
+		for_each_cache_domain(p->cache_domains, dump_cache_domain, buffer);
+	if (p->interrupts)
+		for_each_irq(p->interrupts, dump_irq, (void *)2);
 }
 
 void dump_tree(void)
 {
-	GList *p_iter, *c_iter, *cp_iter;
-	struct package *package;
-	struct cache_domain *cache_domain;
-	struct cpu_core *cpu;
-
 	char buffer[4096];
-	p_iter = g_list_first(packages);
-	while (p_iter) {
-		package = p_iter->data;
-		cpumask_scnprintf(buffer, 4096, package->mask);
-		printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", package->number, package_numa_node(package)->number, buffer, (unsigned long)package->workload);
-		c_iter = g_list_first(package->cache_domains);
-		while (c_iter) {
-			cache_domain = c_iter->data;
-			c_iter = g_list_next(c_iter);
-			cpumask_scnprintf(buffer, 4095, cache_domain->mask);
-			printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (workload %lu) \n", cache_domain->number, cache_domain->node_num, buffer, (unsigned long)cache_domain->workload);
-			cp_iter = cache_domain->cpu_cores;
-			while (cp_iter) {
-				cpu = cp_iter->data;
-				cp_iter = g_list_next(cp_iter);
-				printf("                CPU number %i  numa_node is %d (workload %lu)\n", cpu->number, cpu_numa_node(cpu)->number , (unsigned long)cpu->workload);
-				dump_irqs(18, cpu->interrupts);
-			}
-			dump_irqs(10, cache_domain->interrupts);
-		}
-		dump_irqs(2, package->interrupts);
-		p_iter = g_list_next(p_iter);
-	}
+	for_each_package(NULL, dump_package, buffer);
 }
 
 /*
@@ -444,3 +442,41 @@ void clear_cpu_tree(void)
 	core_count = 0;
 
 }
+
+
+void for_each_package(GList *list, void (*cb)(struct package *p, void *data), void *data)
+{
+	GList *entry = g_list_first(list ? list : packages);
+	GList *next;
+
+	while (entry) {
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
+	}
+}
+
+void for_each_cache_domain(GList *list, void (*cb)(struct cache_domain *c, void *data), void *data)
+{
+	GList *entry = g_list_first(list ? list : cache_domains);
+	GList *next;
+
+	while (entry) {
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
+	}
+}
+
+void for_each_cpu_core(GList *list, void (*cb)(struct cpu_core *c, void *data), void *data)
+{
+	GList *entry = g_list_first(list ? list : cpus);
+	GList *next;
+
+	while (entry) {
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
+	}
+}
+

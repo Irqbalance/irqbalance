@@ -32,7 +32,6 @@ extern void parse_proc_interrupts(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
 
-extern void add_interrupt_numa(int number, cpumask_t mask, int node_num, int type);
 
 void calculate_workload(void);
 void reset_counts(void);
@@ -41,7 +40,7 @@ void sort_irq_list(void);
 void calculate_placement(void);
 void dump_tree(void);
 
-void activate_mapping(void);
+void activate_mappings(void);
 void account_for_nic_stats(void);
 void check_power_mode(void);
 void clear_cpu_tree(void);
@@ -53,19 +52,23 @@ void pci_numa_scan(void);
  */
 extern void build_numa_node_list(void);
 extern void free_numa_node_list(void);
-extern void dump_numa_node_info(struct numa_node *node);
-extern void for_each_numa_node(void (*cb)(struct numa_node *node));
+extern void dump_numa_node_info(struct numa_node *node, void *data);
+extern void for_each_numa_node(GList *list, void (*cb)(struct numa_node *node, void *data), void *data);
 extern void add_package_to_node(struct package *p, int nodeid);
+extern struct numa_node *get_numa_node(int nodeid);
 
 /*
  * Package functions
  */
 #define package_numa_node(p) ((p)->numa_node)
+extern void for_each_package(GList *list, void (*cb)(struct package *p, void *data), void *data);
+
 /*
  * cache_domain functions
  */
 #define cache_domain_package(c) ((c)->package)
 #define cache_domain_numa_node(c) (package_numa_node(cache_domain_package((c))))
+extern void for_each_cache_domain(GList *list, void (*cb)(struct cache_domain *c, void *data), void *data);
 
 /*
  * cpu core functions
@@ -73,15 +76,19 @@ extern void add_package_to_node(struct package *p, int nodeid);
 #define cpu_cache_domain(cpu) ((cpu)->cache_domain)
 #define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
 #define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
+extern void for_each_cpu_core(GList *list, void (*cb)(struct cpu_core *c, void *data), void *data);
 
 /*
  * irq db functions
  */
 extern void rebuild_irq_db(void);
 extern void free_irq_db(void);
-extern int set_irq_integer_prop(int irq, enum irq_prop prop, int val);
-extern int find_irq_integer_prop(int irq, enum irq_prop prop);
-extern cpumask_t find_irq_cpumask_prop(int irq, enum irq_prop prop);
-extern void for_each_irq(void (*cb)(int irq));
+extern void for_each_irq(GList *list, void (*cb)(struct irq_info *info,  void *data), void *data);
+extern struct irq_info *get_irq_info(int irq);
+extern void migrate_irq(GList **from, GList **to, struct irq_info *info);
+extern struct irq_info *add_misc_irq(int irq);
+
+#define irq_numa_node(irq) ((irq)->numa_node)
+
 #endif
 

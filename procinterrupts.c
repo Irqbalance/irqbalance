@@ -39,7 +39,6 @@ void parse_proc_interrupts(void)
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
-	int int_type;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -56,6 +55,7 @@ void parse_proc_interrupts(void)
 		int	 number;
 		uint64_t count;
 		char *c, *c2;
+		struct irq_info *info;
 
 		if (getline(&line, &size, file)==0)
 			break;
@@ -73,6 +73,10 @@ void parse_proc_interrupts(void)
 		*c = 0;
 		c++;
 		number = strtoul(line, NULL, 10);
+		info = get_irq_info(number);
+		if (!info)
+			info = add_misc_irq(number);
+
 		count = 0;
 		cpunr = 0;
 
@@ -89,17 +93,11 @@ void parse_proc_interrupts(void)
 		if (cpunr != core_count) 
 			need_cpu_rescan = 1;
 		
-		set_interrupt_count(number, count);
+		info->irq_count = count;
 
 		/* is interrupt MSI based? */
-		int_type = find_irq_integer_prop(number, IRQ_TYPE);
-		if ((int_type == IRQ_TYPE_MSI) || (int_type == IRQ_TYPE_MSIX)) {
+		if ((info->type == IRQ_TYPE_MSI) || (info->type == IRQ_TYPE_MSIX))
 			msi_found_in_sysfs = 1;
-			/* Set numa node for irq if it was MSI */
-			if (debug_mode)
-				printf("Set MSI interrupt for %d\n", number);
-			set_msi_interrupt_numa(number);
-		}
 	}		
 	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {
 		syslog(LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");

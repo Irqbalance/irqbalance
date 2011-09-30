@@ -44,7 +44,7 @@ enum irq_prop {
 struct numa_node {
 	uint64_t	workload;
 	int	number;
-	cpumask_t	local_cpus;
+	cpumask_t	mask;
 	GList	*packages;
 	GList	*interrupts;
 };
@@ -94,29 +94,21 @@ struct cpu_core {
 	GList 	*interrupts;
 };
 
-struct interrupt {
-	uint64_t	workload;
-
-	int	balance_level;
-
-	int	number;
-	int	class;
-	int	node_num;
-	int	msi;
-
-	uint64_t	count;
-	uint64_t	old_count;
-
-	cpumask_t	mask;
-	cpumask_t	old_mask;
-	
-
-	cpumask_t	numa_mask;
-	cpumask_t	allowed_mask;
-
-	/* user/driver provided for smarter balancing */
-	cpumask_t	node_mask;
+struct irq_info {
+        int irq;
+        int class;
+        int type;
+	int level;
+        struct numa_node *numa_node;
+        cpumask_t cpumask;
+        cpumask_t affinity_hint;
+	cpumask_t mask; /*this will go away soon*/
+	cpumask_t old_mask; /*this will go away soon*/
+        uint64_t irq_count;
+        uint64_t last_irq_count;
+	uint64_t workload;
+        int moved;
+        void *assigned_obj;
 };
-
 
 #endif

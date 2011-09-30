@@ -124,7 +124,7 @@ static void free_object_tree()
 
 static void dump_object_tree()
 {
-	for_each_numa_node(dump_numa_node_info);
+	for_each_numa_node(NULL, dump_numa_node_info, NULL);
 }
 
 int main(int argc, char** argv)
@@ -185,7 +185,6 @@ int main(int argc, char** argv)
 	sleep(SLEEP_INTERVAL/4);
 	reset_counts();
 	parse_proc_interrupts();
-	pci_numa_scan();
 	calculate_workload();
 	sort_irq_list();
 	if (debug_mode)
@@ -216,13 +215,8 @@ int main(int argc, char** argv)
 
 		calculate_workload();
 
-		/* to cope with dynamic configurations we scan for new numa information
-		 * once every 5 minutes
-		 */
-		pci_numa_scan();
-
 		calculate_placement();
-		activate_mapping();
+		activate_mappings();
 	
 		if (debug_mode)
 			dump_tree();

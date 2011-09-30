@@ -32,30 +32,28 @@
 #include "irqbalance.h"
 
 
-void activate_mapping(void)
+static void activate_mapping(struct irq_info *info, void *data __attribute__((unused)))
 {
-	struct interrupt *irq;
-	GList *iter;
+	char buf[PATH_MAX];
+	FILE *file;
 
-	iter = g_list_first(interrupts);
-	while (iter) {
-		irq = iter->data;
-		iter = g_list_next(iter);
+	if (info->level == BALANCE_NONE)
+		return;
+	if (cpus_equal(info->mask, info->old_mask))
+		return;
 
-		/* don't set the level if it's a NONE irq, or if there is
-		 * no change */
-		if (irq->balance_level != BALANCE_NONE && 
-			!cpus_equal(irq->mask, irq->old_mask)) {
-			char buf[PATH_MAX];
-			FILE *file;
-			sprintf(buf, "/proc/irq/%i/smp_affinity", irq->number);
-			file = fopen(buf, "w");
-			if (!file)
-				continue;
-			cpumask_scnprintf(buf, PATH_MAX, irq->mask);
-			fprintf(file,"%s", buf);
-			fclose(file);
-			irq->old_mask = irq->mask;
-		}
-	}
+	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
+	file = fopen(buf, "w");
+	if (!file)
+		return;
+
+	cpumask_scnprintf(buf, PATH_MAX, info->mask);
+	fprintf(file, "%s", buf);
+	fclose(file);
+	info->old_mask = info->mask;
+}
+
+void activate_mappings(void)
+{
+	for_each_irq(NULL, activate_mapping, NULL);
 }
