@@ -127,6 +127,13 @@ static void dump_object_tree()
 	for_each_numa_node(NULL, dump_numa_node_info, NULL);
 }
 
+static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	info->moved = 1;
+	migrate_irq((info->assigned_obj ? &info->assigned_obj->interrupts : NULL),
+		     &rebalance_irq_list, info);
+}
+
 int main(int argc, char** argv)
 {
 
@@ -190,6 +197,8 @@ int main(int argc, char** argv)
 	if (debug_mode)
 		dump_workloads();
 
+	for_each_irq(NULL, force_rebalance_irq, NULL);
+
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);
 		if (debug_mode)
@@ -223,6 +232,8 @@ int main(int argc, char** argv)
 		if (one_shot_mode)
 			break;
 		counter++;
+
+		for_each_irq(NULL, force_rebalance_irq, NULL);
 	}
 	free_object_tree();
 	return EXIT_SUCCESS;

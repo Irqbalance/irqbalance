@@ -309,8 +309,6 @@ void clear_work_stats(void)
 	while (p_iter) {
 		package = p_iter->data;
 		package->common.workload = 0;
-		g_list_free(package->common.interrupts);
-		package->common.interrupts = NULL;
 		c_iter = g_list_first(package->cache_domains);
 		memset(package->class_count, 0, sizeof(package->class_count));
 		while (c_iter) {
@@ -318,15 +316,11 @@ void clear_work_stats(void)
 			c_iter = g_list_next(c_iter);
 			cache_domain->common.workload = 0;
 			cp_iter = cache_domain->cpu_cores;
-			g_list_free(cache_domain->common.interrupts);
-			cache_domain->common.interrupts = NULL;
 			memset(cache_domain->class_count, 0, sizeof(cache_domain->class_count));
 			while (cp_iter) {
 				cpu = cp_iter->data;
 				cp_iter = g_list_next(cp_iter);
 				cpu->common.workload = 0;
-				g_list_free(cpu->common.interrupts);
-				cpu->common.interrupts = NULL;
 				memset(cpu->class_count, 0, sizeof(cpu->class_count));
 			}
 		}

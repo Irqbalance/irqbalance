@@ -76,7 +76,7 @@ struct irq_info {
         uint64_t last_irq_count;
 	uint64_t workload;
         int moved;
-        void *assigned_obj;
+        struct common_obj_data *assigned_obj;
 };
 
 #endif

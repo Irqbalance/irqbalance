@@ -30,7 +30,7 @@
 
 int power_mode;
 
-extern GList *packages, *cache_domains, *cpus;
+GList *rebalance_irq_list;
 
 static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 {
@@ -170,7 +170,7 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 
 	if (place.best) {
 		migrate_irq(&p->common.interrupts, &place.best->common.interrupts, info);
-		info->assigned_obj = place.best;
+		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->class_count[info->class]++;
 		info->mask = place.best->common.mask;
 	}
@@ -219,7 +219,7 @@ static void place_core(struct irq_info *info, void *data)
 
 	if (place.best) {
 		migrate_irq(&c->common.interrupts, &place.best->common.interrupts, info);
-		info->assigned_obj = place.best;
+		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
 		info->mask = place.best->common.mask;
 	}
@@ -265,7 +265,7 @@ static void place_irq_in_package(struct irq_info *info, void *unused __attribute
 
 	if (place.best) {
 		migrate_irq(NULL, &place.best->common.interrupts, info);
-		info->assigned_obj = place.best;
+		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
 		place.best->class_count[info->class]++;
 		info->mask = place.best->common.mask;
@@ -376,7 +376,7 @@ void calculate_placement(void)
 	sort_irq_list();
 	do_unroutables();
 
-	for_each_irq(NULL, place_irq_in_package, NULL);
+	for_each_irq(rebalance_irq_list, place_irq_in_package, NULL);
 	for_each_package(NULL, place_cache_domain, NULL);
 	for_each_cache_domain(NULL, place_cores, NULL);
 

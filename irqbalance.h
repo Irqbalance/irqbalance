@@ -12,8 +12,6 @@
 #include "types.h"
 #include <numa.h>
 
-struct interrupt;
-
 extern int package_count;
 extern int cache_domain_count;
 extern int core_count;
@@ -24,7 +22,6 @@ extern int debug_mode;
 extern int power_mode;
 extern int need_cpu_rescan;
 extern int one_shot_mode;
-extern GList *interrupts;
 
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
@@ -32,6 +29,7 @@ extern void parse_proc_interrupts(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
 
+extern GList *rebalance_irq_list;
 
 void calculate_workload(void);
 void reset_counts(void);
