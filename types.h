@@ -27,60 +27,39 @@
 #define IRQ_TYPE_MSIX	2
 
 
-/*
- * IRQ properties
- */
+struct common_obj_data {
+	uint64_t workload;
+	int number;
+	cpumask_t mask;
+	GList *interrupts;
+};
+
 struct numa_node {
-	uint64_t	workload;
-	int	number;
-	cpumask_t	mask;
+	struct common_obj_data common;
 	GList	*packages;
-	GList	*interrupts;
 };
 
 struct package {
-	uint64_t	workload;
-	int	number;
-
-	cpumask_t	mask;
+	struct common_obj_data common;
 	struct numa_node *numa_node;
-
 	int class_count[7];
-
 	GList	*cache_domains;
-	GList 	*interrupts;
 };
 
 struct cache_domain {
-	uint64_t	workload;
-	int	number;
-
+	struct common_obj_data common;
 	int marker;
-	int	node_num;
-
 	struct package *package;
-
-	cpumask_t	mask;
-
 	int class_count[7];
-
 	GList	*cpu_cores;
-	GList 	*interrupts;
 };
 
 
 struct cpu_core {
-	uint64_t	workload;
-	int	number;
-
+	struct common_obj_data common;
 	int	marker;
 	struct cache_domain *cache_domain;
-
 	int class_count[7];
-
-	cpumask_t	mask;
-
-	GList 	*interrupts;
 };
 
 struct irq_info {

@@ -38,11 +38,13 @@
 GList *numa_nodes = NULL;
 
 struct numa_node unspecified_node = {
-	.workload = 0,
-	.number = -1,
-	.mask = CPU_MASK_ALL,
+	.common = {
+		.workload = 0,
+		.number = -1,
+		.mask = CPU_MASK_ALL,
+		.interrupts = NULL,
+	},	
 	.packages = NULL,
-	.interrupts = NULL,
 };
 
 static void add_one_node(const char *nodename)
@@ -60,18 +62,18 @@ static void add_one_node(const char *nodename)
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
 	f = fopen(path, "r");
 	if (ferror(f)) {
-		cpus_clear(new->mask);
+		cpus_clear(new->common.mask);
 	} else {
 		fscanf(f, "%as", &cpustr);
 		if (!cpustr) {
-			cpus_clear(new->mask);
+			cpus_clear(new->common.mask);
 		} else {
-			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
+			cpumask_parse_user(cpustr, strlen(cpustr), new->common.mask);
 			free(cpustr);
 		}
 	}
 	
-	new->number = strtoul(&nodename[4], NULL, 10);
+	new->common.number = strtoul(&nodename[4], NULL, 10);
 	numa_nodes = g_list_append(numa_nodes, new);
 }
 
@@ -106,16 +108,16 @@ static gint compare_node(gconstpointer a, gconstpointer b)
 	const struct numa_node *ai = a;
 	const struct numa_node *bi = b;
 
-	return (ai->number == bi->number) ? 0 : 1;
+	return (ai->common.number == bi->common.number) ? 0 : 1;
 }
 
 void add_package_to_node(struct package *p, int nodeid)
 {
 	struct numa_node find, *node;
-	find.number = nodeid;
+	find.common.number = nodeid;
 	GList *entry;
 
-	find.number = nodeid;
+	find.common.number = nodeid;
 	entry = g_list_find_custom(numa_nodes, &find, compare_node);
 
 	if (!entry) {
@@ -134,8 +136,8 @@ void dump_numa_node_info(struct numa_node *node, void *unused __attribute__((unu
 {
 	char buffer[4096];
 
-	printf("NUMA NODE NUMBER: %d\n", node->number);
-	cpumask_scnprintf(buffer, 4096, node->mask); 
+	printf("NUMA NODE NUMBER: %d\n", node->common.number);
+	cpumask_scnprintf(buffer, 4096, node->common.mask); 
 	printf("LOCAL CPU MASK: %s\n", buffer);
 	printf("\n");
 }
@@ -161,7 +163,7 @@ struct numa_node *get_numa_node(int nodeid)
 	if (nodeid == -1)
 		return &unspecified_node;
 
-	find.number = nodeid;
+	find.common.number = nodeid;
 
 	entry = g_list_find_custom(numa_nodes, &find, compare_node);
 	return entry ? entry->data : NULL;

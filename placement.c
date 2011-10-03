@@ -38,13 +38,13 @@ static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 	int maxcount;
 	int dist;
 	/* moving to a cold package/cache/etc gets you a 3000 penalty */
-	if (!cpus_intersects(irq->old_mask, package->mask))
+	if (!cpus_intersects(irq->old_mask, package->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY;
 
 	/* do a little numa affinity */
-	if (irq_numa_node(irq)->number != package_numa_node(package)->number) {
-		if (irq_numa_node(irq)->number >= 0 && package_numa_node(package)->number >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->number, package_numa_node(package)->number);
+	if (irq_numa_node(irq)->common.number != package_numa_node(package)->common.number) {
+		if (irq_numa_node(irq)->common.number >= 0 && package_numa_node(package)->common.number >= 0) {
+			dist = numa_distance(irq_numa_node(irq)->common.number, package_numa_node(package)->common.number);
 			/* moving to a distant numa node results into penalty */
 			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
 		}
@@ -56,7 +56,7 @@ static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 
 	/* in power save mode, you better be on package 0, with overflow to the next package if really needed */
 	if (power_mode)
-		bonus += POWER_MODE_PACKAGE_THRESHOLD * package->number;
+		bonus += POWER_MODE_PACKAGE_THRESHOLD * package->common.number;
 
 	/* if we're out of whack in terms of per class counts.. just block (except in power mode) */
 	maxcount = (class_counts[irq->class] + package_count -1 ) / package_count;
@@ -72,13 +72,13 @@ static uint64_t cache_domain_cost_func(struct irq_info *irq, struct cache_domain
 	int dist;
 
 	/* moving to a cold cache gets you a 1500 penalty */
-	if (!cpus_intersects(irq->old_mask, cache_domain->mask))
+	if (!cpus_intersects(irq->old_mask, cache_domain->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY/2;
 
 	/* do a little numa affinity */
-	if (irq_numa_node(irq)->number != cache_domain->node_num) {
-		if (irq_numa_node(irq)->number >= 0 && cache_domain->node_num >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->number, cache_domain->node_num);
+	if (irq_numa_node(irq)->common.number != cache_domain_numa_node(cache_domain)->common.number) {
+		if (irq_numa_node(irq)->common.number >= 0 && cache_domain_numa_node(cache_domain)->common.number >= 0) {
+			dist = numa_distance(irq_numa_node(irq)->common.number, cache_domain_numa_node(cache_domain)->common.number);
 			/* moving to a distant numa node results into penalty */
 			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
 		}
@@ -107,13 +107,13 @@ static uint64_t cpu_cost_func(struct irq_info *irq, struct cpu_core *cpu)
 	int dist;
 
 	/* moving to a colder core gets you a 1000 penalty */
-	if (!cpus_intersects(irq->old_mask, cpu->mask))
+	if (!cpus_intersects(irq->old_mask, cpu->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY/3;
 
 	/* do a little numa affinity */
-	if (irq_numa_node(irq)->number != cpu_numa_node(cpu)->number) {
-		if (irq_numa_node(irq)->number >= 0 && cpu_numa_node(cpu)->number >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->number, cpu_numa_node(cpu)->number);
+	if (irq_numa_node(irq)->common.number != cpu_numa_node(cpu)->common.number) {
+		if (irq_numa_node(irq)->common.number >= 0 && cpu_numa_node(cpu)->common.number >= 0) {
+			dist = numa_distance(irq_numa_node(irq)->common.number, cpu_numa_node(cpu)->common.number);
 			/* moving to a distant numa node results into penalty */
 			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
 		}
@@ -127,7 +127,7 @@ static uint64_t cpu_cost_func(struct irq_info *irq, struct cpu_core *cpu)
 	 * since some chipsets only place at the first cpu, give a tiny preference to non-first
 	 * cpus for specifically placed interrupts 
 	 */
-	if (first_cpu(cpu_cache_domain(cpu)->mask)==cpu->number)
+	if (first_cpu(cpu_cache_domain(cpu)->common.mask)==cpu->common.number)
 		bonus++;
 
 	/* pay 6000 for each previous interrupt of the same class */
@@ -147,7 +147,7 @@ static void find_best_cd(struct cache_domain *c, void *data)
 	struct cache_domain_placement *best = data;
 	uint64_t newload;
 
-	newload = c->workload + cache_domain_cost_func(best->info, c);
+	newload = c->common.workload + cache_domain_cost_func(best->info, c);
 	if (newload < best->best_cost) {
 		best->best = c;
 		best->best_cost = newload;
@@ -169,18 +169,18 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 	for_each_cache_domain(p->cache_domains, find_best_cd, &place);
 
 	if (place.best) {
-		migrate_irq(&p->interrupts, &place.best->interrupts, info);
+		migrate_irq(&p->common.interrupts, &place.best->common.interrupts, info);
 		info->assigned_obj = place.best;
 		place.best->class_count[info->class]++;
-		info->mask = place.best->mask;
+		info->mask = place.best->common.mask;
 	}
 
 }
 	
 static void place_cache_domain(struct package *package, void *data __attribute__((unused)))
 {
-	if (package->interrupts)
-		for_each_irq(package->interrupts, place_irq_in_cache_domain, package);
+	if (package->common.interrupts)
+		for_each_irq(package->common.interrupts, place_irq_in_cache_domain, package);
 }
 
 
@@ -195,7 +195,7 @@ static void place_irq_in_core(struct cpu_core *c, void *data)
 	struct core_placement *best = data;
 	uint64_t newload;
 
-	newload = c->workload + cpu_cost_func(best->info, c);
+	newload = c->common.workload + cpu_cost_func(best->info, c);
 	if (newload < best->best_cost) {
 		best->best = c;
 		best->best_cost = newload;
@@ -218,18 +218,18 @@ static void place_core(struct irq_info *info, void *data)
 	for_each_cpu_core(c->cpu_cores, place_irq_in_core, &place);
 
 	if (place.best) {
-		migrate_irq(&c->interrupts, &place.best->interrupts, info);
+		migrate_irq(&c->common.interrupts, &place.best->common.interrupts, info);
 		info->assigned_obj = place.best;
-		place.best->workload += info->workload + 1;
-		info->mask = place.best->mask;
+		place.best->common.workload += info->workload + 1;
+		info->mask = place.best->common.mask;
 	}
 
 }
 
 static void place_cores(struct cache_domain *cache_domain, void *data __attribute__((unused)))
 {
-	if (cache_domain->interrupts)
-		for_each_irq(cache_domain->interrupts, place_core, cache_domain);
+	if (cache_domain->common.interrupts)
+		for_each_irq(cache_domain->common.interrupts, place_core, cache_domain);
 }
 
 struct package_placement {
@@ -243,7 +243,7 @@ static void find_best_package(struct package *p, void *data)
 	uint64_t newload;
 	struct package_placement *place = data;
 
-	newload = p->workload + package_cost_func(place->info, p);
+	newload = p->common.workload + package_cost_func(place->info, p);
 	if (newload < place->best_cost) {
 		place->best = p;
 		place->best_cost = newload;
@@ -264,11 +264,11 @@ static void place_irq_in_package(struct irq_info *info, void *unused __attribute
 	for_each_package(NULL, find_best_package, &place);
 
 	if (place.best) {
-		migrate_irq(NULL, &place.best->interrupts, info);
+		migrate_irq(NULL, &place.best->common.interrupts, info);
 		info->assigned_obj = place.best;
-		place.best->workload += info->workload + 1;
+		place.best->common.workload += info->workload + 1;
 		place.best->class_count[info->class]++;
-		info->mask = place.best->mask;
+		info->mask = place.best->common.mask;
 	}
 }
 
@@ -278,11 +278,11 @@ static void place_irq_affinity_hint(struct irq_info *info, void *data __attribut
 	if (info->level == BALANCE_NONE)
 		return;
 
-	if ((!cpus_empty(irq_numa_node(info)->mask)) &&
-	    (!cpus_equal(info->mask, irq_numa_node(info)->mask)) &&
-	     (!__cpus_full(&irq_numa_node(info)->mask, num_possible_cpus()))) {
+	if ((!cpus_empty(irq_numa_node(info)->common.mask)) &&
+	    (!cpus_equal(info->mask, irq_numa_node(info)->common.mask)) &&
+	     (!__cpus_full(&irq_numa_node(info)->common.mask, num_possible_cpus()))) {
 		info->old_mask = info->mask;
-		info->mask = irq_numa_node(info)->mask;
+		info->mask = irq_numa_node(info)->common.mask;
 	}
 }
 
@@ -296,27 +296,27 @@ static void check_cpu_irq_route(struct cpu_core *c, void *data)
 {
 	struct irq_info *info = data;
 
-	if (cpus_intersects(c->mask, irq_numa_node(info)->mask) ||
-			    cpus_intersects(c->mask, info->mask))
-				c->workload += info->workload;
+	if (cpus_intersects(c->common.mask, irq_numa_node(info)->common.mask) ||
+			    cpus_intersects(c->common.mask, info->mask))
+				c->common.workload += info->workload;
 }
 
 static void check_cd_irq_route(struct cache_domain *c, void *data)
 {
 	struct irq_info *info = data;
 
-	if (cpus_intersects(c->mask, irq_numa_node(info)->mask) ||
-			    cpus_intersects(c->mask, info->mask))
-				c->workload += info->workload;
+	if (cpus_intersects(c->common.mask, irq_numa_node(info)->common.mask) ||
+			    cpus_intersects(c->common.mask, info->mask))
+				c->common.workload += info->workload;
 }
 
 static void check_package_irq_route(struct package *p, void *data)
 {
 	struct irq_info *info = data;
 
-	if (cpus_intersects(p->mask, irq_numa_node(info)->mask) ||
-			    cpus_intersects(p->mask, info->mask))
-				p->workload += info->workload;
+	if (cpus_intersects(p->common.mask, irq_numa_node(info)->common.mask) ||
+			    cpus_intersects(p->common.mask, info->mask))
+				p->common.workload += info->workload;
 }
 
 static void check_irq_route(struct irq_info *info, void *data __attribute__((unused)))
@@ -345,20 +345,20 @@ static void validate_irq(struct irq_info *info, void *data)
 
 static void validate_package(struct package *p, void *data __attribute__((unused)))
 {
-	if (p->interrupts)
-		for_each_irq(p->interrupts, validate_irq, p);
+	if (p->common.interrupts)
+		for_each_irq(p->common.interrupts, validate_irq, p);
 }
 
 static void validate_cd(struct cache_domain *c, void *data __attribute__((unused)))
 {
-	if (c->interrupts)
-		for_each_irq(c->interrupts, validate_irq, c);
+	if (c->common.interrupts)
+		for_each_irq(c->common.interrupts, validate_irq, c);
 }
 
 static void validate_cpu(struct cpu_core *c, void *data __attribute__((unused)))
 {
-	if (c->interrupts)
-		for_each_irq(c->interrupts, validate_irq, c);
+	if (c->common.interrupts)
+		for_each_irq(c->common.interrupts, validate_irq, c);
 }
 
 static void validate_object_tree_placement()
