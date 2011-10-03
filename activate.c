@@ -43,15 +43,19 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->moved)
 		return;
 
+	if (!info->assigned_obj)
+		return;
+
+
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
 	if (!file)
 		return;
 
-	cpumask_scnprintf(buf, PATH_MAX, info->mask);
+	cpumask_scnprintf(buf, PATH_MAX, info->assigned_obj->mask);
 	fprintf(file, "%s", buf);
 	fclose(file);
-	info->old_mask = info->mask;
+	info->moved = 0; /*migration is done*/
 }
 
 void activate_mappings(void)

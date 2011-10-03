@@ -36,9 +36,6 @@ static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 {
 	int bonus = 0;
 	int maxcount;
-	/* moving to a cold package/cache/etc gets you a 3000 penalty */
-	if (!cpus_intersects(irq->old_mask, package->common.mask))
-		bonus = CROSS_PACKAGE_PENALTY;
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -60,10 +57,6 @@ static uint64_t cache_domain_cost_func(struct irq_info *irq, struct cache_domain
 {
 	int bonus = 0;
 
-	/* moving to a cold cache gets you a 1500 penalty */
-	if (!cpus_intersects(irq->old_mask, cache_domain->common.mask))
-		bonus = CROSS_PACKAGE_PENALTY/2;
-
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
 		bonus = bonus / 10;
@@ -84,10 +77,6 @@ static uint64_t cache_domain_cost_func(struct irq_info *irq, struct cache_domain
 static uint64_t cpu_cost_func(struct irq_info *irq, struct cpu_core *cpu)
 {
 	int bonus = 0;
-
-	/* moving to a colder core gets you a 1000 penalty */
-	if (!cpus_intersects(irq->old_mask, cpu->common.mask))
-		bonus = CROSS_PACKAGE_PENALTY/3;
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -145,7 +134,6 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 		migrate_irq(&p->common.interrupts, &place.best->common.interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->class_count[info->class]++;
-		info->mask = place.best->common.mask;
 	}
 
 }
@@ -197,7 +185,6 @@ static void place_core(struct irq_info *info, void *data)
 		migrate_irq(&c->common.interrupts, &place.best->common.interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
-		info->mask = place.best->common.mask;
 	}
 
 }
@@ -248,7 +235,6 @@ static void place_irq_in_package(struct irq_info *info, void *data)
 		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
 		place.best->class_count[info->class]++;
-		info->mask = place.best->common.mask;
 	}
 }
 
@@ -292,7 +278,6 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->common.interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)irq_numa_node(info);
 		irq_numa_node(info)->common.workload += info->workload + 1;
-		info->mask = irq_numa_node(info)->common.mask;
 		return;
 	}
 
@@ -306,71 +291,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		migrate_irq(&rebalance_irq_list, &place.best->common.interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
-		info->mask = place.best->common.mask;
 	}
-}
-
-static void place_irq_affinity_hint(struct irq_info *info, void *data __attribute__((unused)))
-{
-
-	if (info->level == BALANCE_NONE)
-		return;
-
-	if ((!cpus_empty(irq_numa_node(info)->common.mask)) &&
-	    (!cpus_equal(info->mask, irq_numa_node(info)->common.mask)) &&
-	     (!__cpus_full(&irq_numa_node(info)->common.mask, num_possible_cpus()))) {
-		info->old_mask = info->mask;
-		info->mask = irq_numa_node(info)->common.mask;
-	}
-}
-
-static void place_affinity_hint(void)
-{
-	for_each_irq(NULL, place_irq_affinity_hint, NULL);
-}
-
-
-static void check_cpu_irq_route(struct cpu_core *c, void *data)
-{
-	struct irq_info *info = data;
-
-	if (cpus_intersects(c->common.mask, irq_numa_node(info)->common.mask) ||
-			    cpus_intersects(c->common.mask, info->mask))
-				c->common.workload += info->workload;
-}
-
-static void check_cd_irq_route(struct cache_domain *c, void *data)
-{
-	struct irq_info *info = data;
-
-	if (cpus_intersects(c->common.mask, irq_numa_node(info)->common.mask) ||
-			    cpus_intersects(c->common.mask, info->mask))
-				c->common.workload += info->workload;
-}
-
-static void check_package_irq_route(struct package *p, void *data)
-{
-	struct irq_info *info = data;
-
-	if (cpus_intersects(p->common.mask, irq_numa_node(info)->common.mask) ||
-			    cpus_intersects(p->common.mask, info->mask))
-				p->common.workload += info->workload;
-}
-
-static void check_irq_route(struct irq_info *info, void *data __attribute__((unused)))
-{
-
-	if (info->level != BALANCE_NONE)
-		return;
-
-	for_each_package(NULL, check_package_irq_route, info);
-	for_each_cache_domain(NULL, check_cd_irq_route, info);
-	for_each_cpu_core(NULL, check_cpu_irq_route, info);
-}
-
-static void do_unroutables(void)
-{
-	for_each_irq(NULL, check_irq_route, NULL);
 }
 
 static void validate_irq(struct irq_info *info, void *data)
@@ -412,19 +333,12 @@ void calculate_placement(void)
 	clear_work_stats();
 
 	sort_irq_list(&rebalance_irq_list);
-	do_unroutables();
 
 	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
 	for_each_numa_node(NULL, place_packages, NULL);
 	for_each_package(NULL, place_cache_domain, NULL);
 	for_each_cache_domain(NULL, place_cores, NULL);
 
-	/*
-	 * if affinity_hint is populated on irq and is not set to
-	 * all CPUs (meaning it's initialized), honor that above
-	 * anything in the package locality/workload.
-	 */
-	place_affinity_hint();
 	if (debug_mode)
 		validate_object_tree_placement();
 }

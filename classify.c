@@ -323,6 +323,7 @@ void migrate_irq(GList **from, GList **to, struct irq_info *info)
 
 
 	*to = g_list_append(*to, tmp);
+	info->moved = 1;
 }
 
 static gint sort_irqs(gconstpointer A, gconstpointer B)

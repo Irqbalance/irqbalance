@@ -70,8 +70,6 @@ struct irq_info {
         struct numa_node *numa_node;
         cpumask_t cpumask;
         cpumask_t affinity_hint;
-	cpumask_t mask; /*this will go away soon*/
-	cpumask_t old_mask; /*this will go away soon*/
         uint64_t irq_count;
         uint64_t last_irq_count;
 	uint64_t workload;

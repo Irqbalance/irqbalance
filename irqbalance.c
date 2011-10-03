@@ -129,7 +129,6 @@ static void dump_object_tree()
 
 static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
-	info->moved = 1;
 	migrate_irq((info->assigned_obj ? &info->assigned_obj->interrupts : NULL),
 		     &rebalance_irq_list, info);
 }
