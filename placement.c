@@ -36,19 +36,9 @@ static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 {
 	int bonus = 0;
 	int maxcount;
-	int dist;
 	/* moving to a cold package/cache/etc gets you a 3000 penalty */
 	if (!cpus_intersects(irq->old_mask, package->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY;
-
-	/* do a little numa affinity */
-	if (irq_numa_node(irq)->common.number != package_numa_node(package)->common.number) {
-		if (irq_numa_node(irq)->common.number >= 0 && package_numa_node(package)->common.number >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->common.number, package_numa_node(package)->common.number);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
-		}
-	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -69,20 +59,10 @@ static uint64_t package_cost_func(struct irq_info *irq, struct package *package)
 static uint64_t cache_domain_cost_func(struct irq_info *irq, struct cache_domain *cache_domain)
 {
 	int bonus = 0;
-	int dist;
 
 	/* moving to a cold cache gets you a 1500 penalty */
 	if (!cpus_intersects(irq->old_mask, cache_domain->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY/2;
-
-	/* do a little numa affinity */
-	if (irq_numa_node(irq)->common.number != cache_domain_numa_node(cache_domain)->common.number) {
-		if (irq_numa_node(irq)->common.number >= 0 && cache_domain_numa_node(cache_domain)->common.number >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->common.number, cache_domain_numa_node(cache_domain)->common.number);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
-		}
-	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -104,20 +84,10 @@ static uint64_t cache_domain_cost_func(struct irq_info *irq, struct cache_domain
 static uint64_t cpu_cost_func(struct irq_info *irq, struct cpu_core *cpu)
 {
 	int bonus = 0;
-	int dist;
 
 	/* moving to a colder core gets you a 1000 penalty */
 	if (!cpus_intersects(irq->old_mask, cpu->common.mask))
 		bonus = CROSS_PACKAGE_PENALTY/3;
-
-	/* do a little numa affinity */
-	if (irq_numa_node(irq)->common.number != cpu_numa_node(cpu)->common.number) {
-		if (irq_numa_node(irq)->common.number >= 0 && cpu_numa_node(cpu)->common.number >= 0) {
-			dist = numa_distance(irq_numa_node(irq)->common.number, cpu_numa_node(cpu)->common.number);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
-		}
-	}
 
 	/* but if the irq has had 0 interrupts for a while move it about more easily */
 	if (irq->workload==0)
@@ -256,9 +226,10 @@ static void find_best_package(struct package *p, void *data)
 	}
 }
 
-static void place_irq_in_package(struct irq_info *info, void *unused __attribute__((unused)))
+static void place_irq_in_package(struct irq_info *info, void *data)
 {
 	struct package_placement place;
+	struct numa_node *n = data;
 
 	if (!info->moved)
 		return;
@@ -270,13 +241,71 @@ static void place_irq_in_package(struct irq_info *info, void *unused __attribute
 	place.best = NULL;
 	place.info = info;
 
-	for_each_package(NULL, find_best_package, &place);
+	for_each_package(n->packages, find_best_package, &place);
 
 	if (place.best) {
-		migrate_irq(NULL, &place.best->common.interrupts, info);
+		migrate_irq(&n->common.interrupts, &place.best->common.interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)place.best;
 		place.best->common.workload += info->workload + 1;
 		place.best->class_count[info->class]++;
+		info->mask = place.best->common.mask;
+	}
+}
+
+static void place_packages(struct numa_node *n, void *data __attribute__((unused)))
+{
+	if (n->common.interrupts)
+		for_each_irq(n->common.interrupts, place_irq_in_package, n);
+}
+
+struct node_placement {
+	struct irq_info *info;
+	struct numa_node *best;
+	uint64_t best_cost;
+};
+
+static void find_best_node(struct numa_node *n, void *data)
+{
+	struct node_placement *place = data;
+
+	/*
+ 	 * Just find the least loaded node
+ 	 */
+	if (n->common.workload < place->best_cost) {
+		place->best = n;
+		place->best_cost = n->common.workload;
+	}
+}
+
+static void place_irq_in_node(struct irq_info *info, void *data __attribute__((unused)))
+{
+	struct node_placement place;
+
+	if( info->level == BALANCE_NONE)
+		return;
+
+	if (irq_numa_node(info)->common.number != -1) {
+		/*
+ 		 * This irq belongs to a device with a preferred numa node
+ 		 * put it on that node
+ 		 */
+		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->common.interrupts, info);
+		info->assigned_obj = (struct common_obj_data *)irq_numa_node(info);
+		irq_numa_node(info)->common.workload += info->workload + 1;
+		info->mask = irq_numa_node(info)->common.mask;
+		return;
+	}
+
+	place.best_cost = INT_MAX;
+	place.best = NULL;
+	place.info = info;
+
+	for_each_numa_node(NULL, find_best_node, &place);
+
+	if (place.best) {
+		migrate_irq(&rebalance_irq_list, &place.best->common.interrupts, info);
+		info->assigned_obj = (struct common_obj_data *)place.best;
+		place.best->common.workload += info->workload + 1;
 		info->mask = place.best->common.mask;
 	}
 }
@@ -385,7 +414,8 @@ void calculate_placement(void)
 	sort_irq_list();
 	do_unroutables();
 
-	for_each_irq(rebalance_irq_list, place_irq_in_package, NULL);
+	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
+	for_each_numa_node(NULL, place_packages, NULL);
 	for_each_package(NULL, place_cache_domain, NULL);
 	for_each_cache_domain(NULL, place_cores, NULL);
 
