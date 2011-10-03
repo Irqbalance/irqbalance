@@ -193,11 +193,11 @@ int main(int argc, char** argv)
 	reset_counts();
 	parse_proc_interrupts();
 	calculate_workload();
-	sort_irq_list();
 	if (debug_mode)
 		dump_workloads();
 
 	for_each_irq(NULL, force_rebalance_irq, NULL);
+	sort_irq_list(&rebalance_irq_list);
 
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);

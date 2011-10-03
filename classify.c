@@ -345,7 +345,7 @@ static gint sort_irqs(gconstpointer A, gconstpointer B)
 
 }
 
-void sort_irq_list(void)
+void sort_irq_list(GList **list)
 {
-	interrupts_db = g_list_sort(interrupts_db, sort_irqs);
+	*list = g_list_sort(*list, sort_irqs);
 }

@@ -34,7 +34,7 @@ extern GList *rebalance_irq_list;
 void calculate_workload(void);
 void reset_counts(void);
 void dump_workloads(void);
-void sort_irq_list(void);
+void sort_irq_list(GList **list);
 void calculate_placement(void);
 void dump_tree(void);
 

@@ -411,7 +411,7 @@ void calculate_placement(void)
 	/* first clear old data */ 
 	clear_work_stats();
 
-	sort_irq_list();
+	sort_irq_list(&rebalance_irq_list);
 	do_unroutables();
 
 	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
