@@ -37,9 +37,10 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	char buf[PATH_MAX];
 	FILE *file;
 
-	if (info->level == BALANCE_NONE)
-		return;
-	if (cpus_equal(info->mask, info->old_mask))
+	/*
+ 	 * only activate mappings for irqs that have moved
+ 	 */
+	if (!info->moved)
 		return;
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
