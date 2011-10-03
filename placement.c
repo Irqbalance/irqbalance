@@ -159,6 +159,9 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 	struct package *p = data;
 	struct cache_domain_placement place;
 
+	if (!info->moved)
+		return;
+
 	if (info->level <= BALANCE_PACKAGE)
 		return;
 
@@ -207,6 +210,9 @@ static void place_core(struct irq_info *info, void *data)
 	struct cache_domain *c = data;
 	struct core_placement place;
 
+	if (!info->moved)
+		return;
+
 	if ((info->level <= BALANCE_CACHE) &&
 	    (!one_shot_mode))
 		return;
@@ -253,6 +259,9 @@ static void find_best_package(struct package *p, void *data)
 static void place_irq_in_package(struct irq_info *info, void *unused __attribute__((unused)))
 {
 	struct package_placement place;
+
+	if (!info->moved)
+		return;
 
 	if (info->level == BALANCE_NONE)
 		return;
