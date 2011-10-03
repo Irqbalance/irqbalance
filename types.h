@@ -30,17 +30,6 @@
 /*
  * IRQ properties
  */
-enum irq_prop {
-	IRQ_CLASS = 0,
-	IRQ_TYPE,
-	IRQ_NUMA,
-	IRQ_LEVEL,
-	IRQ_LCPU_MASK,
-	IRQ_INT_COUNT,
-	IRQ_LAST_INT_COUNT,
-	IRQ_MAX_PROPERTY
-};
-
 struct numa_node {
 	uint64_t	workload;
 	int	number;
