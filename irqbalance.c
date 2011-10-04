@@ -189,6 +189,7 @@ int main(int argc, char** argv)
 #endif
 
 	parse_proc_interrupts();
+	parse_proc_stat();
 	sleep(SLEEP_INTERVAL/4);
 	reset_counts();
 	parse_proc_interrupts();
@@ -207,6 +208,7 @@ int main(int argc, char** argv)
 
 		check_power_mode();
 		parse_proc_interrupts();
+		parse_proc_stat();
 
 		/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
 		if (need_cpu_rescan) {

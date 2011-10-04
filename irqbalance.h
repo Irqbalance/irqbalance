@@ -75,6 +75,8 @@ extern void for_each_cache_domain(GList *list, void (*cb)(struct cache_domain *c
 #define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
 #define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
 extern void for_each_cpu_core(GList *list, void (*cb)(struct cpu_core *c, void *data), void *data);
+extern struct cpu_core *find_cpu_core(int cpunr);
+extern int get_cpu_count(void);
 
 /*
  * irq db functions

@@ -298,6 +298,8 @@ static void clear_cpu_stats(struct cpu_core *c, void *data __attribute__((unused
 	memset(c->class_count, 0, sizeof(c->class_count));
 	c->common.workload = 0;
 	c->common.load = 0;
+	c->irq_load = 0;
+	c->softirq_load = 0;
 }
 
 static void clear_cd_stats(struct cache_domain *c, void *data __attribute__((unused)))
@@ -323,6 +325,12 @@ static void clear_node_stats(struct numa_node *n, void *data __attribute__((unus
 	for_each_package(n->packages, clear_package_stats, NULL);
 }
 
+static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unused)))
+{
+	info->workload = 0;
+	info->load = 0;
+}
+
 /*
  * this function removes previous state from the cpu tree, such as
  * which level does how much work and the actual lists of interrupts 
@@ -331,6 +339,7 @@ static void clear_node_stats(struct numa_node *n, void *data __attribute__((unus
 void clear_work_stats(void)
 {
 	for_each_numa_node(NULL, clear_node_stats, NULL);
+	for_each_irq(NULL, clear_irq_stats, NULL);
 }
 
 
@@ -444,5 +453,29 @@ void for_each_cpu_core(GList *list, void (*cb)(struct cpu_core *c, void *data), 
 		cb(entry->data, data);
 		entry = next;
 	}
+}
+
+static gint compare_cpus(gconstpointer a, gconstpointer b)
+{
+	const struct cpu_core *ai = a;
+	const struct cpu_core *bi = b;
+
+	return ai->common.number - bi->common.number;	
+}
+
+struct cpu_core *find_cpu_core(int cpunr)
+{
+	GList *entry;
+	struct cpu_core find;
+
+	find.common.number = cpunr;
+	entry = g_list_find_custom(cpus, &find, compare_cpus);
+
+	return entry ? entry->data : NULL;
+}	
+
+int get_cpu_count(void)
+{
+	return g_list_length(cpus);
 }
 

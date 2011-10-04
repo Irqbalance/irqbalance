@@ -47,6 +47,7 @@ void parse_proc_interrupts(void)
 	/* first line is the header we don't need; nuke it */
 	if (getline(&line, &size, file)==0) {
 		free(line);
+		fclose(file);
 		return;
 	}
 
@@ -110,4 +111,101 @@ void parse_proc_interrupts(void)
 	}
 	fclose(file);
 	free(line);
+}
+
+
+static void accumulate_irq_count(struct irq_info *info, void *data)
+{
+	uint64_t *acc = data;
+
+	*acc += (info->irq_count - info->last_irq_count);
+}
+
+static void assign_load_slice(struct irq_info *info, void *data)
+{
+	uint64_t *load_slice = data;
+	info->load = (info->irq_count - info->last_irq_count) * *load_slice;
+}
+
+static void compute_irq_load_share(struct cpu_core *cpu, void *data __attribute__((unused)))
+{
+	uint64_t total_irq_counts = 0;
+	uint64_t load_slice;
+
+	for_each_irq(cpu->common.interrupts, accumulate_irq_count, &total_irq_counts);
+
+	load_slice = cpu->common.load / total_irq_counts;
+
+	for_each_irq(cpu->common.interrupts, assign_load_slice, &load_slice);
+}
+
+void parse_proc_stat()
+{
+	FILE *file;
+	char *line = NULL;
+	size_t size = 0;
+	int cpunr, rc, cpucount;
+	struct cpu_core *cpu;
+	struct common_obj_data *parent;
+	int irq_load, softirq_load;
+
+	file = fopen("/proc/stat", "r");
+	if (!file) {
+		syslog(LOG_WARNING, "WARNING cant open /proc/stat.  balacing is broken\n");
+		return;
+	}
+
+	/* first line is the header we don't need; nuke it */
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		syslog(LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
+		fclose(file);
+		return;
+        }
+
+	cpucount = 0;
+	while (!feof(file)) {
+		if (getline(&line, &size, file)==0)
+                        break;
+
+		if (!strstr(line, "cpu"))
+			break;
+
+		cpunr = strtoul(&line[3], NULL, 10);
+
+		rc = sscanf(line, "%*s %*d %*d %*d %*d %*d %d %d", &irq_load, &softirq_load);
+		if (rc < 2)
+			break;	
+
+		cpu = find_cpu_core(cpunr);
+
+		if (!cpu)
+			break;
+
+		cpucount++;
+
+		/*
+ 		 * For each cpu add the irq and softirq load and propagate that
+ 		 * all the way up the device tree
+ 		 */
+		cpu->irq_load = irq_load;
+		cpu->softirq_load = softirq_load;
+		cpu->common.load = irq_load + softirq_load;
+		cpu->cache_domain->common.load += cpu->common.load;
+		cpu->cache_domain->package->common.load += cpu->common.load;
+		cpu->cache_domain->package->numa_node->common.load += cpu->common.load;
+	}
+
+	fclose(file);
+	if (cpucount != get_cpu_count()) {
+		syslog(LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
+		return;
+	}
+
+	/*
+ 	 * Now that we have load for each cpu attribute a fair share of the load
+ 	 * to each irq on that cpu
+ 	 */
+	for_each_cpu_core(NULL, compute_irq_load_share, NULL);
+
 }
