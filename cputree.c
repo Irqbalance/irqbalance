@@ -293,6 +293,36 @@ void dump_tree(void)
 	for_each_package(NULL, dump_package, buffer);
 }
 
+static void clear_cpu_stats(struct cpu_core *c, void *data __attribute__((unused)))
+{
+	memset(c->class_count, 0, sizeof(c->class_count));
+	c->common.workload = 0;
+	c->common.load = 0;
+}
+
+static void clear_cd_stats(struct cache_domain *c, void *data __attribute__((unused)))
+{
+	memset(c->class_count, 0, sizeof(c->class_count));
+	c->common.workload = 0;
+	c->common.load = 0;
+	for_each_cpu_core(c->cpu_cores, clear_cpu_stats, NULL);
+}
+
+static void clear_package_stats(struct package *p, void *data __attribute__((unused)))
+{
+	memset(p->class_count, 0, sizeof(p->class_count));
+	p->common.workload = 0;
+	p->common.load = 0;
+	for_each_cache_domain(p->cache_domains, clear_cd_stats, NULL);
+}
+
+static void clear_node_stats(struct numa_node *n, void *data __attribute__((unused)))
+{
+	n->common.workload = 0;
+	n->common.load = 0;
+	for_each_package(n->packages, clear_package_stats, NULL);
+}
+
 /*
  * this function removes previous state from the cpu tree, such as
  * which level does how much work and the actual lists of interrupts 
@@ -300,32 +330,7 @@ void dump_tree(void)
  */
 void clear_work_stats(void)
 {
-	GList *p_iter, *c_iter, *cp_iter;
-	struct package *package;
-	struct cache_domain *cache_domain;
-	struct cpu_core *cpu;
-
-	p_iter = g_list_first(packages);
-	while (p_iter) {
-		package = p_iter->data;
-		package->common.workload = 0;
-		c_iter = g_list_first(package->cache_domains);
-		memset(package->class_count, 0, sizeof(package->class_count));
-		while (c_iter) {
-			cache_domain = c_iter->data;
-			c_iter = g_list_next(c_iter);
-			cache_domain->common.workload = 0;
-			cp_iter = cache_domain->cpu_cores;
-			memset(cache_domain->class_count, 0, sizeof(cache_domain->class_count));
-			while (cp_iter) {
-				cpu = cp_iter->data;
-				cp_iter = g_list_next(cp_iter);
-				cpu->common.workload = 0;
-				memset(cpu->class_count, 0, sizeof(cpu->class_count));
-			}
-		}
-		p_iter = g_list_next(p_iter);
-	}
+	for_each_numa_node(NULL, clear_node_stats, NULL);
 }
 
 

@@ -29,6 +29,7 @@
 
 struct common_obj_data {
 	uint64_t workload;
+	uint64_t load;
 	int number;
 	cpumask_t mask;
 	GList *interrupts;
@@ -60,6 +61,8 @@ struct cpu_core {
 	int	marker;
 	struct cache_domain *cache_domain;
 	int class_count[7];
+	uint64_t irq_load;
+	uint64_t softirq_load;
 };
 
 struct irq_info {
@@ -73,6 +76,7 @@ struct irq_info {
         uint64_t irq_count;
         uint64_t last_irq_count;
 	uint64_t workload;
+	uint64_t load;
         int moved;
         struct common_obj_data *assigned_obj;
 };
