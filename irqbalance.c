@@ -219,6 +219,7 @@ int main(int argc, char** argv)
 
 			free_object_tree();
 			build_object_tree();
+			for_each_irq(NULL, force_rebalance_irq, NULL);
 		}
 
 		calculate_workload();
