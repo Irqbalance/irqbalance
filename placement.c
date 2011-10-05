@@ -101,8 +101,9 @@ struct cache_domain_placement {
 	uint64_t best_cost;
 };
 
-static void find_best_cd(struct cache_domain *c, void *data)
+static void find_best_cd(struct common_obj_data *d, void *data)
 {
+	struct cache_domain *c = (struct cache_domain *)d;
 	struct cache_domain_placement *best = data;
 	uint64_t newload;
 
@@ -138,8 +139,9 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 
 }
 	
-static void place_cache_domain(struct package *package, void *data __attribute__((unused)))
+static void place_cache_domain(struct common_obj_data *d, void *data __attribute__((unused)))
 {
+	struct package *package = (struct package *)d;
 	if (package->common.interrupts)
 		for_each_irq(package->common.interrupts, place_irq_in_cache_domain, package);
 }
@@ -151,8 +153,9 @@ struct core_placement {
 	struct irq_info *info;
 };
 
-static void place_irq_in_core(struct cpu_core *c, void *data)
+static void place_irq_in_core(struct common_obj_data *d, void *data)
 {
+	struct cpu_core *c = (struct cpu_core *)d;
 	struct core_placement *best = data;
 	uint64_t newload;
 
@@ -189,8 +192,9 @@ static void place_core(struct irq_info *info, void *data)
 
 }
 
-static void place_cores(struct cache_domain *cache_domain, void *data __attribute__((unused)))
+static void place_cores(struct common_obj_data *d, void *data __attribute__((unused)))
 {
+	struct cache_domain *cache_domain = (struct cache_domain *)d;
 	if (cache_domain->common.interrupts)
 		for_each_irq(cache_domain->common.interrupts, place_core, cache_domain);
 }
@@ -201,8 +205,9 @@ struct package_placement {
 	uint64_t best_cost;
 };
 
-static void find_best_package(struct package *p, void *data)
+static void find_best_package(struct common_obj_data *d, void *data)
 {
+	struct package *p = (struct package *)d;
 	uint64_t newload;
 	struct package_placement *place = data;
 
@@ -238,8 +243,9 @@ static void place_irq_in_package(struct irq_info *info, void *data)
 	}
 }
 
-static void place_packages(struct numa_node *n, void *data __attribute__((unused)))
+static void place_packages(struct common_obj_data *d, void *data __attribute__((unused)))
 {
+	struct numa_node *n = (struct numa_node *)d;
 	if (n->common.interrupts)
 		for_each_irq(n->common.interrupts, place_irq_in_package, n);
 }
@@ -250,8 +256,9 @@ struct node_placement {
 	uint64_t best_cost;
 };
 
-static void find_best_node(struct numa_node *n, void *data)
+static void find_best_node(struct common_obj_data *d, void *data)
 {
+	struct numa_node *n = (struct numa_node *)d;
 	struct node_placement *place = data;
 
 	/*
@@ -302,29 +309,17 @@ static void validate_irq(struct irq_info *info, void *data)
 			info->irq, info->assigned_obj, data);
 }
 
-static void validate_package(struct package *p, void *data __attribute__((unused)))
+static void validate_object(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	if (p->common.interrupts)
-		for_each_irq(p->common.interrupts, validate_irq, p);
-}
-
-static void validate_cd(struct cache_domain *c, void *data __attribute__((unused)))
-{
-	if (c->common.interrupts)
-		for_each_irq(c->common.interrupts, validate_irq, c);
-}
-
-static void validate_cpu(struct cpu_core *c, void *data __attribute__((unused)))
-{
-	if (c->common.interrupts)
-		for_each_irq(c->common.interrupts, validate_irq, c);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, validate_irq, d);
 }
 
 static void validate_object_tree_placement()
 {
-	for_each_package(NULL, validate_package, NULL);	
-	for_each_cache_domain(NULL, validate_cd, NULL);
-	for_each_cpu_core(NULL, validate_cpu, NULL);
+	for_each_package(NULL, validate_object, NULL);	
+	for_each_cache_domain(NULL, validate_object, NULL);
+	for_each_cpu_core(NULL, validate_object, NULL);
 }
 
 void calculate_placement(void)

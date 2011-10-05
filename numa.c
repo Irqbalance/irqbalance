@@ -132,8 +132,9 @@ void add_package_to_node(struct package *p, int nodeid)
 	p->numa_node = node;
 }
 
-void dump_numa_node_info(struct numa_node *node, void *unused __attribute__((unused)))
+void dump_numa_node_info(struct common_obj_data *d, void *unused __attribute__((unused)))
 {
+	struct numa_node *node = (struct numa_node *)d;
 	char buffer[4096];
 
 	printf("NUMA NODE NUMBER: %d\n", node->common.number);
@@ -142,7 +143,7 @@ void dump_numa_node_info(struct numa_node *node, void *unused __attribute__((unu
 	printf("\n");
 }
 
-void for_each_numa_node(GList *list, void(*cb)(struct numa_node *node, void *data), void *data)
+void for_each_numa_node(GList *list, void(*cb)(struct common_obj_data *node, void *data), void *data)
 {
 	GList *entry, *next;
 
