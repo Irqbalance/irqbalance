@@ -127,8 +127,9 @@ static void assign_load_slice(struct irq_info *info, void *data)
 	info->load = (info->irq_count - info->last_irq_count) * *load_slice;
 }
 
-static void compute_irq_load_share(struct cpu_core *cpu, void *data __attribute__((unused)))
+static void compute_irq_load_share(struct common_obj_data *d, void *data __attribute__((unused)))
 {
+	struct cpu_core *cpu = (struct cpu_core *)d;
 	uint64_t total_irq_counts = 0;
 	uint64_t load_slice;
 
@@ -146,7 +147,6 @@ void parse_proc_stat()
 	size_t size = 0;
 	int cpunr, rc, cpucount;
 	struct cpu_core *cpu;
-	struct common_obj_data *parent;
 	int irq_load, softirq_load;
 
 	file = fopen("/proc/stat", "r");
