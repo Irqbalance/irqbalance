@@ -38,12 +38,10 @@
 int one_shot_mode;
 int debug_mode;
 int numa_avail;
-
 int need_cpu_rescan;
-
 extern cpumask_t banned_cpus;
-
 static int counter;
+enum hp_e hint_policy = HINT_POLICY_SUBSET;
 
 
 void sleep_approx(int seconds)
@@ -64,12 +62,13 @@ void sleep_approx(int seconds)
 struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
 	{"debug", 0, NULL, 'd'},
+	{"hintpolicy", 1, NULL, 'h'},
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
-	printf("irqbalance [--oneshot | -o] [--debug | -d]");
+	printf("irqbalance [--oneshot | -o] [--debug | -d] [--hintpolicy= | -h [exact|subset|ignore]]");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -78,7 +77,7 @@ static void parse_command_line(int argc, char **argv)
 	int longind;
 
 	while ((opt = getopt_long(argc, argv,
-		"",
+		"odh:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -87,6 +86,18 @@ static void parse_command_line(int argc, char **argv)
 				exit(1);
 			case 'd':
 				debug_mode=1;
+				break;
+			case 'h':
+				if (!strncmp(optarg, "exact", strlen(optarg)))
+					hint_policy = HINT_POLICY_EXACT;
+				else if (!strncmp(optarg, "subset", strlen(optarg)))
+					hint_policy = HINT_POLICY_SUBSET;
+				else if (!strncmp(optarg, "ignore", strlen(optarg)))
+					hint_policy = HINT_POLICY_IGNORE;
+				else {
+					usage();
+					exit(1);
+				}
 				break;
 			case 'o':
 				one_shot_mode=1;

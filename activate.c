@@ -36,6 +36,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
+	cpumask_t applied_mask;
 
 	/*
  	 * only activate mappings for irqs that have moved
@@ -52,7 +53,13 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!file)
 		return;
 
-	cpumask_scnprintf(buf, PATH_MAX, info->assigned_obj->mask);
+	if ((hint_policy == HINT_POLICY_EXACT) &&
+	    (!cpus_empty(info->affinity_hint)))
+		applied_mask = info->affinity_hint;
+	else
+		applied_mask = info->assigned_obj->mask;
+
+	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	fprintf(file, "%s", buf);
 	fclose(file);
 	info->moved = 0; /*migration is done*/

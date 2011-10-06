@@ -26,7 +26,6 @@
 #define IRQ_TYPE_MSI	1
 #define IRQ_TYPE_MSIX	2
 
-
 struct common_obj_data {
 	uint64_t load;
 	int number;

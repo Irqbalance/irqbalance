@@ -25,8 +25,6 @@ int map_class_to_level[7] =
 { BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
 
-int class_counts[7];
-
 #define MAX_CLASS 0x12
 /*
  * Class codes lifted from pci spec, appendix D.

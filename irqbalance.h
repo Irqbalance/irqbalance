@@ -16,12 +16,6 @@ extern int package_count;
 extern int cache_domain_count;
 extern int core_count;
 extern char *classes[];
-extern int map_class_to_level[7];
-extern int class_counts[7];
-extern int debug_mode;
-extern int power_mode;
-extern int need_cpu_rescan;
-extern int one_shot_mode;
 
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
@@ -46,6 +40,18 @@ void clear_cpu_tree(void);
 void pci_numa_scan(void);
 
 /*===================NEW BALANCER FUNCTIONS============================*/
+enum hp_e {
+	HINT_POLICY_IGNORE,
+	HINT_POLICY_SUBSET,
+	HINT_POLICY_EXACT
+};
+
+extern int debug_mode;
+extern int one_shot_mode;
+extern int power_mode;
+extern int need_cpu_rescan;
+extern enum hp_e hint_policy;
+
 /*
  * Numa node access routines
  */

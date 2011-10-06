@@ -43,6 +43,20 @@ static void find_best_object(struct common_obj_data *d, void *data)
 {
 	struct obj_placement *best = (struct obj_placement *)data;
 	uint64_t newload;
+	cpumask_t subset;
+
+	/*
+ 	 * If the hint policy is subset, then we only want 
+ 	 * to consider objects that are within the irqs hint, but
+ 	 * only if that irq in fact has published a hint
+ 	 */
+	if (hint_policy == HINT_POLICY_SUBSET) {
+		if (!cpus_empty(best->info->affinity_hint)) {
+			cpus_and(subset, best->info->affinity_hint, d->mask);
+			if (cpus_empty(subset))
+				return;
+		}
+	}
 
 	newload = d->load;
 	if (newload < best->best_cost) {
