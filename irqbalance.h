@@ -32,7 +32,7 @@ extern void set_msi_interrupt_numa(int number);
 
 extern GList *rebalance_irq_list;
 
-void calculate_workload(void);
+void update_migration_status(void);
 void reset_counts(void);
 void dump_workloads(void);
 void sort_irq_list(GList **list);

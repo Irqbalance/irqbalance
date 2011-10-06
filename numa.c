@@ -39,7 +39,7 @@ GList *numa_nodes = NULL;
 
 struct numa_node unspecified_node = {
 	.common = {
-		.workload = 0,
+		.load = 0,
 		.number = -1,
 		.mask = CPU_MASK_ALL,
 		.interrupts = NULL,

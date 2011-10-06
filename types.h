@@ -28,7 +28,6 @@
 
 
 struct common_obj_data {
-	uint64_t workload;
 	uint64_t load;
 	int number;
 	cpumask_t mask;
@@ -43,7 +42,6 @@ struct numa_node {
 struct package {
 	struct common_obj_data common;
 	struct numa_node *numa_node;
-	int class_count[7];
 	GList	*cache_domains;
 };
 
@@ -51,7 +49,6 @@ struct cache_domain {
 	struct common_obj_data common;
 	int marker;
 	struct package *package;
-	int class_count[7];
 	GList	*cpu_cores;
 };
 
@@ -60,7 +57,6 @@ struct cpu_core {
 	struct common_obj_data common;
 	int	marker;
 	struct cache_domain *cache_domain;
-	int class_count[7];
 	uint64_t irq_load;
 	uint64_t softirq_load;
 };
@@ -75,7 +71,6 @@ struct irq_info {
         cpumask_t affinity_hint;
         uint64_t irq_count;
         uint64_t last_irq_count;
-	uint64_t workload;
 	uint64_t load;
         int moved;
         struct common_obj_data *assigned_obj;

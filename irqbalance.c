@@ -136,6 +136,7 @@ static void force_rebalance_irq(struct irq_info *info, void *data __attribute__(
 
 int main(int argc, char** argv)
 {
+	int compute_migration_status=0;
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
@@ -188,17 +189,7 @@ int main(int argc, char** argv)
 	capng_apply(CAPNG_SELECT_BOTH);
 #endif
 
-	parse_proc_interrupts();
-	parse_proc_stat();
-	sleep(SLEEP_INTERVAL/4);
-	reset_counts();
-	parse_proc_interrupts();
-	calculate_workload();
-	if (debug_mode)
-		dump_workloads();
-
 	for_each_irq(NULL, force_rebalance_irq, NULL);
-	sort_irq_list(&rebalance_irq_list);
 
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);
@@ -223,9 +214,14 @@ int main(int argc, char** argv)
 			free_object_tree();
 			build_object_tree();
 			for_each_irq(NULL, force_rebalance_irq, NULL);
-		}
+			compute_migration_status=0;
+		} 
 
-		calculate_workload();
+		if (compute_migration_status)	
+			update_migration_status();
+		else
+			compute_migration_status=1;
+
 
 		calculate_placement();
 		activate_mappings();
@@ -236,7 +232,6 @@ int main(int argc, char** argv)
 			break;
 		counter++;
 
-		for_each_irq(NULL, force_rebalance_irq, NULL);
 	}
 	free_object_tree();
 	return EXIT_SUCCESS;

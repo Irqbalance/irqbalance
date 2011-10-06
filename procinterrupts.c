@@ -93,7 +93,8 @@ void parse_proc_interrupts(void)
 		}
 		if (cpunr != core_count) 
 			need_cpu_rescan = 1;
-		
+
+		info->last_irq_count = info->irq_count;		
 		info->irq_count = count;
 
 		/* is interrupt MSI based? */
@@ -135,7 +136,7 @@ static void compute_irq_load_share(struct common_obj_data *d, void *data __attri
 
 	for_each_irq(cpu->common.interrupts, accumulate_irq_count, &total_irq_counts);
 
-	load_slice = cpu->common.load / total_irq_counts;
+	load_slice = total_irq_counts ? (cpu->common.load / total_irq_counts) : 1;
 
 	for_each_irq(cpu->common.interrupts, assign_load_slice, &load_slice);
 }

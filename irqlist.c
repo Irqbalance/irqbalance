@@ -36,36 +36,6 @@
 
 
 
-void get_affinity_hint(struct irq_info *irq, int number)
-{
-	char buf[PATH_MAX];
-	cpumask_t tempmask;
-	char *line = NULL;
-	size_t size = 0;
-	FILE *file;
-	sprintf(buf, "/proc/irq/%i/affinity_hint", number);
-	file = fopen(buf, "r");
-	if (!file)
-		return;
-	if (getline(&line, &size, file)==0) {
-		free(line);
-		fclose(file);
-		return;
-	}
-	cpumask_parse_user(line, strlen(line), tempmask);
-	if (!__cpus_full(&tempmask, num_possible_cpus()))
-		irq->affinity_hint = tempmask;
-	fclose(file);
-	free(line);
-}
-
-void build_workload(struct irq_info *info, void *unused __attribute__((unused)))
-{
-	info->workload = info->irq_count - info->last_irq_count + info->workload/3;
-	class_counts[info->class]++;
-	info->last_irq_count = info->irq_count;
-}
-
 struct load_balance_info {
 	unsigned long long int total_load;
 	unsigned long long avg_load;
@@ -98,8 +68,15 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 {
 	int *remaining_deviation = (int *)data;
 
+	/* Don't rebalance irqs that don't want it */
+	if (info->level == BALANCE_NONE)
+		return;
+
+	/* Don't move cpus that only have one irq, regardless of load */
 	if (g_list_length(info->assigned_obj->interrupts) <= 1)
 		return;
+
+	/* Stop rebalancing if we've estimated a full reduction of deviation */
 	if (*remaining_deviation <= 0)
 		return;
 
@@ -155,19 +132,16 @@ static void migrate_overloaded_irqs(struct common_obj_data *obj, void *data)
 	for_each_##name(NULL, migrate_overloaded_irqs, &(info));\
 }while(0)
 
-void calculate_workload(void)
+void update_migration_status(void)
 {
-	int i;
 	struct load_balance_info info;
 
-	for (i=0; i<7; i++)
-		class_counts[i]=0;
-	for_each_irq(NULL, build_workload, NULL);
 	find_overloaded_objs(cpu_core, info);
 	find_overloaded_objs(cache_domain, info);
 	find_overloaded_objs(package, info);
 	find_overloaded_objs(numa_node, info);
 }
+
 
 static void reset_irq_count(struct irq_info *info, void *unused __attribute__((unused)))
 {
@@ -183,7 +157,7 @@ void reset_counts(void)
 
 static void dump_workload(struct irq_info *info, void *unused __attribute__((unused)))
 {
-	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned long)info->workload);
+	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned long)info->load);
 }
 
 void dump_workloads(void)

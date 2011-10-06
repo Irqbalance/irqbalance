@@ -255,13 +255,13 @@ static void dump_irq(struct irq_info *info, void *data)
 	int spaces = (long int)data;
 	int i;
 	for (i=0; i<spaces; i++) printf(" ");
-	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned int)info->workload);
+	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned int)info->load);
 }
 
 static void dump_cpu_core(struct common_obj_data *d, void *data __attribute__((unused)))
 {
 	struct cpu_core *c = (struct cpu_core *)d;
-	printf("                CPU number %i  numa_node is %d (workload %lu)\n", c->common.number, cpu_numa_node(c)->common.number , (unsigned long)c->common.workload);
+	printf("                CPU number %i  numa_node is %d (load %lu)\n", c->common.number, cpu_numa_node(c)->common.number , (unsigned long)c->common.load);
 	if (c->common.interrupts)
 		for_each_irq(c->common.interrupts, dump_irq, (void *)18);
 }
@@ -271,7 +271,7 @@ static void dump_cache_domain(struct common_obj_data *d, void *data)
 	struct cache_domain *c = (struct cache_domain *)d;
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4095, c->common.mask);
-	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (workload %lu) \n", c->common.number, cache_domain_numa_node(c)->common.number, buffer, (unsigned long)c->common.workload);
+	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", c->common.number, cache_domain_numa_node(c)->common.number, buffer, (unsigned long)c->common.load);
 	if (c->cpu_cores)
 		for_each_cpu_core(c->cpu_cores, dump_cpu_core, NULL);
 	if (c->common.interrupts)
@@ -283,7 +283,7 @@ static void dump_package(struct common_obj_data *d, void *data)
 	struct package *p = (struct package *)d;
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4096, p->common.mask);
-	printf("Package %i:  numa_node is %d cpu mask is %s (workload %lu)\n", p->common.number, package_numa_node(p)->common.number, buffer, (unsigned long)p->common.workload);
+	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", p->common.number, package_numa_node(p)->common.number, buffer, (unsigned long)p->common.load);
 	if (p->cache_domains)
 		for_each_cache_domain(p->cache_domains, dump_cache_domain, buffer);
 	if (p->common.interrupts)
@@ -299,8 +299,6 @@ void dump_tree(void)
 static void clear_cpu_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
 	struct cpu_core *c = (struct cpu_core *)d;
-	memset(c->class_count, 0, sizeof(c->class_count));
-	c->common.workload = 0;
 	c->common.load = 0;
 	c->irq_load = 0;
 	c->softirq_load = 0;
@@ -309,8 +307,6 @@ static void clear_cpu_stats(struct common_obj_data *d, void *data __attribute__(
 static void clear_cd_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
 	struct cache_domain *c = (struct cache_domain *)d;
-	memset(c->class_count, 0, sizeof(c->class_count));
-	c->common.workload = 0;
 	c->common.load = 0;
 	for_each_cpu_core(c->cpu_cores, clear_cpu_stats, NULL);
 }
@@ -318,8 +314,6 @@ static void clear_cd_stats(struct common_obj_data *d, void *data __attribute__((
 static void clear_package_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
 	struct package *p = (struct package *)d;
-	memset(p->class_count, 0, sizeof(p->class_count));
-	p->common.workload = 0;
 	p->common.load = 0;
 	for_each_cache_domain(p->cache_domains, clear_cd_stats, NULL);
 }
@@ -327,14 +321,12 @@ static void clear_package_stats(struct common_obj_data *d, void *data __attribut
 static void clear_node_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
 	struct numa_node *n = (struct numa_node *)d;
-	n->common.workload = 0;
 	n->common.load = 0;
 	for_each_package(n->packages, clear_package_stats, NULL);
 }
 
 static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unused)))
 {
-	info->workload = 0;
 	info->load = 0;
 }
 

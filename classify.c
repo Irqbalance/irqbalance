@@ -336,9 +336,9 @@ static gint sort_irqs(gconstpointer A, gconstpointer B)
 		return 1;
 	if (a->class > b->class)
 		return -1;
-	if (a->workload < b->workload)
+	if (a->load < b->load)
 		return 1;
-	if (a->workload > b->workload)
+	if (a->load > b->load)
 		return -1;
 	if (a<b)
 		return 1;
