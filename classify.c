@@ -154,7 +154,7 @@ assign_node:
 	lcpu_mask = NULL;
 	rc = fscanf(fd, "%as", &lcpu_mask);
 	fclose(fd);
-	if (!lcpu_mask) {
+	if (!lcpu_mask || !rc) {
 		cpus_setall(new->cpumask);
 	} else {
 		cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
