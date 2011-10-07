@@ -140,6 +140,9 @@ static void dump_object_tree()
 
 static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
+	if (info->level == BALANCE_NONE)
+		return;
+
 	migrate_irq((info->assigned_obj ? &info->assigned_obj->interrupts : NULL),
 		     &rebalance_irq_list, info);
 	info->assigned_obj = NULL;
@@ -241,6 +244,7 @@ int main(int argc, char** argv)
 			dump_tree();
 		if (one_shot_mode)
 			break;
+		clear_work_stats();
 		counter++;
 
 	}

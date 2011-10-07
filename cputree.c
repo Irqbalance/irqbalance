@@ -116,6 +116,7 @@ static struct cache_domain* add_cpu_to_cache_domain(struct cpu_core *cpu,
 		if (!cache)
 			return NULL;
 		cache->common.mask = cache_mask;
+		cache->common.number = cache_domain_count;
 		cache_domains = g_list_append(cache_domains, cache);
 		cache_domain_count++;
 	}

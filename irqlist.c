@@ -107,7 +107,6 @@ static void migrate_overloaded_irqs(struct common_obj_data *obj, void *data)
 
 	deviation = obj->load - info->avg_load;
 
-
 	if ((deviation > info->std_deviation) &&
 	    (g_list_length(obj->interrupts) > 1)) {
 		/*
@@ -124,17 +123,19 @@ static void migrate_overloaded_irqs(struct common_obj_data *obj, void *data)
  		 * and migrate irqs until we only have one left, or until that
  		 * difference reaches zero
  		 */
-		for_each_irq(NULL, move_candidate_irqs, &deviation);
+		for_each_irq(obj->interrupts, move_candidate_irqs, &deviation);
 	}
 
 }
 
 #define find_overloaded_objs(name, info) do {\
+	int ___load_sources;\
 	memset(&(info), 0, sizeof(struct load_balance_info));\
 	for_each_##name(NULL, gather_load_stats, &(info));\
 	(info).avg_load = (info).total_load / (info).load_sources;\
 	for_each_##name(NULL, compute_deviations, &(info));\
-	(info).std_deviation = (long double)((info).deviations / ((info).load_sources));\
+	___load_sources = ((info).load_sources == 1) ? 1 : ((info).load_sources - 1);\
+	(info).std_deviation = (long double)((info).deviations / ___load_sources);\
 	(info).std_deviation = sqrt((info).std_deviation);\
 	for_each_##name(NULL, migrate_overloaded_irqs, &(info));\
 }while(0)
