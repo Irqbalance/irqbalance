@@ -46,7 +46,6 @@ struct package {
 
 struct cache_domain {
 	struct common_obj_data common;
-	int marker;
 	struct package *package;
 	GList	*cpu_cores;
 };
@@ -54,7 +53,6 @@ struct cache_domain {
 
 struct cpu_core {
 	struct common_obj_data common;
-	int	marker;
 	struct cache_domain *cache_domain;
 	uint64_t irq_load;
 	uint64_t softirq_load;
