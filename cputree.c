@@ -279,7 +279,7 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 	cpumask_scnprintf(buffer, 4095, d->mask);
 	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
-		for_each_cpu_core(d->children, dump_topo_obj, NULL);
+		for_each_object(d->children, dump_topo_obj, NULL);
 	if (d->interrupts)
 		for_each_irq(d->interrupts, dump_irq, (void *)10);
 }
@@ -290,7 +290,7 @@ static void dump_package(struct topo_obj *d, void *data)
 	cpumask_scnprintf(buffer, 4096, d->mask);
 	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
-		for_each_cache_domain(d->children, dump_cache_domain, buffer);
+		for_each_object(d->children, dump_cache_domain, buffer);
 	if (d->interrupts)
 		for_each_irq(d->interrupts, dump_irq, (void *)2);
 }
@@ -298,7 +298,7 @@ static void dump_package(struct topo_obj *d, void *data)
 void dump_tree(void)
 {
 	char buffer[4096];
-	for_each_package(NULL, dump_package, buffer);
+	for_each_object(packages, dump_package, buffer);
 }
 
 static void clear_cpu_stats(struct topo_obj *d, void *data __attribute__((unused)))
@@ -310,19 +310,19 @@ static void clear_cpu_stats(struct topo_obj *d, void *data __attribute__((unused
 static void clear_cd_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
-	for_each_cpu_core(d->children, clear_cpu_stats, NULL);
+	for_each_object(d->children, clear_cpu_stats, NULL);
 }
 
 static void clear_package_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
-	for_each_cache_domain(d->children, clear_cd_stats, NULL);
+	for_each_object(d->children, clear_cd_stats, NULL);
 }
 
 static void clear_node_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
-	for_each_package(d->children, clear_package_stats, NULL);
+	for_each_object(d->children, clear_package_stats, NULL);
 }
 
 static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unused)))
@@ -337,7 +337,7 @@ static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unu
  */
 void clear_work_stats(void)
 {
-	for_each_numa_node(NULL, clear_node_stats, NULL);
+	for_each_object(numa_nodes, clear_node_stats, NULL);
 	for_each_irq(NULL, clear_irq_stats, NULL);
 }
 
@@ -415,43 +415,6 @@ void clear_cpu_tree(void)
 	}
 	core_count = 0;
 
-}
-
-
-void for_each_package(GList *list, void (*cb)(struct topo_obj *p, void *data), void *data)
-{
-	GList *entry = g_list_first(list ? list : packages);
-	GList *next;
-
-	while (entry) {
-		next = g_list_next(entry);
-		cb(entry->data, data);
-		entry = next;
-	}
-}
-
-void for_each_cache_domain(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data)
-{
-	GList *entry = g_list_first(list ? list : cache_domains);
-	GList *next;
-
-	while (entry) {
-		next = g_list_next(entry);
-		cb(entry->data, data);
-		entry = next;
-	}
-}
-
-void for_each_cpu_core(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data)
-{
-	GList *entry = g_list_first(list ? list : cpus);
-	GList *next;
-
-	while (entry) {
-		next = g_list_next(entry);
-		cb(entry->data, data);
-		entry = next;
-	}
 }
 
 static gint compare_cpus(gconstpointer a, gconstpointer b)

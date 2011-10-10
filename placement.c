@@ -89,7 +89,7 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_cache_domain(p->children, find_best_object, &place);
+	for_each_object(p->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
@@ -124,7 +124,7 @@ static void place_core(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_cpu_core(c->children, find_best_object, &place);
+	for_each_object(c->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
@@ -159,7 +159,7 @@ static void place_irq_in_package(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_package(n->children, find_best_object, &place);
+	for_each_object(n->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
@@ -200,7 +200,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 	place.least_irqs = NULL;
 	place.info = info;
 
-	for_each_numa_node(NULL, find_best_object, &place);
+	for_each_object(numa_nodes, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
@@ -226,9 +226,9 @@ static void validate_object(struct topo_obj *d, void *data __attribute__((unused
 
 static void validate_object_tree_placement()
 {
-	for_each_package(NULL, validate_object, NULL);	
-	for_each_cache_domain(NULL, validate_object, NULL);
-	for_each_cpu_core(NULL, validate_object, NULL);
+	for_each_object(packages, validate_object, NULL);	
+	for_each_object(cache_domains, validate_object, NULL);
+	for_each_object(cpus, validate_object, NULL);
 }
 
 void calculate_placement(void)
@@ -239,9 +239,9 @@ void calculate_placement(void)
 	sort_irq_list(&rebalance_irq_list);
 
 	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
-	for_each_numa_node(NULL, place_packages, NULL);
-	for_each_package(NULL, place_cache_domain, NULL);
-	for_each_cache_domain(NULL, place_cores, NULL);
+	for_each_object(numa_nodes, place_packages, NULL);
+	for_each_object(packages, place_cache_domain, NULL);
+	for_each_object(cache_domains, place_cores, NULL);
 
 	if (debug_mode)
 		validate_object_tree_placement();

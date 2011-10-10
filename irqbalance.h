@@ -40,6 +40,15 @@ void clear_cpu_tree(void);
 void pci_numa_scan(void);
 
 /*===================NEW BALANCER FUNCTIONS============================*/
+
+/*
+ * Master topo_obj type lists
+ */
+extern GList *numa_nodes;
+extern GList *packages;
+extern GList *cache_domains;
+extern GList *cpus;
+
 enum hp_e {
 	HINT_POLICY_IGNORE,
 	HINT_POLICY_SUBSET,
@@ -58,7 +67,6 @@ extern enum hp_e hint_policy;
 extern void build_numa_node_list(void);
 extern void free_numa_node_list(void);
 extern void dump_numa_node_info(struct topo_obj *node, void *data);
-extern void for_each_numa_node(GList *list, void (*cb)(struct topo_obj *node, void *data), void *data);
 extern void add_package_to_node(struct topo_obj *p, int nodeid);
 extern struct topo_obj *get_numa_node(int nodeid);
 
@@ -66,14 +74,12 @@ extern struct topo_obj *get_numa_node(int nodeid);
  * Package functions
  */
 #define package_numa_node(p) ((p)->parent)
-extern void for_each_package(GList *list, void (*cb)(struct topo_obj *p, void *data), void *data);
 
 /*
  * cache_domain functions
  */
 #define cache_domain_package(c) ((c)->parent)
 #define cache_domain_numa_node(c) (package_numa_node(cache_domain_package((c))))
-extern void for_each_cache_domain(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data);
 
 /*
  * cpu core functions
@@ -81,7 +87,6 @@ extern void for_each_cache_domain(GList *list, void (*cb)(struct topo_obj *c, vo
 #define cpu_cache_domain(cpu) ((cpu)->parent)
 #define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
 #define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
-extern void for_each_cpu_core(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data);
 extern struct topo_obj *find_cpu_core(int cpunr);
 extern int get_cpu_count(void);
 
@@ -94,8 +99,22 @@ extern void for_each_irq(GList *list, void (*cb)(struct irq_info *info,  void *d
 extern struct irq_info *get_irq_info(int irq);
 extern void migrate_irq(GList **from, GList **to, struct irq_info *info);
 extern struct irq_info *add_misc_irq(int irq);
-
 #define irq_numa_node(irq) ((irq)->numa_node)
+
+
+/*
+ * Generic object functions
+ */
+static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,  void *data), void *data)
+{
+	GList *entry, *next;
+	entry = g_list_first(list);
+	while (entry) {
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
+	}
+}
 
 #endif
 

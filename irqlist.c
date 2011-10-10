@@ -131,23 +131,23 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 #define find_overloaded_objs(name, info) do {\
 	int ___load_sources;\
 	memset(&(info), 0, sizeof(struct load_balance_info));\
-	for_each_##name(NULL, gather_load_stats, &(info));\
+	for_each_object((name), gather_load_stats, &(info));\
 	(info).avg_load = (info).total_load / (info).load_sources;\
-	for_each_##name(NULL, compute_deviations, &(info));\
+	for_each_object((name), compute_deviations, &(info));\
 	___load_sources = ((info).load_sources == 1) ? 1 : ((info).load_sources - 1);\
 	(info).std_deviation = (long double)((info).deviations / ___load_sources);\
 	(info).std_deviation = sqrt((info).std_deviation);\
-	for_each_##name(NULL, migrate_overloaded_irqs, &(info));\
+	for_each_object((name), migrate_overloaded_irqs, &(info));\
 }while(0)
 
 void update_migration_status(void)
 {
 	struct load_balance_info info;
 
-	find_overloaded_objs(cpu_core, info);
-	find_overloaded_objs(cache_domain, info);
-	find_overloaded_objs(package, info);
-	find_overloaded_objs(numa_node, info);
+	find_overloaded_objs(cpus, info);
+	find_overloaded_objs(cache_domains, info);
+	find_overloaded_objs(packages, info);
+	find_overloaded_objs(numa_nodes, info);
 }
 
 

@@ -204,6 +204,6 @@ void parse_proc_stat()
  	 * Now that we have load for each cpu attribute a fair share of the load
  	 * to each irq on that cpu
  	 */
-	for_each_cpu_core(NULL, compute_irq_load_share, NULL);
+	for_each_object(cpus, compute_irq_load_share, NULL);
 
 }

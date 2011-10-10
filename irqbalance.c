@@ -135,7 +135,7 @@ static void free_object_tree()
 
 static void dump_object_tree()
 {
-	for_each_numa_node(NULL, dump_numa_node_info, NULL);
+	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }
 
 static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))

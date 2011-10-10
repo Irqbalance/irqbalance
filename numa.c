@@ -144,19 +144,6 @@ void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)
 	printf("\n");
 }
 
-void for_each_numa_node(GList *list, void(*cb)(struct topo_obj *node, void *data), void *data)
-{
-	GList *entry, *next;
-
-	entry = g_list_first(list ? list : numa_nodes);
-
-	while (entry) {
-		next = g_list_next(entry);
-		cb(entry->data, data);
-		entry = next;
-	}
-}
-
 struct topo_obj *get_numa_node(int nodeid)
 {
 	struct topo_obj find;
