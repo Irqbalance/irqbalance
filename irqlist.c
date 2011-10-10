@@ -42,6 +42,10 @@ struct load_balance_info {
 	int load_sources;
 	unsigned long long int deviations;
 	long double std_deviation;
+	unsigned int num_within;
+	unsigned int num_over;
+	unsigned int num_under;
+	struct topo_obj *powersave;
 };
 
 static void gather_load_stats(struct topo_obj *obj, void *data)
@@ -102,13 +106,21 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 	/*
  	 * Don't rebalance irqs on objects whos load is below the average
  	 */
-	if (obj->load <= info->avg_load)
+	if (obj->load <= info->avg_load) {
+		if ((obj->load + info->std_deviation) <= info->avg_load) {
+			info->num_under++;
+			info->powersave = obj;
+		} else
+			info->num_within++; 
 		return;
+	}
 
 	deviation = obj->load - info->avg_load;
 
 	if ((deviation > info->std_deviation) &&
 	    (g_list_length(obj->interrupts) > 1)) {
+
+		info->num_over++;
 		/*
  		 * We have a cpu that is overloaded and 
  		 * has irqs that can be moved to fix that
@@ -124,8 +136,19 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
  		 * difference reaches zero
  		 */
 		for_each_irq(obj->interrupts, move_candidate_irqs, &deviation);
-	}
+	} else
+		info->num_within++;
 
+}
+
+static void force_irq_migration(struct irq_info *info, void *data __attribute__((unused)))
+{
+	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+}
+
+static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__((unused)))
+{
+	obj->powersave_mode = 0;
 }
 
 #define find_overloaded_objs(name, info) do {\
@@ -145,6 +168,13 @@ void update_migration_status(void)
 	struct load_balance_info info;
 
 	find_overloaded_objs(cpus, info);
+	if (cycle_count > 5) {
+		if (!info.num_over && (info.num_under >= power_thresh)) {
+			info.powersave->powersave_mode = 1;
+			for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
+		} else if (info.num_over)
+			for_each_object(cpus, clear_powersave_mode, NULL);
+	}
 	find_overloaded_objs(cache_domains, info);
 	find_overloaded_objs(packages, info);
 	find_overloaded_objs(numa_nodes, info);

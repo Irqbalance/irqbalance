@@ -60,6 +60,8 @@ extern int one_shot_mode;
 extern int power_mode;
 extern int need_cpu_rescan;
 extern enum hp_e hint_policy;
+extern unsigned long long cycle_count;
+extern unsigned long power_thresh;
 
 /*
  * Numa node access routines

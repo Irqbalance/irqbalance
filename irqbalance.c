@@ -40,9 +40,9 @@ int debug_mode;
 int numa_avail;
 int need_cpu_rescan;
 extern cpumask_t banned_cpus;
-static int counter;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
-
+unsigned long power_thresh = ULONG_MAX;
+unsigned long long cycle_count = 0;
 
 void sleep_approx(int seconds)
 {
@@ -63,12 +63,14 @@ struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
 	{"debug", 0, NULL, 'd'},
 	{"hintpolicy", 1, NULL, 'h'},
+	{"powerthresh", 1, NULL, 'p'},
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
-	printf("irqbalance [--oneshot | -o] [--debug | -d] [--hintpolicy= | -h [exact|subset|ignore]]");
+	printf("irqbalance [--oneshot | -o] [--debug | -d] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	printf("	[--powerthresh= | -p <off> | <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -77,7 +79,7 @@ static void parse_command_line(int argc, char **argv)
 	int longind;
 
 	while ((opt = getopt_long(argc, argv,
-		"odh:",
+		"odh:p:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -97,6 +99,17 @@ static void parse_command_line(int argc, char **argv)
 				else {
 					usage();
 					exit(1);
+				}
+				break;
+			case 'p':
+				if (!strncmp(optarg, "off", strlen(optarg)))
+					power_thresh = ULONG_MAX;
+				else {
+					power_thresh = strtoull(optarg, NULL, 10);
+					if (power_thresh == ULONG_MAX) {
+						usage();
+						exit(1);
+					}
 				}
 				break;
 			case 'o':
@@ -153,7 +166,6 @@ static void force_rebalance_irq(struct irq_info *info, void *data __attribute__(
 
 int main(int argc, char** argv)
 {
-	int compute_migration_status=0;
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
@@ -214,7 +226,6 @@ int main(int argc, char** argv)
 			printf("\n\n\n-----------------------------------------------------------------------------\n");
 
 
-		check_power_mode();
 		parse_proc_interrupts();
 		parse_proc_stat();
 
@@ -231,14 +242,11 @@ int main(int argc, char** argv)
 			free_object_tree();
 			build_object_tree();
 			for_each_irq(NULL, force_rebalance_irq, NULL);
-			compute_migration_status=0;
+			cycle_count=0;
 		} 
 
-		if (compute_migration_status)	
+		if (cycle_count)	
 			update_migration_status();
-		else
-			compute_migration_status=1;
-
 
 		calculate_placement();
 		activate_mappings();
@@ -248,7 +256,7 @@ int main(int argc, char** argv)
 		if (one_shot_mode)
 			break;
 		clear_work_stats();
-		counter++;
+		cycle_count++;
 
 	}
 	free_object_tree();

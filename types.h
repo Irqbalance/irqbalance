@@ -37,6 +37,7 @@ struct topo_obj {
 	uint64_t load;
 	enum obj_type_e obj_type;
 	int number;
+	int powersave_mode;
 	cpumask_t mask;
 	GList *interrupts;
 	struct topo_obj *parent;

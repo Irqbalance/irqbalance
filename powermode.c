@@ -28,54 +28,7 @@
 #include "irqbalance.h"
 
 
-extern int power_mode;
-
-static uint64_t previous;
-
-static unsigned int hysteresis;
-
 void check_power_mode(void)
 {
-	FILE *file;
-	char *line = NULL;
-	size_t size = 0;
-	char *c;
-	uint64_t dummy __attribute__((unused));
-	uint64_t irq, softirq;
-	file = fopen("/proc/stat", "r");
-	if (!file)
-		return;
-	if (getline(&line, &size, file)==0)
-		size=0;
-	fclose(file);
-	if (!line)
-		return;
-	c=&line[4];
-	dummy = strtoull(c, &c, 10); /* user */
-	dummy = strtoull(c, &c, 10); /* nice */
-	dummy = strtoull(c, &c, 10); /* system */
-	dummy = strtoull(c, &c, 10); /* idle */
-	dummy = strtoull(c, &c, 10); /* iowait */
-	irq = strtoull(c, &c, 10); /* irq */
-	softirq = strtoull(c, &c, 10); /* softirq */
-
-
-	irq += softirq;
-	printf("IRQ delta is %lu \n", (unsigned long)(irq - previous) );
-	if (irq - previous <  POWER_MODE_SOFTIRQ_THRESHOLD)  {
-		hysteresis++;
-		if (hysteresis > POWER_MODE_HYSTERESIS) {
-			if (debug_mode && !power_mode)
-				printf("IRQ delta is %lu, switching to power mode \n", (unsigned long)(irq - previous) );
-			power_mode = 1;
-		}
-	} else {
-		if (debug_mode && power_mode)
-			printf("IRQ delta is %lu, switching to performance mode \n", (unsigned long)(irq - previous) );
-		power_mode = 0;
-		hysteresis = 0;
-	}
-	previous = irq;
-	free(line);
 }
 
