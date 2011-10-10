@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <glib.h>
+#include <syslog.h>
 
 #include "types.h"
 #include <numa.h>

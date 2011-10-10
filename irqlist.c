@@ -170,10 +170,13 @@ void update_migration_status(void)
 	find_overloaded_objs(cpus, info);
 	if (cycle_count > 5) {
 		if (!info.num_over && (info.num_under >= power_thresh)) {
+			syslog(LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
 			info.powersave->powersave_mode = 1;
 			for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
-		} else if (info.num_over)
+		} else if (info.num_over) {
+			syslog(LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
 			for_each_object(cpus, clear_powersave_mode, NULL);
+		}
 	}
 	find_overloaded_objs(cache_domains, info);
 	find_overloaded_objs(packages, info);
