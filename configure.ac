@@ -55,6 +55,8 @@ AC_CHECK_HEADERS(linux/ethtool.h linux/sockios.h, [], [])
 
 AC_CHECK_FUNCS(getopt_long)
 
+AC_CHECK_LIB(numa, numa_run_on_node, [], [])
+AC_CHECK_LIB(m, floor, [], [])
 
 AC_C_CONST
 AC_C_INLINE
