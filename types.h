@@ -31,31 +31,8 @@ struct common_obj_data {
 	int number;
 	cpumask_t mask;
 	GList *interrupts;
-};
-
-struct numa_node {
-	struct common_obj_data common;
-	GList	*packages;
-};
-
-struct package {
-	struct common_obj_data common;
-	struct numa_node *numa_node;
-	GList	*cache_domains;
-};
-
-struct cache_domain {
-	struct common_obj_data common;
-	struct package *package;
-	GList	*cpu_cores;
-};
-
-
-struct cpu_core {
-	struct common_obj_data common;
-	struct cache_domain *cache_domain;
-	uint64_t irq_load;
-	uint64_t softirq_load;
+	struct common_obj_data *parent;
+	GList *children;
 };
 
 struct irq_info {
@@ -63,7 +40,7 @@ struct irq_info {
         int class;
         int type;
 	int level;
-        struct numa_node *numa_node;
+        struct common_obj_data *numa_node;
         cpumask_t cpumask;
         cpumask_t affinity_hint;
         uint64_t irq_count;

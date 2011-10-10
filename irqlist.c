@@ -165,7 +165,7 @@ void reset_counts(void)
 
 static void dump_workload(struct irq_info *info, void *unused __attribute__((unused)))
 {
-	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned long)info->load);
+	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned long)info->load);
 }
 
 void dump_workloads(void)

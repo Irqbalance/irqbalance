@@ -73,7 +73,7 @@ static void find_best_object(struct common_obj_data *d, void *data)
 
 static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 {
-	struct package *p = data;
+	struct common_obj_data *p = data;
 	struct obj_placement place;
 	struct common_obj_data *asign;
 
@@ -89,12 +89,12 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_cache_domain(p->cache_domains, find_best_object, &place);
+	for_each_cache_domain(p->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
 	if (asign) {
-		migrate_irq(&p->common.interrupts, &asign->interrupts, info);
+		migrate_irq(&p->interrupts, &asign->interrupts, info);
 		info->assigned_obj = asign;
 	}
 
@@ -102,14 +102,13 @@ static void place_irq_in_cache_domain(struct irq_info *info, void *data)
 	
 static void place_cache_domain(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct package *package = (struct package *)d;
-	if (package->common.interrupts)
-		for_each_irq(package->common.interrupts, place_irq_in_cache_domain, package);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, place_irq_in_cache_domain, d);
 }
 
 static void place_core(struct irq_info *info, void *data)
 {
-	struct cache_domain *c = data;
+	struct common_obj_data *c = data;
 	struct obj_placement place;
 	struct common_obj_data *asign;
 
@@ -125,12 +124,12 @@ static void place_core(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_cpu_core(c->cpu_cores, find_best_object, &place);
+	for_each_cpu_core(c->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
 	if (asign) {
-		migrate_irq(&c->common.interrupts, &asign->interrupts, info);
+		migrate_irq(&c->interrupts, &asign->interrupts, info);
 		info->assigned_obj = asign;
 		asign->load += info->load;
 	}
@@ -139,15 +138,14 @@ static void place_core(struct irq_info *info, void *data)
 
 static void place_cores(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct cache_domain *cache_domain = (struct cache_domain *)d;
-	if (cache_domain->common.interrupts)
-		for_each_irq(cache_domain->common.interrupts, place_core, cache_domain);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, place_core, d);
 }
 
 static void place_irq_in_package(struct irq_info *info, void *data)
 {
 	struct obj_placement place;
-	struct numa_node *n = data;
+	struct common_obj_data *n = data;
 	struct common_obj_data *asign;
 
 	if (!info->moved)
@@ -161,12 +159,12 @@ static void place_irq_in_package(struct irq_info *info, void *data)
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_package(n->packages, find_best_object, &place);
+	for_each_package(n->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
 	if (asign) {
-		migrate_irq(&n->common.interrupts, &asign->interrupts, info);
+		migrate_irq(&n->interrupts, &asign->interrupts, info);
 		info->assigned_obj = asign;
 		asign->load += info->load;
 	}
@@ -174,9 +172,8 @@ static void place_irq_in_package(struct irq_info *info, void *data)
 
 static void place_packages(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct numa_node *n = (struct numa_node *)d;
-	if (n->common.interrupts)
-		for_each_irq(n->common.interrupts, place_irq_in_package, n);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, place_irq_in_package, d);
 }
 
 static void place_irq_in_node(struct irq_info *info, void *data __attribute__((unused)))
@@ -187,14 +184,14 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 	if( info->level == BALANCE_NONE)
 		return;
 
-	if (irq_numa_node(info)->common.number != -1) {
+	if (irq_numa_node(info)->number != -1) {
 		/*
  		 * This irq belongs to a device with a preferred numa node
  		 * put it on that node
  		 */
-		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->common.interrupts, info);
+		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->interrupts, info);
 		info->assigned_obj = (struct common_obj_data *)irq_numa_node(info);
-		irq_numa_node(info)->common.load += info->load + 1;
+		irq_numa_node(info)->load += info->load + 1;
 		return;
 	}
 

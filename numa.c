@@ -37,43 +37,42 @@
 
 GList *numa_nodes = NULL;
 
-struct numa_node unspecified_node = {
-	.common = {
-		.load = 0,
-		.number = -1,
-		.mask = CPU_MASK_ALL,
-		.interrupts = NULL,
-	},	
-	.packages = NULL,
+struct common_obj_data unspecified_node = {
+	.load = 0,
+	.number = -1,
+	.mask = CPU_MASK_ALL,
+	.interrupts = NULL,
+	.children = NULL,
+	.parent = NULL,
 };
 
 static void add_one_node(const char *nodename)
 {
 	char *path = alloca(strlen(SYSFS_NODE_PATH) + strlen(nodename) + 1);
-	struct numa_node *new;
+	struct common_obj_data *new;
 	char *cpustr;
 	FILE *f;
 
 	if (!path)
 		return;
-	new = calloc(1, sizeof(struct numa_node));
+	new = calloc(1, sizeof(struct common_obj_data));
 	if (!new)
 		return;
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
 	f = fopen(path, "r");
 	if (ferror(f)) {
-		cpus_clear(new->common.mask);
+		cpus_clear(new->mask);
 	} else {
 		fscanf(f, "%as", &cpustr);
 		if (!cpustr) {
-			cpus_clear(new->common.mask);
+			cpus_clear(new->mask);
 		} else {
-			cpumask_parse_user(cpustr, strlen(cpustr), new->common.mask);
+			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
 			free(cpustr);
 		}
 	}
 	
-	new->common.number = strtoul(&nodename[4], NULL, 10);
+	new->number = strtoul(&nodename[4], NULL, 10);
 	numa_nodes = g_list_append(numa_nodes, new);
 }
 
@@ -105,19 +104,19 @@ void free_numa_node_list(void)
 
 static gint compare_node(gconstpointer a, gconstpointer b)
 {
-	const struct numa_node *ai = a;
-	const struct numa_node *bi = b;
+	const struct common_obj_data *ai = a;
+	const struct common_obj_data *bi = b;
 
-	return (ai->common.number == bi->common.number) ? 0 : 1;
+	return (ai->number == bi->number) ? 0 : 1;
 }
 
-void add_package_to_node(struct package *p, int nodeid)
+void add_package_to_node(struct common_obj_data *p, int nodeid)
 {
-	struct numa_node find, *node;
-	find.common.number = nodeid;
+	struct common_obj_data find, *node;
+	find.number = nodeid;
 	GList *entry;
 
-	find.common.number = nodeid;
+	find.number = nodeid;
 	entry = g_list_find_custom(numa_nodes, &find, compare_node);
 
 	if (!entry) {
@@ -128,17 +127,16 @@ void add_package_to_node(struct package *p, int nodeid)
 
 	node = entry->data;
 
-	node->packages = g_list_append(node->packages, p);
-	p->numa_node = node;
+	node->children = g_list_append(node->children, p);
+	p->parent = node;
 }
 
 void dump_numa_node_info(struct common_obj_data *d, void *unused __attribute__((unused)))
 {
-	struct numa_node *node = (struct numa_node *)d;
 	char buffer[4096];
 
-	printf("NUMA NODE NUMBER: %d\n", node->common.number);
-	cpumask_scnprintf(buffer, 4096, node->common.mask); 
+	printf("NUMA NODE NUMBER: %d\n", d->number);
+	cpumask_scnprintf(buffer, 4096, d->mask); 
 	printf("LOCAL CPU MASK: %s\n", buffer);
 	printf("\n");
 }
@@ -156,15 +154,15 @@ void for_each_numa_node(GList *list, void(*cb)(struct common_obj_data *node, voi
 	}
 }
 
-struct numa_node *get_numa_node(int nodeid)
+struct common_obj_data *get_numa_node(int nodeid)
 {
-	struct numa_node find;
+	struct common_obj_data find;
 	GList *entry;
 
 	if (nodeid == -1)
 		return &unspecified_node;
 
-	find.common.number = nodeid;
+	find.number = nodeid;
 
 	entry = g_list_find_custom(numa_nodes, &find, compare_node);
 	return entry ? entry->data : NULL;

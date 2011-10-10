@@ -59,30 +59,30 @@ extern void build_numa_node_list(void);
 extern void free_numa_node_list(void);
 extern void dump_numa_node_info(struct common_obj_data *node, void *data);
 extern void for_each_numa_node(GList *list, void (*cb)(struct common_obj_data *node, void *data), void *data);
-extern void add_package_to_node(struct package *p, int nodeid);
-extern struct numa_node *get_numa_node(int nodeid);
+extern void add_package_to_node(struct common_obj_data *p, int nodeid);
+extern struct common_obj_data *get_numa_node(int nodeid);
 
 /*
  * Package functions
  */
-#define package_numa_node(p) ((p)->numa_node)
+#define package_numa_node(p) ((p)->parent)
 extern void for_each_package(GList *list, void (*cb)(struct common_obj_data *p, void *data), void *data);
 
 /*
  * cache_domain functions
  */
-#define cache_domain_package(c) ((c)->package)
+#define cache_domain_package(c) ((c)->parent)
 #define cache_domain_numa_node(c) (package_numa_node(cache_domain_package((c))))
 extern void for_each_cache_domain(GList *list, void (*cb)(struct common_obj_data *c, void *data), void *data);
 
 /*
  * cpu core functions
  */
-#define cpu_cache_domain(cpu) ((cpu)->cache_domain)
+#define cpu_cache_domain(cpu) ((cpu)->parent)
 #define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
 #define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
 extern void for_each_cpu_core(GList *list, void (*cb)(struct common_obj_data *c, void *data), void *data);
-extern struct cpu_core *find_cpu_core(int cpunr);
+extern struct common_obj_data *find_cpu_core(int cpunr);
 extern int get_cpu_count(void);
 
 /*

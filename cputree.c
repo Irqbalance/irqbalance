@@ -55,32 +55,32 @@ cpumask_t cpu_possible_map;
 */
 static cpumask_t unbanned_cpus;
 
-static struct package* add_cache_domain_to_package(struct cache_domain *cache, 
+static struct common_obj_data* add_cache_domain_to_package(struct common_obj_data *cache, 
 						    cpumask_t package_mask)
 {
 	GList *entry;
-	struct package *package;
-	struct cache_domain *lcache; 
+	struct common_obj_data *package;
+	struct common_obj_data *lcache; 
 
 	entry = g_list_first(packages);
 
 	while (entry) {
 		package = entry->data;
-		if (cpus_equal(package_mask, package->common.mask))
+		if (cpus_equal(package_mask, package->mask))
 			break;
 		entry = g_list_next(entry);
 	}
 
 	if (!entry) {
-		package = calloc(sizeof(struct package), 1);
+		package = calloc(sizeof(struct common_obj_data), 1);
 		if (!package)
 			return NULL;
-		package->common.mask = package_mask;
+		package->mask = package_mask;
 		packages = g_list_append(packages, package);
 		package_count++;
 	}
 
-	entry = g_list_first(package->cache_domains);
+	entry = g_list_first(package->children);
 	while (entry) {
 		lcache = entry->data;
 		if (lcache == cache)
@@ -89,39 +89,39 @@ static struct package* add_cache_domain_to_package(struct cache_domain *cache,
 	}
 
 	if (!entry) {
-		package->cache_domains = g_list_append(package->cache_domains, cache);
-		cache->package = package;
+		package->children = g_list_append(package->children, cache);
+		cache->parent = package;
 	}
 
 	return package;
 }
-static struct cache_domain* add_cpu_to_cache_domain(struct cpu_core *cpu,
+static struct common_obj_data* add_cpu_to_cache_domain(struct common_obj_data *cpu,
 						    cpumask_t cache_mask)
 {
 	GList *entry;
-	struct cache_domain *cache;
-	struct cpu_core *lcpu;
+	struct common_obj_data *cache;
+	struct common_obj_data *lcpu;
 
 	entry = g_list_first(cache_domains);
 
 	while (entry) {
 		cache = entry->data;
-		if (cpus_equal(cache_mask, cache->common.mask))
+		if (cpus_equal(cache_mask, cache->mask))
 			break;
 		entry = g_list_next(entry);
 	}
 
 	if (!entry) {
-		cache = calloc(sizeof(struct cache_domain), 1);
+		cache = calloc(sizeof(struct common_obj_data), 1);
 		if (!cache)
 			return NULL;
-		cache->common.mask = cache_mask;
-		cache->common.number = cache_domain_count;
+		cache->mask = cache_mask;
+		cache->number = cache_domain_count;
 		cache_domains = g_list_append(cache_domains, cache);
 		cache_domain_count++;
 	}
 
-	entry = g_list_first(cache->cpu_cores);
+	entry = g_list_first(cache->children);
 	while (entry) {
 		lcpu = entry->data;
 		if (lcpu == cpu)
@@ -130,8 +130,8 @@ static struct cache_domain* add_cpu_to_cache_domain(struct cpu_core *cpu,
 	}
 
 	if (!entry) {
-		cache->cpu_cores = g_list_append(cache->cpu_cores, cpu);
-		cpu->cache_domain = cache;
+		cache->children = g_list_append(cache->children, cpu);
+		cpu->parent = (struct common_obj_data *)cache;
 	}
 
 	return cache;
@@ -139,12 +139,12 @@ static struct cache_domain* add_cpu_to_cache_domain(struct cpu_core *cpu,
  
 static void do_one_cpu(char *path)
 {
-	struct cpu_core *cpu;
+	struct common_obj_data *cpu;
 	FILE *file;
 	char new_path[PATH_MAX];
 	cpumask_t cache_mask, package_mask;
-	struct cache_domain *cache;
-	struct package *package;
+	struct common_obj_data *cache;
+	struct common_obj_data *package;
 	DIR *dir;
 	struct dirent *entry;
 	int nodeid;
@@ -165,19 +165,18 @@ static void do_one_cpu(char *path)
 		free(line);
 	}
 
-	cpu = malloc(sizeof(struct cpu_core));
+	cpu = calloc(sizeof(struct common_obj_data), 1);
 	if (!cpu)
 		return;
-	memset(cpu, 0, sizeof(struct cpu_core));
 
-	cpu->common.number = strtoul(&path[27], NULL, 10);
+	cpu->number = strtoul(&path[27], NULL, 10);
 
-	cpu_set(cpu->common.number, cpu_possible_map);
+	cpu_set(cpu->number, cpu_possible_map);
 	
-	cpu_set(cpu->common.number, cpu->common.mask);
+	cpu_set(cpu->number, cpu->mask);
 
 	/* if the cpu is on the banned list, just don't add it */
-	if (cpus_intersects(cpu->common.mask, banned_cpus)) {
+	if (cpus_intersects(cpu->mask, banned_cpus)) {
 		free(cpu);
 		/* even though we don't use the cpu we do need to count it */
 		core_count++;
@@ -188,7 +187,7 @@ static void do_one_cpu(char *path)
 	/* try to read the package mask; if it doesn't exist assume solitary */
 	snprintf(new_path, PATH_MAX, "%s/topology/core_siblings", path);
 	file = fopen(new_path, "r");
-	cpu_set(cpu->common.number, package_mask);
+	cpu_set(cpu->number, package_mask);
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
@@ -200,7 +199,7 @@ static void do_one_cpu(char *path)
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available so try index1 first, then index2 */
-	cpu_set(cpu->common.number, cache_mask);
+	cpu_set(cpu->number, cache_mask);
 	snprintf(new_path, PATH_MAX, "%s/cache/index1/shared_cpu_map", path);
 	file = fopen(new_path, "r");
 	if (file) {
@@ -243,9 +242,9 @@ static void do_one_cpu(char *path)
 	   blank out the banned cpus from the various masks so that interrupts
 	   will never be told to go there
 	 */
-	cpus_and(cpu_cache_domain(cpu)->common.mask, cpu_cache_domain(cpu)->common.mask, unbanned_cpus);
-	cpus_and(cpu_package(cpu)->common.mask, cpu_package(cpu)->common.mask, unbanned_cpus);
-	cpus_and(cpu->common.mask, cpu->common.mask, unbanned_cpus);
+	cpus_and(cpu_cache_domain(cpu)->mask, cpu_cache_domain(cpu)->mask, unbanned_cpus);
+	cpus_and(cpu_package(cpu)->mask, cpu_package(cpu)->mask, unbanned_cpus);
+	cpus_and(cpu->mask, cpu->mask, unbanned_cpus);
 
 	cpus = g_list_append(cpus, cpu);
 	core_count++;
@@ -256,39 +255,37 @@ static void dump_irq(struct irq_info *info, void *data)
 	int spaces = (long int)data;
 	int i;
 	for (i=0; i<spaces; i++) printf(" ");
-	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->common.number, classes[info->class], (unsigned int)info->load);
+	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
 
-static void dump_cpu_core(struct common_obj_data *d, void *data __attribute__((unused)))
+static void dump_common_obj_data(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct cpu_core *c = (struct cpu_core *)d;
-	printf("                CPU number %i  numa_node is %d (load %lu)\n", c->common.number, cpu_numa_node(c)->common.number , (unsigned long)c->common.load);
-	if (c->common.interrupts)
-		for_each_irq(c->common.interrupts, dump_irq, (void *)18);
+	struct common_obj_data *c = (struct common_obj_data *)d;
+	printf("                CPU number %i  numa_node is %d (load %lu)\n", c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
+	if (c->interrupts)
+		for_each_irq(c->interrupts, dump_irq, (void *)18);
 }
 
 static void dump_cache_domain(struct common_obj_data *d, void *data)
 {
-	struct cache_domain *c = (struct cache_domain *)d;
 	char *buffer = data;
-	cpumask_scnprintf(buffer, 4095, c->common.mask);
-	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", c->common.number, cache_domain_numa_node(c)->common.number, buffer, (unsigned long)c->common.load);
-	if (c->cpu_cores)
-		for_each_cpu_core(c->cpu_cores, dump_cpu_core, NULL);
-	if (c->common.interrupts)
-		for_each_irq(c->common.interrupts, dump_irq, (void *)10);
+	cpumask_scnprintf(buffer, 4095, d->mask);
+	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
+	if (d->children)
+		for_each_cpu_core(d->children, dump_common_obj_data, NULL);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, dump_irq, (void *)10);
 }
 
 static void dump_package(struct common_obj_data *d, void *data)
 {
-	struct package *p = (struct package *)d;
 	char *buffer = data;
-	cpumask_scnprintf(buffer, 4096, p->common.mask);
-	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", p->common.number, package_numa_node(p)->common.number, buffer, (unsigned long)p->common.load);
-	if (p->cache_domains)
-		for_each_cache_domain(p->cache_domains, dump_cache_domain, buffer);
-	if (p->common.interrupts)
-		for_each_irq(p->common.interrupts, dump_irq, (void *)2);
+	cpumask_scnprintf(buffer, 4096, d->mask);
+	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
+	if (d->children)
+		for_each_cache_domain(d->children, dump_cache_domain, buffer);
+	if (d->interrupts)
+		for_each_irq(d->interrupts, dump_irq, (void *)2);
 }
 
 void dump_tree(void)
@@ -299,31 +296,26 @@ void dump_tree(void)
 
 static void clear_cpu_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct cpu_core *c = (struct cpu_core *)d;
-	c->common.load = 0;
-	c->irq_load = 0;
-	c->softirq_load = 0;
+	struct common_obj_data *c = (struct common_obj_data *)d;
+	c->load = 0;
 }
 
 static void clear_cd_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct cache_domain *c = (struct cache_domain *)d;
-	c->common.load = 0;
-	for_each_cpu_core(c->cpu_cores, clear_cpu_stats, NULL);
+	d->load = 0;
+	for_each_cpu_core(d->children, clear_cpu_stats, NULL);
 }
 
 static void clear_package_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct package *p = (struct package *)d;
-	p->common.load = 0;
-	for_each_cache_domain(p->cache_domains, clear_cd_stats, NULL);
+	d->load = 0;
+	for_each_cache_domain(d->children, clear_cd_stats, NULL);
 }
 
 static void clear_node_stats(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct numa_node *n = (struct numa_node *)d;
-	n->common.load = 0;
-	for_each_package(n->packages, clear_package_stats, NULL);
+	d->load = 0;
+	for_each_package(d->children, clear_package_stats, NULL);
 }
 
 static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unused)))
@@ -382,15 +374,15 @@ void parse_cpu_tree(void)
 void clear_cpu_tree(void)
 {
 	GList *item;
-	struct cpu_core *cpu;
-	struct cache_domain *cache_domain;
-	struct package *package;
+	struct common_obj_data *cpu;
+	struct common_obj_data *cache_domain;
+	struct common_obj_data *package;
 
 	while (packages) {
 		item = g_list_first(packages);
 		package = item->data;
-		g_list_free(package->cache_domains);
-		g_list_free(package->common.interrupts);
+		g_list_free(package->children);
+		g_list_free(package->interrupts);
 		free(package);
 		packages = g_list_delete_link(packages, item);
 	}
@@ -399,8 +391,8 @@ void clear_cpu_tree(void)
 	while (cache_domains) {
 		item = g_list_first(cache_domains);
 		cache_domain = item->data;
-		g_list_free(cache_domain->cpu_cores);
-		g_list_free(cache_domain->common.interrupts);
+		g_list_free(cache_domain->children);
+		g_list_free(cache_domain->interrupts);
 		free(cache_domain);
 		cache_domains = g_list_delete_link(cache_domains, item);
 	}
@@ -410,7 +402,7 @@ void clear_cpu_tree(void)
 	while (cpus) {
 		item = g_list_first(cpus);
 		cpu = item->data;
-		g_list_free(cpu->common.interrupts);
+		g_list_free(cpu->interrupts);
 		free(cpu);
 		cpus = g_list_delete_link(cpus, item);
 	}
@@ -457,18 +449,18 @@ void for_each_cpu_core(GList *list, void (*cb)(struct common_obj_data *c, void *
 
 static gint compare_cpus(gconstpointer a, gconstpointer b)
 {
-	const struct cpu_core *ai = a;
-	const struct cpu_core *bi = b;
+	const struct common_obj_data *ai = a;
+	const struct common_obj_data *bi = b;
 
-	return ai->common.number - bi->common.number;	
+	return ai->number - bi->number;	
 }
 
-struct cpu_core *find_cpu_core(int cpunr)
+struct common_obj_data *find_cpu_core(int cpunr)
 {
 	GList *entry;
-	struct cpu_core find;
+	struct common_obj_data find;
 
-	find.common.number = cpunr;
+	find.number = cpunr;
 	entry = g_list_find_custom(cpus, &find, compare_cpus);
 
 	return entry ? entry->data : NULL;

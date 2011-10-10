@@ -130,15 +130,14 @@ static void assign_load_slice(struct irq_info *info, void *data)
 
 static void compute_irq_load_share(struct common_obj_data *d, void *data __attribute__((unused)))
 {
-	struct cpu_core *cpu = (struct cpu_core *)d;
 	uint64_t total_irq_counts = 0;
 	uint64_t load_slice;
 
-	for_each_irq(cpu->common.interrupts, accumulate_irq_count, &total_irq_counts);
+	for_each_irq(d->interrupts, accumulate_irq_count, &total_irq_counts);
 
-	load_slice = total_irq_counts ? (cpu->common.load / total_irq_counts) : 1;
+	load_slice = total_irq_counts ? (d->load / total_irq_counts) : 1;
 
-	for_each_irq(cpu->common.interrupts, assign_load_slice, &load_slice);
+	for_each_irq(d->interrupts, assign_load_slice, &load_slice);
 }
 
 void parse_proc_stat()
@@ -147,7 +146,7 @@ void parse_proc_stat()
 	char *line = NULL;
 	size_t size = 0;
 	int cpunr, rc, cpucount;
-	struct cpu_core *cpu;
+	struct common_obj_data *cpu;
 	int irq_load, softirq_load;
 
 	file = fopen("/proc/stat", "r");
@@ -189,12 +188,10 @@ void parse_proc_stat()
  		 * For each cpu add the irq and softirq load and propagate that
  		 * all the way up the device tree
  		 */
-		cpu->irq_load = irq_load;
-		cpu->softirq_load = softirq_load;
-		cpu->common.load = irq_load + softirq_load;
-		cpu->cache_domain->common.load += cpu->common.load;
-		cpu->cache_domain->package->common.load += cpu->common.load;
-		cpu->cache_domain->package->numa_node->common.load += cpu->common.load;
+		cpu->load = irq_load + softirq_load;
+		cpu_cache_domain(cpu)->load += cpu->load;
+		cpu_package(cpu)->load += cpu->load;
+		cpu_numa_node(cpu)->load += cpu->load;
 	}
 
 	fclose(file);
