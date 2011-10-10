@@ -63,11 +63,6 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
-static void free_int(gpointer data)
-{
-	free(data);
-}
-
 /*
  * Inserts an irq_info struct into the intterupts_db list
  * devpath points to the device directory in sysfs for the 
@@ -241,9 +236,16 @@ done:
 	return;
 }
 
+static void free_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	free(info);
+}
+
 void free_irq_db(void)
 {
-	g_list_free_full(interrupts_db, free_int);
+	for_each_irq(NULL, free_irq, NULL);
+	g_list_free(interrupts_db);
+	interrupts_db = NULL;
 }
 
 void rebuild_irq_db(void)
@@ -251,7 +253,7 @@ void rebuild_irq_db(void)
 	DIR *devdir = opendir(SYSDEV_DIR);
 	struct dirent *entry;
 
-	g_list_free_full(interrupts_db, free_int);
+	free_irq_db();
 		
 	if (!devdir)
 		return;
