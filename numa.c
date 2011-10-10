@@ -45,6 +45,7 @@ struct topo_obj unspecified_node = {
 	.interrupts = NULL,
 	.children = NULL,
 	.parent = NULL,
+	.obj_type_list = &numa_nodes,
 };
 
 static void add_one_node(const char *nodename)
@@ -74,6 +75,7 @@ static void add_one_node(const char *nodename)
 	}
 	new->obj_type = OBJ_TYPE_NODE;	
 	new->number = strtoul(&nodename[4], NULL, 10);
+	new->obj_type_list = &numa_nodes;
 	numa_nodes = g_list_append(numa_nodes, new);
 }
 

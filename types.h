@@ -41,6 +41,7 @@ struct topo_obj {
 	GList *interrupts;
 	struct topo_obj *parent;
 	GList *children;
+	GList **obj_type_list;
 };
 
 struct irq_info {

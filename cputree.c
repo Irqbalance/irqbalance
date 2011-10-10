@@ -77,6 +77,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 			return NULL;
 		package->mask = package_mask;
 		package->obj_type = OBJ_TYPE_PACKAGE;
+		package->obj_type_list = &packages;
 		packages = g_list_append(packages, package);
 		package_count++;
 	}
@@ -119,6 +120,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cache->obj_type = OBJ_TYPE_CACHE;
 		cache->mask = cache_mask;
 		cache->number = cache_domain_count;
+		cache->obj_type_list = &cache_domains;
 		cache_domains = g_list_append(cache_domains, cache);
 		cache_domain_count++;
 	}
@@ -250,6 +252,7 @@ static void do_one_cpu(char *path)
 	cpus_and(cpu_package(cpu)->mask, cpu_package(cpu)->mask, unbanned_cpus);
 	cpus_and(cpu->mask, cpu->mask, unbanned_cpus);
 
+	cpu->obj_type_list = &cpus;
 	cpus = g_list_append(cpus, cpu);
 	core_count++;
 }
