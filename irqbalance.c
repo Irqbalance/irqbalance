@@ -143,8 +143,11 @@ static void force_rebalance_irq(struct irq_info *info, void *data __attribute__(
 	if (info->level == BALANCE_NONE)
 		return;
 
-	migrate_irq((info->assigned_obj ? &info->assigned_obj->interrupts : NULL),
-		     &rebalance_irq_list, info);
+	if (info->assigned_obj == NULL)
+		rebalance_irq_list = g_list_append(rebalance_irq_list, info);
+	else
+		migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+
 	info->assigned_obj = NULL;
 }
 

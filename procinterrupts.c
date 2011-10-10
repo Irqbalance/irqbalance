@@ -128,16 +128,45 @@ static void assign_load_slice(struct irq_info *info, void *data)
 	info->load = (info->irq_count - info->last_irq_count) * *load_slice;
 }
 
-static void compute_irq_load_share(struct topo_obj *d, void *data __attribute__((unused)))
+/*
+ * Recursive helper to estimate the number of irqs shared between 
+ * multiple topology objects that was handled by this particular object
+ */
+static uint64_t get_parent_branch_irq_count_share(struct topo_obj *d)
+{
+	uint64_t total_irq_count = 0;
+
+	if (d->parent) {
+		total_irq_count = get_parent_branch_irq_count_share(d->parent);
+		total_irq_count /= g_list_length(*d->obj_type_list);
+	}
+
+	if (g_list_length(d->interrupts) > 0)
+		for_each_irq(d->interrupts, accumulate_irq_count, &total_irq_count);
+
+	return total_irq_count;
+}
+
+static void compute_irq_branch_load_share(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	uint64_t total_irq_counts = 0;
+	uint64_t local_irq_counts = 0;
+
 	uint64_t load_slice;
 
-	for_each_irq(d->interrupts, accumulate_irq_count, &total_irq_counts);
+	total_irq_counts = get_parent_branch_irq_count_share(d);
 
-	load_slice = total_irq_counts ? (d->load / total_irq_counts) : 1;
+	load_slice = local_irq_counts ? (d->load / local_irq_counts) : 1;
 
-	for_each_irq(d->interrupts, assign_load_slice, &load_slice);
+	if (g_list_length(d->interrupts) > 0) {
+		for_each_irq(d->interrupts, accumulate_irq_count, &local_irq_counts);
+		for_each_irq(d->interrupts, assign_load_slice, &load_slice);
+	}
+
+	if (d->parent) {
+		load_slice = total_irq_counts ? (d->load / total_irq_counts) : 1;
+		d->parent->load += (total_irq_counts - local_irq_counts) * load_slice;
+	}
 }
 
 void parse_proc_stat()
@@ -189,9 +218,6 @@ void parse_proc_stat()
  		 * all the way up the device tree
  		 */
 		cpu->load = irq_load + softirq_load;
-		cpu_cache_domain(cpu)->load += cpu->load;
-		cpu_package(cpu)->load += cpu->load;
-		cpu_numa_node(cpu)->load += cpu->load;
 	}
 
 	fclose(file);
@@ -204,6 +230,9 @@ void parse_proc_stat()
  	 * Now that we have load for each cpu attribute a fair share of the load
  	 * to each irq on that cpu
  	 */
-	for_each_object(cpus, compute_irq_load_share, NULL);
+	for_each_object(cpus, compute_irq_branch_load_share, NULL);
+	for_each_object(cache_domains, compute_irq_branch_load_share, NULL);
+	for_each_object(packages, compute_irq_branch_load_share, NULL);
+	for_each_object(numa_nodes, compute_irq_branch_load_share, NULL);
 
 }

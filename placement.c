@@ -181,16 +181,13 @@ static void validate_object_tree_placement()
 
 void calculate_placement(void)
 {
-	/* first clear old data */ 
-	clear_work_stats();
-
 	sort_irq_list(&rebalance_irq_list);
-
-	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
-	for_each_object(numa_nodes, place_irq_in_object, NULL);
-	for_each_object(packages, place_irq_in_object, NULL);
-	for_each_object(cache_domains, place_irq_in_object, NULL);
-
+	if (g_list_length(rebalance_irq_list) > 0) {
+		for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
+		for_each_object(numa_nodes, place_irq_in_object, NULL);
+		for_each_object(packages, place_irq_in_object, NULL);
+		for_each_object(cache_domains, place_irq_in_object, NULL);
+	}
 	if (debug_mode)
 		validate_object_tree_placement();
 }

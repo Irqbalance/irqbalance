@@ -313,13 +313,10 @@ void migrate_irq(GList **from, GList **to, struct irq_info *info)
 	GList *entry;
 	struct irq_info find, *tmp;;
 
-	if (from != NULL) {
-		find.irq = info->irq;
-		entry = g_list_find_custom(*from, &find, compare_ints);
-		tmp = entry->data;
-		*from = g_list_delete_link(*from, entry);
-	} else
-		tmp = info;
+	find.irq = info->irq;
+	entry = g_list_find_custom(*from, &find, compare_ints);
+	tmp = entry->data;
+	*from = g_list_delete_link(*from, entry);
 
 
 	*to = g_list_append(*to, tmp);
