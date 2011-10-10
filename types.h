@@ -26,8 +26,16 @@
 #define IRQ_TYPE_MSI	1
 #define IRQ_TYPE_MSIX	2
 
+enum obj_type_e {
+	OBJ_TYPE_CPU,
+	OBJ_TYPE_CACHE,
+	OBJ_TYPE_PACKAGE,
+	OBJ_TYPE_NODE
+};
+
 struct topo_obj {
 	uint64_t load;
+	enum obj_type_e obj_type;
 	int number;
 	cpumask_t mask;
 	GList *interrupts;

@@ -76,6 +76,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		if (!package)
 			return NULL;
 		package->mask = package_mask;
+		package->obj_type = OBJ_TYPE_PACKAGE;
 		packages = g_list_append(packages, package);
 		package_count++;
 	}
@@ -115,6 +116,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cache = calloc(sizeof(struct topo_obj), 1);
 		if (!cache)
 			return NULL;
+		cache->obj_type = OBJ_TYPE_CACHE;
 		cache->mask = cache_mask;
 		cache->number = cache_domain_count;
 		cache_domains = g_list_append(cache_domains, cache);
@@ -168,6 +170,8 @@ static void do_one_cpu(char *path)
 	cpu = calloc(sizeof(struct topo_obj), 1);
 	if (!cpu)
 		return;
+
+	cpu->obj_type = OBJ_TYPE_CPU;
 
 	cpu->number = strtoul(&path[27], NULL, 10);
 

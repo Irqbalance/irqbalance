@@ -40,6 +40,7 @@ GList *numa_nodes = NULL;
 struct topo_obj unspecified_node = {
 	.load = 0,
 	.number = -1,
+	.obj_type = OBJ_TYPE_NODE,
 	.mask = CPU_MASK_ALL,
 	.interrupts = NULL,
 	.children = NULL,
@@ -71,7 +72,7 @@ static void add_one_node(const char *nodename)
 			free(cpustr);
 		}
 	}
-	
+	new->obj_type = OBJ_TYPE_NODE;	
 	new->number = strtoul(&nodename[4], NULL, 10);
 	numa_nodes = g_list_append(numa_nodes, new);
 }
