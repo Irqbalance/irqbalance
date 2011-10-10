@@ -71,109 +71,57 @@ static void find_best_object(struct topo_obj *d, void *data)
 	}
 }
 
-static void place_irq_in_cache_domain(struct irq_info *info, void *data)
+static void find_best_object_for_irq(struct irq_info *info, void *data)
 {
-	struct topo_obj *p = data;
 	struct obj_placement place;
+	struct topo_obj *d = data;
 	struct topo_obj *asign;
 
 	if (!info->moved)
 		return;
 
-	if (info->level <= BALANCE_PACKAGE)
-		return;
+	switch (d->obj_type) {
+	case OBJ_TYPE_NODE:
+		if (info->level == BALANCE_NONE)
+			return;
+		break;
 
+	case OBJ_TYPE_PACKAGE:
+		if (info->level == BALANCE_PACKAGE)
+			return;
+		break;
 
-	place.info = info;
-	place.best = NULL;
-	place.least_irqs = NULL;
-	place.best_cost = INT_MAX;
+	case OBJ_TYPE_CACHE:
+		if (info->level == BALANCE_CACHE)
+			return;
+		break;
 
-	for_each_object(p->children, find_best_object, &place);
-
-	asign = place.least_irqs ? place.least_irqs : place.best;
-
-	if (asign) {
-		migrate_irq(&p->interrupts, &asign->interrupts, info);
-		info->assigned_obj = asign;
+	case OBJ_TYPE_CPU:
+		if (info->level == BALANCE_CORE)
+			return;
+		break;
 	}
 
-}
-	
-static void place_cache_domain(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	if (d->interrupts)
-		for_each_irq(d->interrupts, place_irq_in_cache_domain, d);
-}
-
-static void place_core(struct irq_info *info, void *data)
-{
-	struct topo_obj *c = data;
-	struct obj_placement place;
-	struct topo_obj *asign;
-
-	if (!info->moved)
-		return;
-
-	if ((info->level <= BALANCE_CACHE) &&
-	    (!one_shot_mode))
-		return;
-
 	place.info = info;
 	place.best = NULL;
 	place.least_irqs = NULL;
 	place.best_cost = INT_MAX;
 
-	for_each_object(c->children, find_best_object, &place);
+	for_each_object(d->children, find_best_object, &place);
 
 	asign = place.least_irqs ? place.least_irqs : place.best;
 
 	if (asign) {
-		migrate_irq(&c->interrupts, &asign->interrupts, info);
-		info->assigned_obj = asign;
-		asign->load += info->load;
-	}
-
-}
-
-static void place_cores(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	if (d->interrupts)
-		for_each_irq(d->interrupts, place_core, d);
-}
-
-static void place_irq_in_package(struct irq_info *info, void *data)
-{
-	struct obj_placement place;
-	struct topo_obj *n = data;
-	struct topo_obj *asign;
-
-	if (!info->moved)
-		return;
-
-	if (info->level == BALANCE_NONE)
-		return;
-
-	place.info = info;
-	place.best = NULL;
-	place.least_irqs = NULL;
-	place.best_cost = INT_MAX;
-
-	for_each_object(n->children, find_best_object, &place);
-
-	asign = place.least_irqs ? place.least_irqs : place.best;
-
-	if (asign) {
-		migrate_irq(&n->interrupts, &asign->interrupts, info);
+		migrate_irq(&d->interrupts, &asign->interrupts, info);
 		info->assigned_obj = asign;
 		asign->load += info->load;
 	}
 }
 
-static void place_packages(struct topo_obj *d, void *data __attribute__((unused)))
+static void place_irq_in_object(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	if (d->interrupts)
-		for_each_irq(d->interrupts, place_irq_in_package, d);
+	if (g_list_length(d->interrupts) > 0)
+		for_each_irq(d->interrupts, find_best_object_for_irq, d);
 }
 
 static void place_irq_in_node(struct irq_info *info, void *data __attribute__((unused)))
@@ -190,7 +138,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
  		 * put it on that node
  		 */
 		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->interrupts, info);
-		info->assigned_obj = (struct topo_obj *)irq_numa_node(info);
+		info->assigned_obj = irq_numa_node(info);
 		irq_numa_node(info)->load += info->load + 1;
 		return;
 	}
@@ -239,9 +187,9 @@ void calculate_placement(void)
 	sort_irq_list(&rebalance_irq_list);
 
 	for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
-	for_each_object(numa_nodes, place_packages, NULL);
-	for_each_object(packages, place_cache_domain, NULL);
-	for_each_object(cache_domains, place_cores, NULL);
+	for_each_object(numa_nodes, place_irq_in_object, NULL);
+	for_each_object(packages, place_irq_in_object, NULL);
+	for_each_object(cache_domains, place_irq_in_object, NULL);
 
 	if (debug_mode)
 		validate_object_tree_placement();

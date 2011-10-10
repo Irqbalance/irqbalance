@@ -301,33 +301,16 @@ void dump_tree(void)
 	for_each_object(packages, dump_package, buffer);
 }
 
-static void clear_cpu_stats(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	struct topo_obj *c = (struct topo_obj *)d;
-	c->load = 0;
-}
-
-static void clear_cd_stats(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	d->load = 0;
-	for_each_object(d->children, clear_cpu_stats, NULL);
-}
-
-static void clear_package_stats(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	d->load = 0;
-	for_each_object(d->children, clear_cd_stats, NULL);
-}
-
-static void clear_node_stats(struct topo_obj *d, void *data __attribute__((unused)))
-{
-	d->load = 0;
-	for_each_object(d->children, clear_package_stats, NULL);
-}
-
 static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unused)))
 {
 	info->load = 0;
+}
+
+static void clear_obj_stats(struct topo_obj *d, void *data __attribute__((unused)))
+{
+	d->load = 0;
+	for_each_object(d->children, clear_obj_stats, NULL);
+	for_each_irq(d->interrupts, clear_irq_stats, NULL);
 }
 
 /*
@@ -337,8 +320,7 @@ static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unu
  */
 void clear_work_stats(void)
 {
-	for_each_object(numa_nodes, clear_node_stats, NULL);
-	for_each_irq(NULL, clear_irq_stats, NULL);
+	for_each_object(numa_nodes, clear_obj_stats, NULL);
 }
 
 
