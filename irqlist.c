@@ -44,7 +44,7 @@ struct load_balance_info {
 	long double std_deviation;
 };
 
-static void gather_load_stats(struct common_obj_data *obj, void *data)
+static void gather_load_stats(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 
@@ -52,7 +52,7 @@ static void gather_load_stats(struct common_obj_data *obj, void *data)
 	info->load_sources += 1;
 }
 
-static void compute_deviations(struct common_obj_data *obj, void *data)
+static void compute_deviations(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 	unsigned long long int deviation;
@@ -94,7 +94,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	info->assigned_obj = NULL;
 }
 
-static void migrate_overloaded_irqs(struct common_obj_data *obj, void *data)
+static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 	int deviation;

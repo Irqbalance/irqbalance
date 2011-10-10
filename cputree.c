@@ -55,12 +55,12 @@ cpumask_t cpu_possible_map;
 */
 static cpumask_t unbanned_cpus;
 
-static struct common_obj_data* add_cache_domain_to_package(struct common_obj_data *cache, 
+static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
 						    cpumask_t package_mask)
 {
 	GList *entry;
-	struct common_obj_data *package;
-	struct common_obj_data *lcache; 
+	struct topo_obj *package;
+	struct topo_obj *lcache; 
 
 	entry = g_list_first(packages);
 
@@ -72,7 +72,7 @@ static struct common_obj_data* add_cache_domain_to_package(struct common_obj_dat
 	}
 
 	if (!entry) {
-		package = calloc(sizeof(struct common_obj_data), 1);
+		package = calloc(sizeof(struct topo_obj), 1);
 		if (!package)
 			return NULL;
 		package->mask = package_mask;
@@ -95,12 +95,12 @@ static struct common_obj_data* add_cache_domain_to_package(struct common_obj_dat
 
 	return package;
 }
-static struct common_obj_data* add_cpu_to_cache_domain(struct common_obj_data *cpu,
+static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 						    cpumask_t cache_mask)
 {
 	GList *entry;
-	struct common_obj_data *cache;
-	struct common_obj_data *lcpu;
+	struct topo_obj *cache;
+	struct topo_obj *lcpu;
 
 	entry = g_list_first(cache_domains);
 
@@ -112,7 +112,7 @@ static struct common_obj_data* add_cpu_to_cache_domain(struct common_obj_data *c
 	}
 
 	if (!entry) {
-		cache = calloc(sizeof(struct common_obj_data), 1);
+		cache = calloc(sizeof(struct topo_obj), 1);
 		if (!cache)
 			return NULL;
 		cache->mask = cache_mask;
@@ -131,7 +131,7 @@ static struct common_obj_data* add_cpu_to_cache_domain(struct common_obj_data *c
 
 	if (!entry) {
 		cache->children = g_list_append(cache->children, cpu);
-		cpu->parent = (struct common_obj_data *)cache;
+		cpu->parent = (struct topo_obj *)cache;
 	}
 
 	return cache;
@@ -139,12 +139,12 @@ static struct common_obj_data* add_cpu_to_cache_domain(struct common_obj_data *c
  
 static void do_one_cpu(char *path)
 {
-	struct common_obj_data *cpu;
+	struct topo_obj *cpu;
 	FILE *file;
 	char new_path[PATH_MAX];
 	cpumask_t cache_mask, package_mask;
-	struct common_obj_data *cache;
-	struct common_obj_data *package;
+	struct topo_obj *cache;
+	struct topo_obj *package;
 	DIR *dir;
 	struct dirent *entry;
 	int nodeid;
@@ -165,7 +165,7 @@ static void do_one_cpu(char *path)
 		free(line);
 	}
 
-	cpu = calloc(sizeof(struct common_obj_data), 1);
+	cpu = calloc(sizeof(struct topo_obj), 1);
 	if (!cpu)
 		return;
 
@@ -258,26 +258,26 @@ static void dump_irq(struct irq_info *info, void *data)
 	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
 
-static void dump_common_obj_data(struct common_obj_data *d, void *data __attribute__((unused)))
+static void dump_topo_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	struct common_obj_data *c = (struct common_obj_data *)d;
+	struct topo_obj *c = (struct topo_obj *)d;
 	printf("                CPU number %i  numa_node is %d (load %lu)\n", c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
 	if (c->interrupts)
 		for_each_irq(c->interrupts, dump_irq, (void *)18);
 }
 
-static void dump_cache_domain(struct common_obj_data *d, void *data)
+static void dump_cache_domain(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4095, d->mask);
 	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
-		for_each_cpu_core(d->children, dump_common_obj_data, NULL);
+		for_each_cpu_core(d->children, dump_topo_obj, NULL);
 	if (d->interrupts)
 		for_each_irq(d->interrupts, dump_irq, (void *)10);
 }
 
-static void dump_package(struct common_obj_data *d, void *data)
+static void dump_package(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4096, d->mask);
@@ -294,25 +294,25 @@ void dump_tree(void)
 	for_each_package(NULL, dump_package, buffer);
 }
 
-static void clear_cpu_stats(struct common_obj_data *d, void *data __attribute__((unused)))
+static void clear_cpu_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	struct common_obj_data *c = (struct common_obj_data *)d;
+	struct topo_obj *c = (struct topo_obj *)d;
 	c->load = 0;
 }
 
-static void clear_cd_stats(struct common_obj_data *d, void *data __attribute__((unused)))
+static void clear_cd_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
 	for_each_cpu_core(d->children, clear_cpu_stats, NULL);
 }
 
-static void clear_package_stats(struct common_obj_data *d, void *data __attribute__((unused)))
+static void clear_package_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
 	for_each_cache_domain(d->children, clear_cd_stats, NULL);
 }
 
-static void clear_node_stats(struct common_obj_data *d, void *data __attribute__((unused)))
+static void clear_node_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	d->load = 0;
 	for_each_package(d->children, clear_package_stats, NULL);
@@ -374,9 +374,9 @@ void parse_cpu_tree(void)
 void clear_cpu_tree(void)
 {
 	GList *item;
-	struct common_obj_data *cpu;
-	struct common_obj_data *cache_domain;
-	struct common_obj_data *package;
+	struct topo_obj *cpu;
+	struct topo_obj *cache_domain;
+	struct topo_obj *package;
 
 	while (packages) {
 		item = g_list_first(packages);
@@ -411,7 +411,7 @@ void clear_cpu_tree(void)
 }
 
 
-void for_each_package(GList *list, void (*cb)(struct common_obj_data *p, void *data), void *data)
+void for_each_package(GList *list, void (*cb)(struct topo_obj *p, void *data), void *data)
 {
 	GList *entry = g_list_first(list ? list : packages);
 	GList *next;
@@ -423,7 +423,7 @@ void for_each_package(GList *list, void (*cb)(struct common_obj_data *p, void *d
 	}
 }
 
-void for_each_cache_domain(GList *list, void (*cb)(struct common_obj_data *c, void *data), void *data)
+void for_each_cache_domain(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data)
 {
 	GList *entry = g_list_first(list ? list : cache_domains);
 	GList *next;
@@ -435,7 +435,7 @@ void for_each_cache_domain(GList *list, void (*cb)(struct common_obj_data *c, vo
 	}
 }
 
-void for_each_cpu_core(GList *list, void (*cb)(struct common_obj_data *c, void *data), void *data)
+void for_each_cpu_core(GList *list, void (*cb)(struct topo_obj *c, void *data), void *data)
 {
 	GList *entry = g_list_first(list ? list : cpus);
 	GList *next;
@@ -449,16 +449,16 @@ void for_each_cpu_core(GList *list, void (*cb)(struct common_obj_data *c, void *
 
 static gint compare_cpus(gconstpointer a, gconstpointer b)
 {
-	const struct common_obj_data *ai = a;
-	const struct common_obj_data *bi = b;
+	const struct topo_obj *ai = a;
+	const struct topo_obj *bi = b;
 
 	return ai->number - bi->number;	
 }
 
-struct common_obj_data *find_cpu_core(int cpunr)
+struct topo_obj *find_cpu_core(int cpunr)
 {
 	GList *entry;
-	struct common_obj_data find;
+	struct topo_obj find;
 
 	find.number = cpunr;
 	entry = g_list_find_custom(cpus, &find, compare_cpus);

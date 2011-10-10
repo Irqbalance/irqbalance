@@ -37,7 +37,7 @@
 
 GList *numa_nodes = NULL;
 
-struct common_obj_data unspecified_node = {
+struct topo_obj unspecified_node = {
 	.load = 0,
 	.number = -1,
 	.mask = CPU_MASK_ALL,
@@ -49,13 +49,13 @@ struct common_obj_data unspecified_node = {
 static void add_one_node(const char *nodename)
 {
 	char *path = alloca(strlen(SYSFS_NODE_PATH) + strlen(nodename) + 1);
-	struct common_obj_data *new;
+	struct topo_obj *new;
 	char *cpustr;
 	FILE *f;
 
 	if (!path)
 		return;
-	new = calloc(1, sizeof(struct common_obj_data));
+	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
 		return;
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
@@ -104,15 +104,15 @@ void free_numa_node_list(void)
 
 static gint compare_node(gconstpointer a, gconstpointer b)
 {
-	const struct common_obj_data *ai = a;
-	const struct common_obj_data *bi = b;
+	const struct topo_obj *ai = a;
+	const struct topo_obj *bi = b;
 
 	return (ai->number == bi->number) ? 0 : 1;
 }
 
-void add_package_to_node(struct common_obj_data *p, int nodeid)
+void add_package_to_node(struct topo_obj *p, int nodeid)
 {
-	struct common_obj_data find, *node;
+	struct topo_obj find, *node;
 	find.number = nodeid;
 	GList *entry;
 
@@ -131,7 +131,7 @@ void add_package_to_node(struct common_obj_data *p, int nodeid)
 	p->parent = node;
 }
 
-void dump_numa_node_info(struct common_obj_data *d, void *unused __attribute__((unused)))
+void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)))
 {
 	char buffer[4096];
 
@@ -141,7 +141,7 @@ void dump_numa_node_info(struct common_obj_data *d, void *unused __attribute__((
 	printf("\n");
 }
 
-void for_each_numa_node(GList *list, void(*cb)(struct common_obj_data *node, void *data), void *data)
+void for_each_numa_node(GList *list, void(*cb)(struct topo_obj *node, void *data), void *data)
 {
 	GList *entry, *next;
 
@@ -154,9 +154,9 @@ void for_each_numa_node(GList *list, void(*cb)(struct common_obj_data *node, voi
 	}
 }
 
-struct common_obj_data *get_numa_node(int nodeid)
+struct topo_obj *get_numa_node(int nodeid)
 {
-	struct common_obj_data find;
+	struct topo_obj find;
 	GList *entry;
 
 	if (nodeid == -1)
