@@ -51,7 +51,6 @@ AC_PROG_AWK
 echo .
 echo Checking for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(linux/ethtool.h linux/sockios.h, [], [])
 
 AC_CHECK_FUNCS(getopt_long)
 
