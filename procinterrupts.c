@@ -131,6 +131,12 @@ static void assign_load_slice(struct irq_info *info, void *data)
 {
 	uint64_t *load_slice = data;
 	info->load = (info->irq_count - info->last_irq_count) * *load_slice;
+
+	/*
+ 	 * Every IRQ has at least a load of 1
+ 	 */
+	if (!info->load)
+		info->load++;
 }
 
 /*
@@ -155,9 +161,10 @@ static uint64_t get_parent_branch_irq_count_share(struct topo_obj *d)
 static void compute_irq_branch_load_share(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	uint64_t local_irq_counts = 0;
-
 	uint64_t load_slice;
+	int	load_divisor = g_list_length(d->children);
 
+	d->load /= (load_divisor ? load_divisor : 1);
 
 	if (g_list_length(d->interrupts) > 0) {
 		local_irq_counts = get_parent_branch_irq_count_share(d);
@@ -217,8 +224,16 @@ void parse_proc_stat()
  		 * For each cpu add the irq and softirq load and propagate that
  		 * all the way up the device tree
  		 */
-		if (cycle_count)
+		if (cycle_count) {
 			cpu->load = (irq_load + softirq_load) - (cpu->last_load);
+			/*
+			 * the [soft]irq_load values are in jiffies, which are
+			 * units of 10ms, multiply by 1000 to convert that to
+			 * 1/10 milliseconds.  This give us a better integer
+			 * distribution of load between irqs
+			 */
+			cpu->load *= 1000;
+		}
 		cpu->last_load = (irq_load + softirq_load);
 	}
 

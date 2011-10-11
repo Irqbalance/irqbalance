@@ -93,6 +93,9 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 
 	*remaining_deviation -= info->load;
 
+	if (debug_mode)
+		printf("Selecting irq %d for rebalancing\n", info->irq);
+
 	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
 
 	info->assigned_obj = NULL;
