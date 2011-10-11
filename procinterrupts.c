@@ -68,8 +68,9 @@ void parse_proc_interrupts(void)
 
 		/* lines with letters in front are special, like NMI count. Ignore */
 		c = line;
-		while (isblank(*(c++)))
-			;
+		while (isblank(*(c)))
+			c++;
+			
 		if (!(*c>='0' && *c<='9'))
 			break;
 		c = strchr(line, ':');
