@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <syslog.h>
+#include <ctype.h>
 
 #include "cpumask.h"
 #include "irqbalance.h"
@@ -66,7 +67,10 @@ void parse_proc_interrupts(void)
 				proc_int_has_msi = 1;
 
 		/* lines with letters in front are special, like NMI count. Ignore */
-		if (!(line[0]==' ' || (line[0]>='0' && line[0]<='9')))
+		c = line;
+		while (isblank(*(c++)))
+			;
+		if (!(*c>='0' && *c<='9'))
 			break;
 		c = strchr(line, ':');
 		if (!c)
