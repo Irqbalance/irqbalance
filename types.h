@@ -35,6 +35,7 @@ enum obj_type_e {
 
 struct topo_obj {
 	uint64_t load;
+	uint64_t last_load;
 	enum obj_type_e obj_type;
 	int number;
 	int powersave_mode;

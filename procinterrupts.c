@@ -154,24 +154,19 @@ static uint64_t get_parent_branch_irq_count_share(struct topo_obj *d)
 
 static void compute_irq_branch_load_share(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	uint64_t total_irq_counts = 0;
 	uint64_t local_irq_counts = 0;
 
 	uint64_t load_slice;
 
-	total_irq_counts = get_parent_branch_irq_count_share(d);
-
-	load_slice = local_irq_counts ? (d->load / local_irq_counts) : 1;
 
 	if (g_list_length(d->interrupts) > 0) {
-		for_each_irq(d->interrupts, accumulate_irq_count, &local_irq_counts);
+		local_irq_counts = get_parent_branch_irq_count_share(d);
+		load_slice = local_irq_counts ? (d->load / local_irq_counts) : 1;
 		for_each_irq(d->interrupts, assign_load_slice, &load_slice);
 	}
 
-	if (d->parent) {
-		load_slice = total_irq_counts ? (d->load / total_irq_counts) : 1;
-		d->parent->load += (total_irq_counts - local_irq_counts) * load_slice;
-	}
+	if (d->parent)
+		d->parent->load += d->load;
 }
 
 void parse_proc_stat()
@@ -222,7 +217,9 @@ void parse_proc_stat()
  		 * For each cpu add the irq and softirq load and propagate that
  		 * all the way up the device tree
  		 */
-		cpu->load = irq_load + softirq_load;
+		if (cycle_count)
+			cpu->load = (irq_load + softirq_load) - (cpu->last_load);
+		cpu->last_load = (irq_load + softirq_load);
 	}
 
 	fclose(file);

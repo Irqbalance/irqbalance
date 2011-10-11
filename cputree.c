@@ -308,7 +308,6 @@ static void clear_irq_stats(struct irq_info *info, void *data __attribute__((unu
 
 static void clear_obj_stats(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	d->load = 0;
 	for_each_object(d->children, clear_obj_stats, NULL);
 	for_each_irq(d->interrupts, clear_irq_stats, NULL);
 }
@@ -318,7 +317,7 @@ static void clear_obj_stats(struct topo_obj *d, void *data __attribute__((unused
  * which level does how much work and the actual lists of interrupts 
  * assigned to each component
  */
-void clear_work_stats(void)
+void clear_work_stats()
 {
 	for_each_object(numa_nodes, clear_obj_stats, NULL);
 }

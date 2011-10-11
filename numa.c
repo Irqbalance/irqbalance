@@ -130,8 +130,10 @@ void add_package_to_node(struct topo_obj *p, int nodeid)
 
 	node = entry->data;
 
-	node->children = g_list_append(node->children, p);
-	p->parent = node;
+	if (!p->parent) {
+		node->children = g_list_append(node->children, p);
+		p->parent = node;
+	}
 }
 
 void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)))

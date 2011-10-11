@@ -220,12 +220,16 @@ int main(int argc, char** argv)
 
 	for_each_irq(NULL, force_rebalance_irq, NULL);
 
+	parse_proc_interrupts();
+	parse_proc_stat();
+
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);
 		if (debug_mode)
 			printf("\n\n\n-----------------------------------------------------------------------------\n");
 
 
+		clear_work_stats();
 		parse_proc_interrupts();
 		parse_proc_stat();
 
@@ -242,6 +246,12 @@ int main(int argc, char** argv)
 			free_object_tree();
 			build_object_tree();
 			for_each_irq(NULL, force_rebalance_irq, NULL);
+			parse_proc_interrupts();
+			parse_proc_stat();
+			sleep_approx(SLEEP_INTERVAL);
+			clear_work_stats();
+			parse_proc_interrupts();
+			parse_proc_stat();
 			cycle_count=0;
 		} 
 
@@ -255,7 +265,6 @@ int main(int argc, char** argv)
 			dump_tree();
 		if (one_shot_mode)
 			break;
-		clear_work_stats();
 		cycle_count++;
 
 	}
