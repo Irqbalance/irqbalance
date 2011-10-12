@@ -38,13 +38,11 @@
 int one_shot_mode;
 int debug_mode;
 int numa_avail;
-
 int need_cpu_rescan;
-
 extern cpumask_t banned_cpus;
-
-static int counter;
-
+enum hp_e hint_policy = HINT_POLICY_SUBSET;
+unsigned long power_thresh = ULONG_MAX;
+unsigned long long cycle_count = 0;
 
 void sleep_approx(int seconds)
 {
@@ -64,12 +62,15 @@ void sleep_approx(int seconds)
 struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
 	{"debug", 0, NULL, 'd'},
+	{"hintpolicy", 1, NULL, 'h'},
+	{"powerthresh", 1, NULL, 'p'},
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
-	printf("irqbalance [--oneshot | -o] [--debug | -d]");
+	printf("irqbalance [--oneshot | -o] [--debug | -d] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	printf("	[--powerthresh= | -p <off> | <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -78,7 +79,7 @@ static void parse_command_line(int argc, char **argv)
 	int longind;
 
 	while ((opt = getopt_long(argc, argv,
-		"",
+		"odh:p:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -88,6 +89,29 @@ static void parse_command_line(int argc, char **argv)
 			case 'd':
 				debug_mode=1;
 				break;
+			case 'h':
+				if (!strncmp(optarg, "exact", strlen(optarg)))
+					hint_policy = HINT_POLICY_EXACT;
+				else if (!strncmp(optarg, "subset", strlen(optarg)))
+					hint_policy = HINT_POLICY_SUBSET;
+				else if (!strncmp(optarg, "ignore", strlen(optarg)))
+					hint_policy = HINT_POLICY_IGNORE;
+				else {
+					usage();
+					exit(1);
+				}
+				break;
+			case 'p':
+				if (!strncmp(optarg, "off", strlen(optarg)))
+					power_thresh = ULONG_MAX;
+				else {
+					power_thresh = strtoull(optarg, NULL, 10);
+					if (power_thresh == ULONG_MAX) {
+						usage();
+						exit(1);
+					}
+				}
+				break;
 			case 'o':
 				one_shot_mode=1;
 				break;
@@ -95,6 +119,50 @@ static void parse_command_line(int argc, char **argv)
 	}
 }
 #endif
+
+/*
+ * This builds our object tree.  The Heirarchy is pretty straightforward
+ * At the top are numa_nodes
+ * All CPU packages belong to a single numa_node
+ * All Cache domains belong to a CPU package
+ * All CPU cores belong to a cache domain
+ *
+ * Objects are built in that order (top down)
+ *
+ * Object workload is the aggregate sum of the
+ * workload of the objects below it
+ */
+static void build_object_tree()
+{
+	build_numa_node_list();
+	parse_cpu_tree();
+	rebuild_irq_db();
+}
+
+static void free_object_tree()
+{
+	free_numa_node_list();
+	clear_cpu_tree();
+	free_irq_db();
+}
+
+static void dump_object_tree()
+{
+	for_each_object(numa_nodes, dump_numa_node_info, NULL);
+}
+
+static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	if (info->level == BALANCE_NONE)
+		return;
+
+	if (info->assigned_obj == NULL)
+		rebalance_irq_list = g_list_append(rebalance_irq_list, info);
+	else
+		migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+
+	info->assigned_obj = NULL;
+}
 
 int main(int argc, char** argv)
 {
@@ -125,9 +193,9 @@ int main(int argc, char** argv)
 	}
 
 
-	rebuild_irq_db();
-
-	parse_cpu_tree();
+	build_object_tree();
+	if (debug_mode)
+		dump_object_tree();
 
 
 	/* On single core UP systems irqbalance obviously has no work to do */
@@ -150,15 +218,10 @@ int main(int argc, char** argv)
 	capng_apply(CAPNG_SELECT_BOTH);
 #endif
 
+	for_each_irq(NULL, force_rebalance_irq, NULL);
+
 	parse_proc_interrupts();
-	sleep(SLEEP_INTERVAL/4);
-	reset_counts();
-	parse_proc_interrupts();
-	pci_numa_scan();
-	calculate_workload();
-	sort_irq_list();
-	if (debug_mode)
-		dump_workloads();
+	parse_proc_stat();
 
 	while (1) {
 		sleep_approx(SLEEP_INTERVAL);
@@ -166,8 +229,9 @@ int main(int argc, char** argv)
 			printf("\n\n\n-----------------------------------------------------------------------------\n");
 
 
-		check_power_mode();
+		clear_work_stats();
 		parse_proc_interrupts();
+		parse_proc_stat();
 
 		/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
 		if (need_cpu_rescan) {
@@ -179,25 +243,31 @@ int main(int argc, char** argv)
 			reset_counts();
 			clear_work_stats();
 
-			clear_cpu_tree();
-			parse_cpu_tree();
-		}
+			free_object_tree();
+			build_object_tree();
+			for_each_irq(NULL, force_rebalance_irq, NULL);
+			parse_proc_interrupts();
+			parse_proc_stat();
+			sleep_approx(SLEEP_INTERVAL);
+			clear_work_stats();
+			parse_proc_interrupts();
+			parse_proc_stat();
+			cycle_count=0;
+		} 
 
-		calculate_workload();
-
-		/* to cope with dynamic configurations we scan for new numa information
-		 * once every 5 minutes
-		 */
-		pci_numa_scan();
+		if (cycle_count)	
+			update_migration_status();
 
 		calculate_placement();
-		activate_mapping();
+		activate_mappings();
 	
 		if (debug_mode)
 			dump_tree();
 		if (one_shot_mode)
 			break;
-		counter++;
+		cycle_count++;
+
 	}
+	free_object_tree();
 	return EXIT_SUCCESS;
 }

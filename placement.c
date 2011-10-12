@@ -30,355 +30,167 @@
 
 int power_mode;
 
-extern GList *interrupts, *packages, *cache_domains, *cpus;
+GList *rebalance_irq_list;
 
-static uint64_t package_cost_func(struct interrupt *irq, struct package *package)
+struct obj_placement {
+		struct topo_obj *best;
+		struct topo_obj *least_irqs;
+		uint64_t best_cost;
+		struct irq_info *info;
+};
+
+static void find_best_object(struct topo_obj *d, void *data)
 {
-	int bonus = 0;
-	int maxcount;
-	int dist;
-	/* moving to a cold package/cache/etc gets you a 3000 penalty */
-	if (!cpus_intersects(irq->old_mask, package->mask))
-		bonus = CROSS_PACKAGE_PENALTY;
+	struct obj_placement *best = (struct obj_placement *)data;
+	uint64_t newload;
+	cpumask_t subset;
 
-	/* do a little numa affinity */
-	if (irq->node_num != package->node_num) {
-		if (irq->node_num >= 0 && package->node_num >= 0) {
-			dist = numa_distance(irq->node_num, package->node_num);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
+	/*
+ 	 * If the hint policy is subset, then we only want 
+ 	 * to consider objects that are within the irqs hint, but
+ 	 * only if that irq in fact has published a hint
+ 	 */
+	if (hint_policy == HINT_POLICY_SUBSET) {
+		if (!cpus_empty(best->info->affinity_hint)) {
+			cpus_and(subset, best->info->affinity_hint, d->mask);
+			if (cpus_empty(subset))
+				return;
 		}
 	}
 
-	/* but if the irq has had 0 interrupts for a while move it about more easily */
-	if (irq->workload==0)
-		bonus = bonus / 10;
+	if (d->powersave_mode)
+		return;
 
-	/* in power save mode, you better be on package 0, with overflow to the next package if really needed */
-	if (power_mode)
-		bonus += POWER_MODE_PACKAGE_THRESHOLD * package->number;
-
-	/* if we're out of whack in terms of per class counts.. just block (except in power mode) */
-	maxcount = (class_counts[irq->class] + package_count -1 ) / package_count;
-	if (package->class_count[irq->class]>=maxcount && !power_mode)
-		bonus += 300000;
-
-	/* if the package has no cpus in the allowed mask.. just block */
-	if (!cpus_intersects(irq->allowed_mask, package->mask))
-		bonus += 600000;
-
-	return irq->workload + bonus;
-}
-
-static uint64_t cache_domain_cost_func(struct interrupt *irq, struct cache_domain *cache_domain)
-{
-	int bonus = 0;
-	int dist;
-
-	/* moving to a cold cache gets you a 1500 penalty */
-	if (!cpus_intersects(irq->old_mask, cache_domain->mask))
-		bonus = CROSS_PACKAGE_PENALTY/2;
-
-	/* do a little numa affinity */
-	if (irq->node_num != cache_domain->node_num) {
-		if (irq->node_num >= 0 && cache_domain->node_num >= 0) {
-			dist = numa_distance(irq->node_num, cache_domain->node_num);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
-		}
+	newload = d->load;
+	if (newload < best->best_cost) {
+		best->best = d;
+		best->best_cost = newload;
+		best->least_irqs = NULL;
 	}
 
-	/* but if the irq has had 0 interrupts for a while move it about more easily */
-	if (irq->workload==0)
-		bonus = bonus / 10;
-
-
-	/* pay 6000 for each previous interrupt of the same class */
-	bonus += CLASS_VIOLATION_PENTALTY * cache_domain->class_count[irq->class];
-
-	/* try to avoid having a lot of MSI interrupt (globally, no by devide id) on
-	 * cache domain */
-	if (irq->msi == 1) 
-		bonus += MSI_CACHE_PENALTY * cache_domain->class_count[irq->class];
-
-	/* if the cache domain has no cpus in the allowed mask.. just block */
-	if (!cpus_intersects(irq->allowed_mask, cache_domain->mask))
-		bonus += 600000;
-
-	return irq->workload + bonus;
-}
-
-static uint64_t cpu_cost_func(struct interrupt *irq, struct cpu_core *cpu)
-{
-	int bonus = 0;
-	int dist;
-
-	/* moving to a colder core gets you a 1000 penalty */
-	if (!cpus_intersects(irq->old_mask, cpu->mask))
-		bonus = CROSS_PACKAGE_PENALTY/3;
-
-	/* do a little numa affinity */
-	if (irq->node_num != cpu->node_num) {
-		if (irq->node_num >= 0 && cpu->node_num >= 0) {
-			dist = numa_distance(irq->node_num, cpu->node_num);
-			/* moving to a distant numa node results into penalty */
-			bonus += (dist > 10) ? NUMA_PENALTY * (dist-10) : 0;
-		}
-	}
-
-	/* but if the irq has had 0 interrupts for a while move it about more easily */
-	if (irq->workload==0)
-		bonus = bonus / 10;
-
-	/* 
-	 * since some chipsets only place at the first cpu, give a tiny preference to non-first
-	 * cpus for specifically placed interrupts 
-	 */
-	if (first_cpu(cpu->cache_mask)==cpu->number)
-		bonus++;
-
-	/* pay 6000 for each previous interrupt of the same class */
-	bonus += CLASS_VIOLATION_PENTALTY * cpu->class_count[irq->class];
-
-	/* if the core  has no cpus in the allowed mask.. just block */
-	if (!cpus_intersects(irq->allowed_mask, cpu->mask))
-		bonus += 600000;
-
-	return irq->workload + bonus;
-}
-
-
-static void place_cache_domain(struct package *package)
-{
-	GList *iter, *next;
-	GList *pkg;
-	struct interrupt *irq;
-	struct cache_domain *cache_domain;
-
-
-	iter = g_list_first(package->interrupts);
-	while (iter) {
-		struct cache_domain *best = NULL;
-		uint64_t best_cost = INT_MAX;
-		irq = iter->data;
-
-		if (irq->balance_level <= BALANCE_PACKAGE) {
-			iter = g_list_next(iter);
-			continue;
-		}
-		pkg = g_list_first(package->cache_domains);
-		while (pkg) {
-			uint64_t newload;
-
-			cache_domain = pkg->data;
-			newload = cache_domain->workload + cache_domain_cost_func(irq, cache_domain);
-			if (newload < best_cost)  {
-				best = cache_domain;
-				best_cost = newload;
-			}
-
-			pkg = g_list_next(pkg);
-		}
-		if (best) {
-			next = g_list_next(iter);
-			package->interrupts = g_list_delete_link(package->interrupts, iter);
-			
-			best->workload += irq->workload + 1;
-			best->interrupts=g_list_append(best->interrupts, irq);
-			best->class_count[irq->class]++;
-			irq->mask = best->mask;
-			iter = next;
-		} else
-			iter = g_list_next(iter);
+	if (newload == best->best_cost) {
+		if (g_list_length(d->interrupts) < g_list_length(best->best->interrupts))
+			best->least_irqs = d;
 	}
 }
 
-
-static void place_core(struct cache_domain *cache_domain)
+static void find_best_object_for_irq(struct irq_info *info, void *data)
 {
-	GList *iter, *next;
-	GList *pkg;
-	struct interrupt *irq;
-	struct cpu_core *cpu;
+	struct obj_placement place;
+	struct topo_obj *d = data;
+	struct topo_obj *asign;
 
+	if (!info->moved)
+		return;
 
-	iter = g_list_first(cache_domain->interrupts);
-	while (iter) {
-		struct cpu_core *best = NULL;
-		uint64_t best_cost = INT_MAX;
-		irq = iter->data;
+	switch (d->obj_type) {
+	case OBJ_TYPE_NODE:
+		if (info->level == BALANCE_NONE)
+			return;
+		break;
 
-		/* if the irq isn't per-core policy and is not very busy, leave it at cache domain level */
-		if (irq->balance_level <= BALANCE_CACHE && irq->workload < CORE_SPECIFIC_THRESHOLD && !one_shot_mode) {
-			iter = g_list_next(iter);
-			continue;
-		}
-		pkg = g_list_first(cache_domain->cpu_cores);
-		while (pkg) {
-			uint64_t newload;
+	case OBJ_TYPE_PACKAGE:
+		if (info->level == BALANCE_PACKAGE)
+			return;
+		break;
 
-			cpu = pkg->data;
-			newload = cpu->workload + cpu_cost_func(irq, cpu);
-			if (newload < best_cost)  {
-				best = cpu;
-				best_cost = newload;
-			}
+	case OBJ_TYPE_CACHE:
+		if (info->level == BALANCE_CACHE)
+			return;
+		break;
 
-			pkg = g_list_next(pkg);
-		}
-		if (best) {
-			next = g_list_next(iter);
-			cache_domain->interrupts = g_list_delete_link(cache_domain->interrupts, iter);
-			
-			best->workload += irq->workload + 1;
-			best->interrupts=g_list_append(best->interrupts, irq);
-			best->class_count[irq->class]++;
-			irq->mask = best->mask;
-			iter = next;
-		} else
-			iter = g_list_next(iter);
+	case OBJ_TYPE_CPU:
+		if (info->level == BALANCE_CORE)
+			return;
+		break;
+	}
+
+	place.info = info;
+	place.best = NULL;
+	place.least_irqs = NULL;
+	place.best_cost = INT_MAX;
+
+	for_each_object(d->children, find_best_object, &place);
+
+	asign = place.least_irqs ? place.least_irqs : place.best;
+
+	if (asign) {
+		migrate_irq(&d->interrupts, &asign->interrupts, info);
+		info->assigned_obj = asign;
+		asign->load += info->load;
 	}
 }
 
-
-static void place_packages(GList *list)
+static void place_irq_in_object(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	GList *iter;
-	GList *pkg;
-	struct interrupt *irq;
-	struct package *package;
+	if (g_list_length(d->interrupts) > 0)
+		for_each_irq(d->interrupts, find_best_object_for_irq, d);
+}
 
+static void place_irq_in_node(struct irq_info *info, void *data __attribute__((unused)))
+{
+	struct obj_placement place;
+	struct topo_obj *asign;
 
-	iter = g_list_first(list);
-	while (iter) {
-		struct package *best = NULL;
-		uint64_t best_cost = INT_MAX;
-		irq = iter->data;
-		if (irq->balance_level == BALANCE_NONE) {
-			iter = g_list_next(iter);
-			continue;
-		}
-		pkg = g_list_first(packages);
-		while (pkg) {
-			uint64_t newload;
+	if( info->level == BALANCE_NONE)
+		return;
 
-			package = pkg->data;
-			newload = package->workload + package_cost_func(irq, package);
-			if (newload < best_cost)  {
-				best = package;
-				best_cost = newload;
-			}
+	if (irq_numa_node(info)->number != -1) {
+		/*
+ 		 * This irq belongs to a device with a preferred numa node
+ 		 * put it on that node
+ 		 */
+		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->interrupts, info);
+		info->assigned_obj = irq_numa_node(info);
+		irq_numa_node(info)->load += info->load + 1;
+		return;
+	}
 
-			pkg = g_list_next(pkg);
-		}
-		if (best) {
-			best->workload += irq->workload + 1;
-			best->interrupts=g_list_append(best->interrupts, irq);
-			best->class_count[irq->class]++;
-			irq->mask = best->mask;
-		}
-		iter = g_list_next(iter);
+	place.best_cost = INT_MAX;
+	place.best = NULL;
+	place.least_irqs = NULL;
+	place.info = info;
+
+	for_each_object(numa_nodes, find_best_object, &place);
+
+	asign = place.least_irqs ? place.least_irqs : place.best;
+
+	if (asign) {
+		migrate_irq(&rebalance_irq_list, &asign->interrupts, info);
+		info->assigned_obj = asign;
+		asign->load += info->load;
 	}
 }
 
-
-static void place_affinity_hint(GList *list)
+static void validate_irq(struct irq_info *info, void *data)
 {
-	/* still need to balance best workload within the affinity_hint mask */
-	GList *iter;
-	struct interrupt *irq;
-
-	iter = g_list_first(list);
-	while (iter) {
-		irq = iter->data;
-		if (irq->balance_level == BALANCE_NONE) {
-			iter = g_list_next(iter);
-			continue;
-		}
-		if ((!cpus_empty(irq->node_mask)) &&
-		    (!cpus_equal(irq->mask, irq->node_mask)) &&
-		    (!__cpus_full(&irq->node_mask, num_possible_cpus()))) {
-			irq->old_mask = irq->mask;
-			irq->mask = irq->node_mask;
-		}
-
-		iter = g_list_next(iter);
-	}
+	if (info->assigned_obj != data)
+		printf("object validation error: irq %d is wrong, points to %p, should be %p\n",
+			info->irq, info->assigned_obj, data);
 }
 
-
-static void do_unroutables(void)
+static void validate_object(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	struct package *package;
-	struct cache_domain *cache_domain;
-	struct cpu_core *cpu;
-	struct interrupt *irq;
-	GList *iter, *inter;
-
-	inter = g_list_first(interrupts);
-	while (inter) {
-		irq = inter->data;
-		inter = g_list_next(inter);
-		if (irq->balance_level != BALANCE_NONE)
-			continue;
-
-		iter = g_list_first(packages);
-		while (iter) {
-			package = iter->data;
-			if (cpus_intersects(package->mask, irq->node_mask) ||
-			    cpus_intersects(package->mask, irq->mask))
-				package->workload += irq->workload;
-			iter = g_list_next(iter);
-		}
-
-		iter = g_list_first(cache_domains);
-		while (iter) {
-			cache_domain = iter->data;
-			if (cpus_intersects(cache_domain->mask, irq->node_mask)
-			    || cpus_intersects(cache_domain->mask, irq->mask))
-				cache_domain->workload += irq->workload;
-			iter = g_list_next(iter);
-		}
-		iter = g_list_first(cpus);
-		while (iter) {
-			cpu = iter->data;
-			if (cpus_intersects(cpu->mask, irq->node_mask) ||
-			    cpus_intersects(cpu->mask, irq->mask))
-				cpu->workload += irq->workload;
-			iter = g_list_next(iter);
-		}
-	}
+	if (d->interrupts)
+		for_each_irq(d->interrupts, validate_irq, d);
 }
 
+static void validate_object_tree_placement()
+{
+	for_each_object(packages, validate_object, NULL);	
+	for_each_object(cache_domains, validate_object, NULL);
+	for_each_object(cpus, validate_object, NULL);
+}
 
 void calculate_placement(void)
 {
-	struct package *package;
-	struct cache_domain *cache_domain;
-	GList *iter;
-	/* first clear old data */ 
-	clear_work_stats();
-	sort_irq_list();
-	do_unroutables();
-
-	place_packages(interrupts);
-	iter = g_list_first(packages);
-	while (iter) {
-		package = iter->data;
-		place_cache_domain(package);
-		iter = g_list_next(iter);
+	sort_irq_list(&rebalance_irq_list);
+	if (g_list_length(rebalance_irq_list) > 0) {
+		for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
+		for_each_object(numa_nodes, place_irq_in_object, NULL);
+		for_each_object(packages, place_irq_in_object, NULL);
+		for_each_object(cache_domains, place_irq_in_object, NULL);
 	}
-
-	iter = g_list_first(cache_domains);
-	while (iter) {
-		cache_domain = iter->data;
-		place_core(cache_domain);
-		iter = g_list_next(iter);
-	}
-	/*
-	 * if affinity_hint is populated on irq and is not set to
-	 * all CPUs (meaning it's initialized), honor that above
-	 * anything in the package locality/workload.
-	 */
-	place_affinity_hint(interrupts);
+	if (debug_mode)
+		validate_object_tree_placement();
 }

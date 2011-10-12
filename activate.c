@@ -32,30 +32,40 @@
 #include "irqbalance.h"
 
 
-void activate_mapping(void)
+static void activate_mapping(struct irq_info *info, void *data __attribute__((unused)))
 {
-	struct interrupt *irq;
-	GList *iter;
+	char buf[PATH_MAX];
+	FILE *file;
+	cpumask_t applied_mask;
 
-	iter = g_list_first(interrupts);
-	while (iter) {
-		irq = iter->data;
-		iter = g_list_next(iter);
+	/*
+ 	 * only activate mappings for irqs that have moved
+ 	 */
+	if (!info->moved)
+		return;
 
-		/* don't set the level if it's a NONE irq, or if there is
-		 * no change */
-		if (irq->balance_level != BALANCE_NONE && 
-			!cpus_equal(irq->mask, irq->old_mask)) {
-			char buf[PATH_MAX];
-			FILE *file;
-			sprintf(buf, "/proc/irq/%i/smp_affinity", irq->number);
-			file = fopen(buf, "w");
-			if (!file)
-				continue;
-			cpumask_scnprintf(buf, PATH_MAX, irq->mask);
-			fprintf(file,"%s", buf);
-			fclose(file);
-			irq->old_mask = irq->mask;
-		}
-	}
+	if (!info->assigned_obj)
+		return;
+
+
+	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
+	file = fopen(buf, "w");
+	if (!file)
+		return;
+
+	if ((hint_policy == HINT_POLICY_EXACT) &&
+	    (!cpus_empty(info->affinity_hint)))
+		applied_mask = info->affinity_hint;
+	else
+		applied_mask = info->assigned_obj->mask;
+
+	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
+	fprintf(file, "%s", buf);
+	fclose(file);
+	info->moved = 0; /*migration is done*/
+}
+
+void activate_mappings(void)
+{
+	for_each_irq(NULL, activate_mapping, NULL);
 }

@@ -33,24 +33,130 @@
 
 #include "irqbalance.h"
 
-void pci_numa_scan(void)
+#define SYSFS_NODE_PATH "/sys/devices/system/node"
+
+GList *numa_nodes = NULL;
+
+struct topo_obj unspecified_node = {
+	.load = 0,
+	.number = -1,
+	.obj_type = OBJ_TYPE_NODE,
+	.mask = CPU_MASK_ALL,
+	.interrupts = NULL,
+	.children = NULL,
+	.parent = NULL,
+	.obj_type_list = &numa_nodes,
+};
+
+static void add_one_node(const char *nodename)
 {
-	int irq = -1;
-	cpumask_t mask;
-	int node_num;
-	do {
-		int type;
-		irq = get_next_irq(irq);
-		if (irq == -1)
-			break;
+	char *path = alloca(strlen(SYSFS_NODE_PATH) + strlen(nodename) + 1);
+	struct topo_obj *new;
+	char *cpustr;
+	FILE *f;
 
-		mask = find_irq_cpumask_prop(irq, IRQ_LCPU_MASK);
-
-		node_num = find_irq_integer_prop(irq, IRQ_NUMA);
-
-		type = find_irq_integer_prop(irq, IRQ_CLASS);
-
-		add_interrupt_numa(irq, mask, node_num, type);
-		
-	} while (irq != -1);
+	if (!path)
+		return;
+	new = calloc(1, sizeof(struct topo_obj));
+	if (!new)
+		return;
+	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
+	f = fopen(path, "r");
+	if (ferror(f)) {
+		cpus_clear(new->mask);
+	} else {
+		fscanf(f, "%as", &cpustr);
+		if (!cpustr) {
+			cpus_clear(new->mask);
+		} else {
+			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
+			free(cpustr);
+		}
+	}
+	new->obj_type = OBJ_TYPE_NODE;	
+	new->number = strtoul(&nodename[4], NULL, 10);
+	new->obj_type_list = &numa_nodes;
+	numa_nodes = g_list_append(numa_nodes, new);
 }
+
+void build_numa_node_list(void)
+{
+	DIR *dir = opendir(SYSFS_NODE_PATH);
+	struct dirent *entry;
+
+	do {
+		entry = readdir(dir);
+		if (!entry)
+			break;
+		if ((entry->d_type == DT_DIR) && (strstr(entry->d_name, "node"))) {
+			add_one_node(entry->d_name);
+		}
+	} while (entry);
+}
+
+static void free_numa_node(gpointer data)
+{
+	free(data);
+}
+
+void free_numa_node_list(void)
+{
+	g_list_free_full(numa_nodes, free_numa_node);
+	numa_nodes = NULL;
+}
+
+static gint compare_node(gconstpointer a, gconstpointer b)
+{
+	const struct topo_obj *ai = a;
+	const struct topo_obj *bi = b;
+
+	return (ai->number == bi->number) ? 0 : 1;
+}
+
+void add_package_to_node(struct topo_obj *p, int nodeid)
+{
+	struct topo_obj find, *node;
+	find.number = nodeid;
+	GList *entry;
+
+	find.number = nodeid;
+	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+
+	if (!entry) {
+		if (debug_mode)
+			printf("Could not find numa node for node id %d\n", nodeid);
+		return;
+	}
+
+	node = entry->data;
+
+	if (!p->parent) {
+		node->children = g_list_append(node->children, p);
+		p->parent = node;
+	}
+}
+
+void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)))
+{
+	char buffer[4096];
+
+	printf("NUMA NODE NUMBER: %d\n", d->number);
+	cpumask_scnprintf(buffer, 4096, d->mask); 
+	printf("LOCAL CPU MASK: %s\n", buffer);
+	printf("\n");
+}
+
+struct topo_obj *get_numa_node(int nodeid)
+{
+	struct topo_obj find;
+	GList *entry;
+
+	if (nodeid == -1)
+		return &unspecified_node;
+
+	find.number = nodeid;
+
+	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+	return entry ? entry->data : NULL;
+}
+

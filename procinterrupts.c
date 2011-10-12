@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <syslog.h>
+#include <ctype.h>
 
 #include "cpumask.h"
 #include "irqbalance.h"
@@ -39,7 +40,6 @@ void parse_proc_interrupts(void)
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
-	int int_type;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -48,6 +48,7 @@ void parse_proc_interrupts(void)
 	/* first line is the header we don't need; nuke it */
 	if (getline(&line, &size, file)==0) {
 		free(line);
+		fclose(file);
 		return;
 	}
 
@@ -56,6 +57,7 @@ void parse_proc_interrupts(void)
 		int	 number;
 		uint64_t count;
 		char *c, *c2;
+		struct irq_info *info;
 
 		if (getline(&line, &size, file)==0)
 			break;
@@ -65,7 +67,11 @@ void parse_proc_interrupts(void)
 				proc_int_has_msi = 1;
 
 		/* lines with letters in front are special, like NMI count. Ignore */
-		if (!(line[0]==' ' || (line[0]>='0' && line[0]<='9')))
+		c = line;
+		while (isblank(*(c)))
+			c++;
+			
+		if (!(*c>='0' && *c<='9'))
 			break;
 		c = strchr(line, ':');
 		if (!c)
@@ -73,6 +79,10 @@ void parse_proc_interrupts(void)
 		*c = 0;
 		c++;
 		number = strtoul(line, NULL, 10);
+		info = get_irq_info(number);
+		if (!info)
+			info = add_misc_irq(number);
+
 		count = 0;
 		cpunr = 0;
 
@@ -88,18 +98,13 @@ void parse_proc_interrupts(void)
 		}
 		if (cpunr != core_count) 
 			need_cpu_rescan = 1;
-		
-		set_interrupt_count(number, count);
+
+		info->last_irq_count = info->irq_count;		
+		info->irq_count = count;
 
 		/* is interrupt MSI based? */
-		int_type = find_irq_integer_prop(number, IRQ_TYPE);
-		if ((int_type == IRQ_TYPE_MSI) || (int_type == IRQ_TYPE_MSIX)) {
+		if ((info->type == IRQ_TYPE_MSI) || (info->type == IRQ_TYPE_MSIX))
 			msi_found_in_sysfs = 1;
-			/* Set numa node for irq if it was MSI */
-			if (debug_mode)
-				printf("Set MSI interrupt for %d\n", number);
-			set_msi_interrupt_numa(number);
-		}
 	}		
 	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {
 		syslog(LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");
@@ -112,4 +117,139 @@ void parse_proc_interrupts(void)
 	}
 	fclose(file);
 	free(line);
+}
+
+
+static void accumulate_irq_count(struct irq_info *info, void *data)
+{
+	uint64_t *acc = data;
+
+	*acc += (info->irq_count - info->last_irq_count);
+}
+
+static void assign_load_slice(struct irq_info *info, void *data)
+{
+	uint64_t *load_slice = data;
+	info->load = (info->irq_count - info->last_irq_count) * *load_slice;
+
+	/*
+ 	 * Every IRQ has at least a load of 1
+ 	 */
+	if (!info->load)
+		info->load++;
+}
+
+/*
+ * Recursive helper to estimate the number of irqs shared between 
+ * multiple topology objects that was handled by this particular object
+ */
+static uint64_t get_parent_branch_irq_count_share(struct topo_obj *d)
+{
+	uint64_t total_irq_count = 0;
+
+	if (d->parent) {
+		total_irq_count = get_parent_branch_irq_count_share(d->parent);
+		total_irq_count /= g_list_length(*d->obj_type_list);
+	}
+
+	if (g_list_length(d->interrupts) > 0)
+		for_each_irq(d->interrupts, accumulate_irq_count, &total_irq_count);
+
+	return total_irq_count;
+}
+
+static void compute_irq_branch_load_share(struct topo_obj *d, void *data __attribute__((unused)))
+{
+	uint64_t local_irq_counts = 0;
+	uint64_t load_slice;
+	int	load_divisor = g_list_length(d->children);
+
+	d->load /= (load_divisor ? load_divisor : 1);
+
+	if (g_list_length(d->interrupts) > 0) {
+		local_irq_counts = get_parent_branch_irq_count_share(d);
+		load_slice = local_irq_counts ? (d->load / local_irq_counts) : 1;
+		for_each_irq(d->interrupts, assign_load_slice, &load_slice);
+	}
+
+	if (d->parent)
+		d->parent->load += d->load;
+}
+
+void parse_proc_stat()
+{
+	FILE *file;
+	char *line = NULL;
+	size_t size = 0;
+	int cpunr, rc, cpucount;
+	struct topo_obj *cpu;
+	int irq_load, softirq_load;
+
+	file = fopen("/proc/stat", "r");
+	if (!file) {
+		syslog(LOG_WARNING, "WARNING cant open /proc/stat.  balacing is broken\n");
+		return;
+	}
+
+	/* first line is the header we don't need; nuke it */
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		syslog(LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
+		fclose(file);
+		return;
+        }
+
+	cpucount = 0;
+	while (!feof(file)) {
+		if (getline(&line, &size, file)==0)
+                        break;
+
+		if (!strstr(line, "cpu"))
+			break;
+
+		cpunr = strtoul(&line[3], NULL, 10);
+
+		rc = sscanf(line, "%*s %*d %*d %*d %*d %*d %d %d", &irq_load, &softirq_load);
+		if (rc < 2)
+			break;	
+
+		cpu = find_cpu_core(cpunr);
+
+		if (!cpu)
+			break;
+
+		cpucount++;
+
+		/*
+ 		 * For each cpu add the irq and softirq load and propagate that
+ 		 * all the way up the device tree
+ 		 */
+		if (cycle_count) {
+			cpu->load = (irq_load + softirq_load) - (cpu->last_load);
+			/*
+			 * the [soft]irq_load values are in jiffies, which are
+			 * units of 10ms, multiply by 1000 to convert that to
+			 * 1/10 milliseconds.  This give us a better integer
+			 * distribution of load between irqs
+			 */
+			cpu->load *= 1000;
+		}
+		cpu->last_load = (irq_load + softirq_load);
+	}
+
+	fclose(file);
+	if (cpucount != get_cpu_count()) {
+		syslog(LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
+		return;
+	}
+
+	/*
+ 	 * Now that we have load for each cpu attribute a fair share of the load
+ 	 * to each irq on that cpu
+ 	 */
+	for_each_object(cpus, compute_irq_branch_load_share, NULL);
+	for_each_object(cache_domains, compute_irq_branch_load_share, NULL);
+	for_each_object(packages, compute_irq_branch_load_share, NULL);
+	for_each_object(numa_nodes, compute_irq_branch_load_share, NULL);
+
 }

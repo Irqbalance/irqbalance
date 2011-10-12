@@ -26,89 +26,39 @@
 #define IRQ_TYPE_MSI	1
 #define IRQ_TYPE_MSIX	2
 
-
-/*
- * IRQ properties
- */
-enum irq_prop {
-	IRQ_CLASS = 0,
-	IRQ_TYPE,
-	IRQ_NUMA,
-	IRQ_LCPU_MASK,
-	IRQ_MAX_PROPERTY
+enum obj_type_e {
+	OBJ_TYPE_CPU,
+	OBJ_TYPE_CACHE,
+	OBJ_TYPE_PACKAGE,
+	OBJ_TYPE_NODE
 };
 
-struct package {
-	uint64_t	workload;
-	int	number;
-
-	cpumask_t	mask;
-	int	node_num;
-
-	int class_count[7];
-
-	GList	*cache_domains;
-	GList 	*interrupts;
+struct topo_obj {
+	uint64_t load;
+	uint64_t last_load;
+	enum obj_type_e obj_type;
+	int number;
+	int powersave_mode;
+	cpumask_t mask;
+	GList *interrupts;
+	struct topo_obj *parent;
+	GList *children;
+	GList **obj_type_list;
 };
 
-struct cache_domain {
-	uint64_t	workload;
-	int	number;
-
-	int marker;
-	int	node_num;
-
-	cpumask_t	mask;
-
-	cpumask_t	package_mask;
-
-	int class_count[7];
-
-	GList	*cpu_cores;
-	GList 	*interrupts;
+struct irq_info {
+        int irq;
+        int class;
+        int type;
+	int level;
+        struct topo_obj *numa_node;
+        cpumask_t cpumask;
+        cpumask_t affinity_hint;
+        uint64_t irq_count;
+        uint64_t last_irq_count;
+	uint64_t load;
+        int moved;
+        struct topo_obj *assigned_obj;
 };
-
-
-struct cpu_core {
-	uint64_t	workload;
-	int	number;
-
-	int	marker;
-	int	node_num;
-
-	int class_count[7];
-
-	cpumask_t	package_mask;
-	cpumask_t	cache_mask;
-	cpumask_t	mask;
-
-	GList 	*interrupts;
-};
-
-struct interrupt {
-	uint64_t	workload;
-
-	int	balance_level;
-
-	int	number;
-	int	class;
-	int	node_num;
-	int	msi;
-
-	uint64_t	count;
-	uint64_t	old_count;
-	uint64_t	extra;
-
-	cpumask_t	mask;
-	cpumask_t	old_mask;
-	
-
-	cpumask_t	numa_mask;
-	cpumask_t	allowed_mask;
-
-	/* user/driver provided for smarter balancing */
-	cpumask_t	node_mask;
-};
-
 
 #endif

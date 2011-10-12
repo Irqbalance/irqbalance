@@ -25,8 +25,6 @@ int map_class_to_level[7] =
 { BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
 
-int class_counts[7];
-
 #define MAX_CLASS 0x12
 /*
  * Class codes lifted from pci spec, appendix D.
@@ -56,35 +54,6 @@ static short class_codes[MAX_CLASS] = {
 static GList *interrupts_db;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
-union property {
-	int int_val;
-	cpumask_t mask_val;
-};
-
-enum irq_type {
-	INT_TYPE = 0,
-	CPUMASK_TYPE,
-};
-
-struct irq_property {
-	enum irq_type itype;
-	union property iproperty;
-};
-#define iint_val iproperty.int_val
-#define imask_val iproperty.mask_val
-
-struct irq_info {
-	int irq;
-	struct irq_property property[IRQ_MAX_PROPERTY];
-};
-
-static void init_new_irq(struct irq_info *new)
-{
-	new->property[IRQ_CLASS].itype = INT_TYPE;
-	new->property[IRQ_TYPE].itype = INT_TYPE;
-	new->property[IRQ_NUMA].itype = INT_TYPE;
-	new->property[IRQ_LCPU_MASK].itype = CPUMASK_TYPE;
-}
 
 static gint compare_ints(gconstpointer a, gconstpointer b)
 {
@@ -92,11 +61,6 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	const struct irq_info *bi = b;
 
 	return ai->irq - bi->irq;
-}
-
-static void free_int(gpointer data)
-{
-	free(data);
 }
 
 /*
@@ -126,13 +90,12 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 		return NULL;
 	}
 
-	new = malloc(sizeof(struct irq_info));
+	new = calloc(sizeof(struct irq_info), 1);
 	if (!new)
 		return NULL;
-	init_new_irq(new);
 
 	new->irq = irq;
-	new->property[IRQ_CLASS].iint_val = IRQ_OTHER;
+	new->class = IRQ_OTHER;
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
@@ -159,7 +122,9 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 	if (class >= MAX_CLASS)
 		goto get_numa_node;
 
-	new->property[IRQ_CLASS].iint_val = class_codes[class];
+	new->class = class_codes[class];
+	new->level = map_class_to_level[class_codes[class]];
+
 get_numa_node:
 	numa_node = -1;
 	sprintf(path, "%s/numa_node", devpath);
@@ -171,24 +136,39 @@ get_numa_node:
 	fclose(fd);
 
 assign_node:
-	new->property[IRQ_NUMA].iint_val = numa_node;
+	new->numa_node = get_numa_node(numa_node);
 
 	sprintf(path, "%s/local_cpus", devpath);
 	fd = fopen(path, "r");
 	if (!fd) {
-		cpus_setall(new->property[IRQ_LCPU_MASK].imask_val);
-		goto out;
+		cpus_setall(new->cpumask);
+		goto assign_affinity_hint;
 	}
 	lcpu_mask = NULL;
 	rc = fscanf(fd, "%as", &lcpu_mask);
 	fclose(fd);
-	if (!lcpu_mask) {
-		cpus_setall(new->property[IRQ_LCPU_MASK].imask_val);
+	if (!lcpu_mask || !rc) {
+		cpus_setall(new->cpumask);
 	} else {
 		cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
-				   new->property[IRQ_LCPU_MASK].imask_val);
-		free(lcpu_mask);
+				   new->cpumask);
 	}
+	free(lcpu_mask);
+
+assign_affinity_hint:
+	cpus_clear(new->affinity_hint);
+	sprintf(path, "/proc/irq/%d/affinity_hint", irq);
+	fd = fopen(path, "r");
+	if (!fd)
+		goto out;
+	lcpu_mask = NULL;
+	rc = fscanf(fd, "%as", &lcpu_mask);
+	fclose(fd);
+	if (!lcpu_mask)
+		goto out;
+	cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
+			   new->affinity_hint);
+	free(lcpu_mask);
 out:
 	if (debug_mode)
 		printf("Adding IRQ %d to database\n", irq);
@@ -226,7 +206,7 @@ static void build_one_dev_entry(const char *dirname)
 				new = add_one_irq_to_db(path, irqnum);
 				if (!new)
 					continue;
-				new->property[IRQ_TYPE].iint_val = IRQ_TYPE_MSIX;
+				new->type = IRQ_TYPE_MSIX;
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -248,20 +228,32 @@ static void build_one_dev_entry(const char *dirname)
 		new = add_one_irq_to_db(path, irqnum);
 		if (!new)
 			goto done;
-		new->property[IRQ_TYPE].iint_val = IRQ_TYPE_LEGACY;
+		new->type = IRQ_TYPE_LEGACY;
 	}
+
 done:
 	fclose(fd);
 	return;
 }
 
+static void free_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	free(info);
+}
+
+void free_irq_db(void)
+{
+	for_each_irq(NULL, free_irq, NULL);
+	g_list_free(interrupts_db);
+	interrupts_db = NULL;
+}
 
 void rebuild_irq_db(void)
 {
 	DIR *devdir = opendir(SYSDEV_DIR);
 	struct dirent *entry;
 
-	g_list_free_full(interrupts_db, free_int);
+	free_irq_db();
 		
 	if (!devdir)
 		return;
@@ -278,83 +270,80 @@ void rebuild_irq_db(void)
 	closedir(devdir);
 }
 
-static GList *add_misc_irq(int irq)
+struct irq_info *add_misc_irq(int irq)
 {
-	struct irq_info *new, find;
+	struct irq_info *new;
 
-	new = malloc(sizeof(struct irq_info));
+	new = calloc(sizeof(struct irq_info), 1);
 	if (!new)
 		return NULL;
-	init_new_irq(new);
 
 	new->irq = irq;
-	new->property[IRQ_TYPE].iint_val = IRQ_TYPE_LEGACY;
-	new->property[IRQ_CLASS].iint_val = IRQ_OTHER;
-	new->property[IRQ_NUMA].iint_val = -1;
+	new->type = IRQ_TYPE_LEGACY;
+	new->class = IRQ_OTHER;
+	new->numa_node = get_numa_node(0);
 	interrupts_db = g_list_append(interrupts_db, new);
-	find.irq = irq;
-	return g_list_find_custom(interrupts_db, &find, compare_ints);	
+	return new;
 }
 
-int find_irq_integer_prop(int irq, enum irq_prop prop)
+void for_each_irq(GList *list, void (*cb)(struct irq_info *info, void *data), void *data)
 {
-	GList *entry;
-	struct irq_info find, *result;
-	
-	find.irq = irq;
+	GList *entry = g_list_first(list ? list : interrupts_db);
+	GList *next;
 
-	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
-
-	if (!entry) {
-		if (debug_mode)
-			printf("No entry for irq %d in the irq database, adding default entry\n", irq);
-		entry = add_misc_irq(irq);
+	while (entry) {
+		next = g_list_next(entry);
+		cb(entry->data, data);
+		entry = next;
 	}
-
-	result = entry->data;
-	assert(result->property[prop].itype == INT_TYPE);
-	return result->property[prop].iint_val;
 }
 
-cpumask_t find_irq_cpumask_prop(int irq, enum irq_prop prop)
+struct irq_info *get_irq_info(int irq)
 {
 	GList *entry;
-	struct irq_info find, *result;
-	
-	find.irq = irq;
-
-	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
-
-	if (!entry) {
-		if (debug_mode)
-			printf("No entry for irq %d in the irq database, adding default entry\n", irq);
-		entry = add_misc_irq(irq);
-	}
-
-	result = entry->data;
-	assert(result->property[prop].itype == CPUMASK_TYPE);
-	return result->property[prop].imask_val;
-}
-
-int get_next_irq(int irq)
-{
-	GList *entry;
-	struct irq_info *irqp, find;
-
-	if (irq == -1) {
-		entry = g_list_first(interrupts_db);
-		irqp = entry->data;
-		return irqp->irq;
-	}
+	struct irq_info find;
 
 	find.irq = irq;
 	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
-	if (!entry)
+	return entry ? entry->data : NULL;
+}
+
+void migrate_irq(GList **from, GList **to, struct irq_info *info)
+{
+	GList *entry;
+	struct irq_info find, *tmp;;
+
+	find.irq = info->irq;
+	entry = g_list_find_custom(*from, &find, compare_ints);
+	tmp = entry->data;
+	*from = g_list_delete_link(*from, entry);
+
+
+	*to = g_list_append(*to, tmp);
+	info->moved = 1;
+}
+
+static gint sort_irqs(gconstpointer A, gconstpointer B)
+{
+        struct irq_info *a, *b;
+        a = (struct irq_info*)A;
+        b = (struct irq_info*)B;
+
+	if (a->class < b->class)
+		return 1;
+	if (a->class > b->class)
 		return -1;
-
-	entry = g_list_next(entry);
-	if (!entry)
+	if (a->load < b->load)
+		return 1;
+	if (a->load > b->load)
 		return -1;
-	irqp= entry->data;
-	return irqp->irq;
+	if (a<b)
+		return 1;
+        return -1;
+
+}
+
+void sort_irq_list(GList **list)
+{
+	*list = g_list_sort(*list, sort_irqs);
 }

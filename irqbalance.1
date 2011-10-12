@@ -41,6 +41,19 @@ Causes irqbalance to be run once, after which the daemon exits
 .B --debug
 Causes irqbalance to run in the foreground and extra debug information to be printed
 
+.TP
+.B --hintpolicy=[exact | subset | ignore]
+Set the policy for how irq kernel affinity hinting is treated.  Can be one of:
+.P
+.I exact
+irq affinity hint is applied unilaterally and never violated
+.P
+.I subset
+irq is balanced, but the assigned object will be a subset of the affintiy hint
+.P
+.I ignore
+irq affinity hint value is completely ignored
+
 .SH "ENVIRONMENT VARIABLES"
 .TP
 .B IRQBALANCE_ONESHOT

@@ -29,285 +29,183 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
+#include <math.h>
 
 #include "types.h"
 #include "irqbalance.h"
 
-GList *interrupts;
 
 
+struct load_balance_info {
+	unsigned long long int total_load;
+	unsigned long long avg_load;
+	int load_sources;
+	unsigned long long int deviations;
+	long double std_deviation;
+	unsigned int num_within;
+	unsigned int num_over;
+	unsigned int num_under;
+	struct topo_obj *powersave;
+};
 
-void get_affinity_hint(struct interrupt *irq, int number)
+static void gather_load_stats(struct topo_obj *obj, void *data)
 {
-	char buf[PATH_MAX];
-	cpumask_t tempmask;
-	char *line = NULL;
-	size_t size = 0;
-	FILE *file;
-	sprintf(buf, "/proc/irq/%i/affinity_hint", number);
-	file = fopen(buf, "r");
-	if (!file)
-		return;
-	if (getline(&line, &size, file)==0) {
-		free(line);
-		fclose(file);
-		return;
-	}
-	cpumask_parse_user(line, strlen(line), tempmask);
-	if (!__cpus_full(&tempmask, num_possible_cpus()))
-		irq->node_mask = tempmask;
-	fclose(file);
-	free(line);
+	struct load_balance_info *info = data;
+
+	info->total_load += obj->load;
+	info->load_sources += 1;
 }
 
-/*
- * This function classifies and reads various things from /proc about a specific irq 
- */
-static void investigate(struct interrupt *irq, int number)
+static void compute_deviations(struct topo_obj *obj, void *data)
 {
-	DIR *dir;
-	struct dirent *entry;
-	char *c, *c2;
-	int nr , count = 0, can_set = 1;
-	char buf[PATH_MAX];
-	sprintf(buf, "/proc/irq/%i", number);
-	dir = opendir(buf);
-	do {
-		entry = readdir(dir);
-		if (!entry)
-			break;
-		if (strcmp(entry->d_name,"smp_affinity")==0) {
-			char *line = NULL;
-			size_t size = 0;
-			FILE *file;
-			sprintf(buf, "/proc/irq/%i/smp_affinity", number);
-			file = fopen(buf, "r+");
-			if (!file)
-				continue;
-			if (getline(&line, &size, file)==0) {
-				free(line);
-				fclose(file);
-				continue;
-			}
-			cpumask_parse_user(line, strlen(line), irq->mask);
-			/*
-			 * Check that we can write the affinity, if
-			 * not take it out of the list.
-			 */
-			fputs(line, file);
-			if (fclose(file) && errno == EIO)
-				can_set = 0;
-			free(line);
-		} else if (strcmp(entry->d_name,"allowed_affinity")==0) {
-			char *line = NULL;
-			size_t size = 0;
-			FILE *file;
-			sprintf(buf, "/proc/irq/%i/allowed_affinity", number);
-			file = fopen(buf, "r");
-			if (!file)
-				continue;
-			if (getline(&line, &size, file)==0) {
-				free(line);
-				fclose(file);
-				continue;
-			}
-			cpumask_parse_user(line, strlen(line), irq->allowed_mask);
-			fclose(file);
-			free(line);
-		} else if (strcmp(entry->d_name,"affinity_hint")==0) {
-			get_affinity_hint(irq, number);
-		} else {
-			irq->class = find_irq_integer_prop(irq->number, IRQ_CLASS);
-		}
+	struct load_balance_info *info = data;
+	unsigned long long int deviation;
 
-	} while (entry);
-	closedir(dir);	
-	irq->balance_level = map_class_to_level[irq->class];
+	deviation = (obj->load > info->avg_load) ?
+		obj->load - info->avg_load :
+		info->avg_load - obj->load;
 
-	for (nr = 0; nr < NR_CPUS; nr++)
-		if (cpu_isset(nr, irq->allowed_mask))
-			count++;
-
-	/* if there is no choice in the allowed mask, don't bother to balance */
-	if ((count<2) || (can_set == 0))
-		 irq->balance_level = BALANCE_NONE;
-		
-
-	/* next, check the IRQBALANCE_BANNED_INTERRUPTS env variable for blacklisted irqs */
-	c = c2 = getenv("IRQBALANCE_BANNED_INTERRUPTS");
-	if (!c)
-		return;
-
-	do {
-		c = c2;
-		nr = strtoul(c, &c2, 10);
-		if (c!=c2 && nr == number)
-			irq->balance_level = BALANCE_NONE;
-	} while (c!=c2 && c2!=NULL);
+	info->deviations += (deviation * deviation);
 }
 
-/* Set numa node number for MSI interrupt;
- * Assumes existing irq metadata
- */
-void set_msi_interrupt_numa(int number)
+static void move_candidate_irqs(struct irq_info *info, void *data)
 {
-	GList *item;
-	struct interrupt *irq;
-	int node;
+	int *remaining_deviation = (int *)data;
 
-	node = find_irq_integer_prop(number, IRQ_NUMA);
-	if (node < 0)
-		return;
-
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-
-		if (irq->number == number) {
-			irq->node_num = node;
-			irq->msi = 1;
+	/* never move an irq that has an afinity hint when 
+ 	 * hint_policy is HINT_POLICY_EXACT 
+ 	 */
+	if (hint_policy == HINT_POLICY_EXACT)
+		if (!cpus_empty(info->affinity_hint))
 			return;
-		}
-		item = g_list_next(item);
-	}
-}
 
-/*
- * Set the number of interrupts received for a specific irq;
- * create the irq metadata if there is none yet
- */
-void set_interrupt_count(int number, uint64_t count)
-{
-	GList *item;
-	struct interrupt *irq;
-
-	if (count < MIN_IRQ_COUNT && !one_shot_mode)
-		return; /* no need to track or set interrupts sources without any activity since boot
-		 	   but allow for a few (20) boot-time-only interrupts */
-
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-
-		if (irq->number == number) {
-			irq->count = count;
-			/* see if affinity_hint changed */
-			get_affinity_hint(irq, number);
-			return;
-		}
-		item = g_list_next(item);
-	}
-	/* new interrupt */
-	irq = malloc(sizeof(struct interrupt));
-	if (!irq)
+	/* Don't rebalance irqs that don't want it */
+	if (info->level == BALANCE_NONE)
 		return;
-	memset(irq, 0, sizeof(struct interrupt));
-	irq->node_num = -1;
-	irq->number = number;
-	irq->count = count;
-	irq->allowed_mask = CPU_MASK_ALL;
-	investigate(irq, number);
-	interrupts = g_list_append(interrupts, irq);
+
+	/* Don't move cpus that only have one irq, regardless of load */
+	if (g_list_length(info->assigned_obj->interrupts) <= 1)
+		return;
+
+	/* Stop rebalancing if we've estimated a full reduction of deviation */
+	if (*remaining_deviation <= 0)
+		return;
+
+	*remaining_deviation -= info->load;
+
+	if (debug_mode)
+		printf("Selecting irq %d for rebalancing\n", info->irq);
+
+	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+
+	info->assigned_obj = NULL;
 }
 
-/*
- * Set the numa affinity mask for a specific interrupt if there
- * is metadata for the interrupt; do nothing if no such data
- * exists.
- */
-void add_interrupt_numa(int number, cpumask_t mask, int node_num, int type)
+static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 {
-	GList *item;
-	struct interrupt *irq;
+	struct load_balance_info *info = data;
+	int deviation;
 
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-		item = g_list_next(item);
+	/*
+ 	 * Don't rebalance irqs on objects whos load is below the average
+ 	 */
+	if (obj->load <= info->avg_load) {
+		if ((obj->load + info->std_deviation) <= info->avg_load) {
+			info->num_under++;
+			info->powersave = obj;
+		} else
+			info->num_within++; 
+		return;
+	}
 
-		if (irq->number == number) {
-			cpus_or(irq->numa_mask, irq->numa_mask, mask);
-			irq->node_num = node_num;
-			if (irq->class < type && irq->balance_level != BALANCE_NONE)  {
-				irq->class = type;
-				irq->balance_level = map_class_to_level[irq->class];
-			}
-			return;
+	deviation = obj->load - info->avg_load;
+
+	if ((deviation > info->std_deviation) &&
+	    (g_list_length(obj->interrupts) > 1)) {
+
+		info->num_over++;
+		/*
+ 		 * We have a cpu that is overloaded and 
+ 		 * has irqs that can be moved to fix that
+ 		 */
+
+		/* order the list from least to greatest workload */
+		sort_irq_list(&obj->interrupts);
+		/*
+ 		 * Each irq carries a weighted average amount of load
+ 		 * we think its responsible for.  Set deviation to be the load
+ 		 * of the difference between this objects load and the averate,
+ 		 * and migrate irqs until we only have one left, or until that
+ 		 * difference reaches zero
+ 		 */
+		for_each_irq(obj->interrupts, move_candidate_irqs, &deviation);
+	} else
+		info->num_within++;
+
+}
+
+static void force_irq_migration(struct irq_info *info, void *data __attribute__((unused)))
+{
+	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+}
+
+static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__((unused)))
+{
+	obj->powersave_mode = 0;
+}
+
+#define find_overloaded_objs(name, info) do {\
+	int ___load_sources;\
+	memset(&(info), 0, sizeof(struct load_balance_info));\
+	for_each_object((name), gather_load_stats, &(info));\
+	(info).avg_load = (info).total_load / (info).load_sources;\
+	for_each_object((name), compute_deviations, &(info));\
+	___load_sources = ((info).load_sources == 1) ? 1 : ((info).load_sources - 1);\
+	(info).std_deviation = (long double)((info).deviations / ___load_sources);\
+	(info).std_deviation = sqrt((info).std_deviation);\
+	for_each_object((name), migrate_overloaded_irqs, &(info));\
+}while(0)
+
+void update_migration_status(void)
+{
+	struct load_balance_info info;
+
+	find_overloaded_objs(cpus, info);
+	if (cycle_count > 5) {
+		if (!info.num_over && (info.num_under >= power_thresh)) {
+			syslog(LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
+			info.powersave->powersave_mode = 1;
+			for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
+		} else if (info.num_over) {
+			syslog(LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
+			for_each_object(cpus, clear_powersave_mode, NULL);
 		}
 	}
+	find_overloaded_objs(cache_domains, info);
+	find_overloaded_objs(packages, info);
+	find_overloaded_objs(numa_nodes, info);
 }
 
-void calculate_workload(void)
+
+static void reset_irq_count(struct irq_info *info, void *unused __attribute__((unused)))
 {
-	int i;
-	GList *item;
-	struct interrupt *irq;
-
-	for (i=0; i<7; i++)
-		class_counts[i]=0;
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-		item = g_list_next(item);
-
-		irq->workload = irq->count - irq->old_count + irq->workload/3 + irq->extra;
-		class_counts[irq->class]++;
-		irq->old_count = irq->count;
-		irq->extra = 0;
-	}
+	info->last_irq_count = info->irq_count;
+	info->irq_count = 0;
 }
 
 void reset_counts(void)
 {
-	GList *item;
-	struct interrupt *irq;
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-		item = g_list_next(item);
-		irq->old_count = irq->count;
-		irq->extra = 0;
+	for_each_irq(NULL, reset_irq_count, NULL);
+}
 
-	}
+
+static void dump_workload(struct irq_info *info, void *unused __attribute__((unused)))
+{
+	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned long)info->load);
 }
 
 void dump_workloads(void)
 {
-	GList *item;
-	struct interrupt *irq;
-	item = g_list_first(interrupts);
-	while (item) {
-		irq = item->data;
-		item = g_list_next(item);
-
-		printf("Interrupt %i node_num %d (class %s) has workload %lu \n", irq->number, irq->node_num, classes[irq->class], (unsigned long)irq->workload);
-
-	}
+	for_each_irq(NULL, dump_workload, NULL);
 }
 
-
-static gint sort_irqs(gconstpointer A, gconstpointer B)
-{
-	struct interrupt *a, *b;
-	a = (struct interrupt*)A;
-	b = (struct interrupt*)B;
-
-	if (a->class < b->class)
-		return 1;
-	if (a->class > b->class)
-		return -1;
-	if (a->workload < b->workload)
-		return 1;
-	if (a->workload > b->workload)
-		return -1;
-	if (a<b)
-		return 1;
-	return -1;
-	
-}
-
-void sort_irq_list(void)
-{
-	/* sort by class first (high->low) and then by workload (high->low) */
-	interrupts = g_list_sort(interrupts, sort_irqs);
-}
