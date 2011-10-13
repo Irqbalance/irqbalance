@@ -27,6 +27,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -334,15 +335,17 @@ void parse_cpu_tree(void)
 	if (!dir)
 		return;
 	do {
+		int num;
+		char pad;
 		entry = readdir(dir);
-                if (entry && strlen(entry->d_name)>3 && strstr(entry->d_name,"cpu")) {
+		/*
+ 		 * We only want to count real cpus, not cpufreq and
+ 		 * cpuidle
+ 		 */
+		if (entry &&
+		    sscanf(entry->d_name, "cpu%d%c", &num, &pad) == 1 &&
+		    !strchr(entry->d_name, ' ')) {
 			char new_path[PATH_MAX];
-			/*
- 			 * We only want to count real cpus, not cpufreq and
- 			 * cpuidle
- 			 */
-			if ((entry->d_name[3] < 0x30) | (entry->d_name[3] > 0x39))
-				continue;
 			sprintf(new_path, "/sys/devices/system/cpu/%s", entry->d_name);
 			do_one_cpu(new_path);
 		}
