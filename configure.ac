@@ -41,15 +41,16 @@ AM_INIT_AUTOMAKE
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
-echo .
-echo Checking for programs
+AC_MSG_NOTICE()
+AC_MSG_NOTICE([Checking for programs])
 
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
 
-echo .
-echo Checking for header files
+AC_MSG_NOTICE
+AC_MSG_NOTICE([echo Checking for header files])
+
 AC_HEADER_STDC
 
 AC_CHECK_FUNCS(getopt_long)
@@ -66,13 +67,9 @@ LIBCAP_NG_PATH
 
 AC_OUTPUT(Makefile)
 
-echo .
-echo "
-
-  irqbalance Version:     $VERSION
-  Target:                 $target
-  Installation prefix:    $prefix
-  Compiler:               $CC
-  Compiler flags:
-`echo $CFLAGS | fmt -w 50 | sed 's,^,                          ,'`
-"
+AC_MSG_NOTICE()
+AC_MSG_NOTICE([irqbalance Version:     $VERSION])
+AC_MSG_NOTICE([Target:                 $target])
+AC_MSG_NOTICE([Installation prefix:    $prefix])
+AC_MSG_NOTICE([Compiler:               $CC])
+AC_MSG_NOTICE([Compiler flags: $CFLAGS])
