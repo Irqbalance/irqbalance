@@ -281,7 +281,7 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_topo_obj, NULL);
-	if (d->interrupts)
+	if (g_list_length(d->interrupts) > 0)
 		for_each_irq(d->interrupts, dump_irq, (void *)10);
 }
 
@@ -292,7 +292,7 @@ static void dump_package(struct topo_obj *d, void *data)
 	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_cache_domain, buffer);
-	if (d->interrupts)
+	if (g_list_length(d->interrupts) > 0)
 		for_each_irq(d->interrupts, dump_irq, (void *)2);
 }
 

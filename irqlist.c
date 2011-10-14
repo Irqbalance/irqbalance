@@ -112,7 +112,9 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 	if (obj->load <= info->avg_load) {
 		if ((obj->load + info->std_deviation) <= info->avg_load) {
 			info->num_under++;
-			info->powersave = obj;
+			if (!info->powersave)
+				if (!obj->powersave_mode)
+					info->powersave = obj;
 		} else
 			info->num_within++; 
 		return;
@@ -169,13 +171,13 @@ static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__(
 void update_migration_status(void)
 {
 	struct load_balance_info info;
-
 	find_overloaded_objs(cpus, info);
 	if (cycle_count > 5) {
-		if (!info.num_over && (info.num_under >= power_thresh)) {
+		if (!info.num_over && (info.num_under >= power_thresh) && info.powersave) {
 			syslog(LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
 			info.powersave->powersave_mode = 1;
-			for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
+			if (g_list_length(info.powersave->interrupts) > 0)
+				for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
 		} else if (info.num_over) {
 			syslog(LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
 			for_each_object(cpus, clear_powersave_mode, NULL);

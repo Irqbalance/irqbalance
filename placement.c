@@ -171,7 +171,7 @@ static void validate_irq(struct irq_info *info, void *data)
 
 static void validate_object(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	if (d->interrupts)
+	if (g_list_length(d->interrupts) > 0)
 		for_each_irq(d->interrupts, validate_irq, d);
 }
 
