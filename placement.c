@@ -46,6 +46,12 @@ static void find_best_object(struct topo_obj *d, void *data)
 	cpumask_t subset;
 
 	/*
+ 	 * Don't consider the unspecified numa node here
+ 	 */
+	if ((d->obj_type == OBJ_TYPE_NODE) && (d->number == -1))
+		return;
+
+	/*
  	 * If the hint policy is subset, then we only want 
  	 * to consider objects that are within the irqs hint, but
  	 * only if that irq in fact has published a hint

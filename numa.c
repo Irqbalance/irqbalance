@@ -84,6 +84,14 @@ void build_numa_node_list(void)
 	DIR *dir = opendir(SYSFS_NODE_PATH);
 	struct dirent *entry;
 
+	/*
+	 * Add the unspecified node
+	 */
+	numa_nodes = g_list_append(numa_nodes, &unspecified_node);
+
+	if (!dir)
+		return;
+
 	do {
 		entry = readdir(dir);
 		if (!entry)
@@ -96,6 +104,9 @@ void build_numa_node_list(void)
 
 static void free_numa_node(gpointer data)
 {
+	if (data == (void *)(&unspecified_node))
+		return;
+
 	free(data);
 }
 
