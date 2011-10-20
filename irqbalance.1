@@ -54,6 +54,14 @@ irq is balanced, but the assigned object will be a subset of the affintiy hint
 .I ignore
 irq affinity hint value is completely ignored
 
+.TP
+.B --powerthresh=<threshold>
+Set the threshold at which we attempt to move a cpu into powersave mode
+If more than <threshold> cpus are more than 1 standard deviation below the
+average cpu softirq workload, and no cpus are more than 1 standard deviation
+above (and have more than 1 irq assigned to them), attempt to place 1 cpu in
+powersave mode.  In powersave mode, a cpu will not have any irqs balanced to it,
+in an effort to prevent that cpu from waking up without need.
 .SH "ENVIRONMENT VARIABLES"
 .TP
 .B IRQBALANCE_ONESHOT
