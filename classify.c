@@ -281,7 +281,7 @@ struct irq_info *add_misc_irq(int irq)
 	new->irq = irq;
 	new->type = IRQ_TYPE_LEGACY;
 	new->class = IRQ_OTHER;
-	new->numa_node = get_numa_node(0);
+	new->numa_node = get_numa_node(-1);
 	interrupts_db = g_list_append(interrupts_db, new);
 	return new;
 }

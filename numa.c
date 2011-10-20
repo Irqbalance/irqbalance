@@ -162,6 +162,9 @@ struct topo_obj *get_numa_node(int nodeid)
 	struct topo_obj find;
 	GList *entry;
 
+	if (!numa_avail)
+		return &unspecified_node;
+
 	if (nodeid == -1)
 		return &unspecified_node;
 

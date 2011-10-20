@@ -49,6 +49,7 @@ extern GList *numa_nodes;
 extern GList *packages;
 extern GList *cache_domains;
 extern GList *cpus;
+extern int numa_avail;
 
 enum hp_e {
 	HINT_POLICY_IGNORE,
