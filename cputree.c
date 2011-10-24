@@ -228,7 +228,7 @@ static void do_one_cpu(char *path)
 		free(line);
 	}
 
-	nodeid=0;
+	nodeid=-1;
 	dir = opendir(path);
 	do {
 		entry = readdir(dir);

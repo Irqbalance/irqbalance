@@ -127,19 +127,15 @@ static gint compare_node(gconstpointer a, gconstpointer b)
 void add_package_to_node(struct topo_obj *p, int nodeid)
 {
 	struct topo_obj find, *node;
-	find.number = nodeid;
-	GList *entry;
 
-	find.number = nodeid;
-	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+	node = get_numa_node(nodeid);
 
-	if (!entry) {
+	if (!node) {
 		if (debug_mode)
 			printf("Could not find numa node for node id %d\n", nodeid);
 		return;
 	}
 
-	node = entry->data;
 
 	if (!p->parent) {
 		node->children = g_list_append(node->children, p);
