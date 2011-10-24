@@ -74,7 +74,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 	int rc;
 	struct irq_info *new, find;
 	int numa_node;
-	char *path = alloca(strlen(devpath) + 64);
+	char path[PATH_MAX];
 	FILE *fd;
 	char *lcpu_mask;
 	GList *entry;
@@ -180,13 +180,12 @@ out:
  */
 static void build_one_dev_entry(const char *dirname)
 {
-	size_t pathlen = strlen(SYSDEV_DIR) + strlen(dirname) + 128;
 	struct dirent *entry;
 	DIR *msidir;
 	FILE *fd;
 	int irqnum;
 	struct irq_info *new;
-	char *path = alloca(pathlen);
+	char path[PATH_MAX];
 
 	if (!path)
 		return;

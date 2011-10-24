@@ -50,7 +50,7 @@ struct topo_obj unspecified_node = {
 
 static void add_one_node(const char *nodename)
 {
-	char *path = alloca(strlen(SYSFS_NODE_PATH) + strlen(nodename) + 1);
+	char path[PATH_MAX];
 	struct topo_obj *new;
 	char *cpustr;
 	FILE *f;
