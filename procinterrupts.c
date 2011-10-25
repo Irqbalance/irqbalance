@@ -176,6 +176,14 @@ static void compute_irq_branch_load_share(struct topo_obj *d, void *data __attri
 		d->parent->load += d->load;
 }
 
+static void reset_load(struct topo_obj *d, void *data __attribute__((unused)))
+{
+	if (d->parent)
+		reset_load(d->parent, NULL);
+
+	d->load = 0;
+}
+
 void parse_proc_stat()
 {
 	FILE *file;
@@ -242,6 +250,11 @@ void parse_proc_stat()
 		syslog(LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
 		return;
 	}
+
+	/*
+ 	 * Reset the load values for all objects above cpus
+ 	 */
+	for_each_object(cache_domains, reset_load, NULL);
 
 	/*
  	 * Now that we have load for each cpu attribute a fair share of the load
