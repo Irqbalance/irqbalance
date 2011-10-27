@@ -55,8 +55,6 @@ static void add_one_node(const char *nodename)
 	char *cpustr;
 	FILE *f;
 
-	if (!path)
-		return;
 	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
 		return;
@@ -126,7 +124,7 @@ static gint compare_node(gconstpointer a, gconstpointer b)
 
 void add_package_to_node(struct topo_obj *p, int nodeid)
 {
-	struct topo_obj find, *node;
+	struct topo_obj *node;
 
 	node = get_numa_node(nodeid);
 

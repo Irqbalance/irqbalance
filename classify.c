@@ -187,9 +187,6 @@ static void build_one_dev_entry(const char *dirname)
 	struct irq_info *new;
 	char path[PATH_MAX];
 
-	if (!path)
-		return;
-
 	sprintf(path, "%s/%s/msi_irqs", SYSDEV_DIR, dirname);
 	
 	msidir = opendir(path);
