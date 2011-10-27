@@ -182,6 +182,12 @@ static void do_one_cpu(char *path)
 	
 	cpu_set(cpu->number, cpu->mask);
 
+	/*
+ 	 * Default the cache_domain mask to be equal to the cpu
+ 	 */
+	cpus_clear(cache_mask);
+	cpu_set(cpu->number, cache_mask);
+
 	/* if the cpu is on the banned list, just don't add it */
 	if (cpus_intersects(cpu->mask, banned_cpus)) {
 		free(cpu);
