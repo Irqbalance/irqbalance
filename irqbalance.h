@@ -11,7 +11,11 @@
 #include <syslog.h>
 
 #include "types.h"
+#ifdef HAVE_NUMA_H
 #include <numa.h>
+#else
+#define numa_available() -1
+#endif
 
 extern int package_count;
 extern int cache_domain_count;

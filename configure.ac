@@ -48,10 +48,18 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
 
+AC_ARG_ENABLE([numa],
+  AS_HELP_STRING([--disable-numa], [enable numa support (default is auto)]))
+AS_IF([test "$enable_numa" = "no"],[
+  ac_cv_header_numa_h=no
+  ac_cv_lib_numa_numa_available=no
+])
+
 AC_MSG_NOTICE
 AC_MSG_NOTICE([echo Checking for header files])
 
 AC_HEADER_STDC
+AC_CHECK_HEADERS([numa.h])
 
 AC_CHECK_FUNCS(getopt_long)
 
