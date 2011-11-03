@@ -55,8 +55,8 @@ AC_HEADER_STDC
 
 AC_CHECK_FUNCS(getopt_long)
 
-AC_CHECK_LIB(numa, numa_available, [], [])
-AC_CHECK_LIB(m, floor, [], [])
+AC_CHECK_LIB(numa, numa_available)
+AC_CHECK_LIB(m, floor)
 
 AC_C_CONST
 AC_C_INLINE
