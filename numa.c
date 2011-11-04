@@ -54,6 +54,7 @@ static void add_one_node(const char *nodename)
 	struct topo_obj *new;
 	char *cpustr;
 	FILE *f;
+	int ret;
 
 	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
@@ -63,8 +64,8 @@ static void add_one_node(const char *nodename)
 	if (ferror(f)) {
 		cpus_clear(new->mask);
 	} else {
-		fscanf(f, "%as", &cpustr);
-		if (!cpustr) {
+		ret = fscanf(f, "%as", &cpustr);
+		if (!ret || !cpustr) {
 			cpus_clear(new->mask);
 		} else {
 			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
