@@ -21,7 +21,7 @@
 # 
 
 AUTOMAKE_OPTIONS = no-dependencies
-EXTRA_DIST = README INSTALL COPYING autogen.sh cap-ng.m4
+EXTRA_DIST = README INSTALL COPYING autogen.sh cap-ng.m4 misc/irqbalance.service
  
 INCLUDES = -I${top_srcdir} 
 LIBS = $(CAPNG_LDADD) $(GLIB_LIBS) @LIBS@
