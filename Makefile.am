@@ -21,6 +21,7 @@
 # 
 
 AUTOMAKE_OPTIONS = no-dependencies
+ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = README INSTALL COPYING autogen.sh cap-ng.m4 misc/irqbalance.service
  
 INCLUDES = -I${top_srcdir} 
