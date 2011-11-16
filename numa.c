@@ -37,7 +37,7 @@
 
 GList *numa_nodes = NULL;
 
-struct topo_obj unspecified_node = {
+static struct topo_obj unspecified_node = {
 	.load = 0,
 	.number = -1,
 	.obj_type = OBJ_TYPE_NODE,
@@ -72,6 +72,7 @@ static void add_one_node(const char *nodename)
 			free(cpustr);
 		}
 	}
+	fclose(f);
 	new->obj_type = OBJ_TYPE_NODE;	
 	new->number = strtoul(&nodename[4], NULL, 10);
 	new->obj_type_list = &numa_nodes;
@@ -99,13 +100,16 @@ void build_numa_node_list(void)
 			add_one_node(entry->d_name);
 		}
 	} while (entry);
+	closedir(dir);
 }
 
 static void free_numa_node(gpointer data)
 {
-	if (data == (void *)(&unspecified_node))
+	struct topo_obj *obj = data;
+	if (data == &unspecified_node)
 		return;
 
+	g_list_free(obj->children);
 	free(data);
 }
 

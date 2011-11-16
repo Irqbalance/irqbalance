@@ -205,12 +205,12 @@ void parse_proc_stat(void)
 		syslog(LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
 		fclose(file);
 		return;
-        }
+	}
 
 	cpucount = 0;
 	while (!feof(file)) {
 		if (getline(&line, &size, file)==0)
-                        break;
+			break;
 
 		if (!strstr(line, "cpu"))
 			break;
@@ -246,6 +246,7 @@ void parse_proc_stat(void)
 	}
 
 	fclose(file);
+	free(line);
 	if (cpucount != get_cpu_count()) {
 		syslog(LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
 		return;
