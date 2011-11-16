@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <signal.h>
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif
@@ -35,6 +36,7 @@
 #endif
 #include "irqbalance.h"
 
+volatile int keep_going = 1;
 int one_shot_mode;
 int debug_mode;
 int numa_avail;
@@ -164,8 +166,15 @@ static void force_rebalance_irq(struct irq_info *info, void *data __attribute__(
 	info->assigned_obj = NULL;
 }
 
+static void handler(int signum)
+{
+	(void)signum;
+	keep_going = 0;
+}
+
 int main(int argc, char** argv)
 {
+	struct sigaction action;
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
@@ -192,6 +201,10 @@ int main(int argc, char** argv)
 			printf("This machine seems not NUMA capable.\n");
 	}
 
+	action.sa_handler = handler;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	sigaction(SIGINT, &action, NULL);
 
 	build_object_tree();
 	if (debug_mode)
@@ -223,7 +236,7 @@ int main(int argc, char** argv)
 	parse_proc_interrupts();
 	parse_proc_stat();
 
-	while (1) {
+	while (keep_going) {
 		sleep_approx(SLEEP_INTERVAL);
 		if (debug_mode)
 			printf("\n\n\n-----------------------------------------------------------------------------\n");
@@ -252,7 +265,7 @@ int main(int argc, char** argv)
 			clear_work_stats();
 			parse_proc_interrupts();
 			parse_proc_stat();
-			cycle_count=0;
+			cycle_count = 0;
 		} 
 
 		if (cycle_count)	
@@ -264,7 +277,7 @@ int main(int argc, char** argv)
 		if (debug_mode)
 			dump_tree();
 		if (one_shot_mode)
-			break;
+			keep_going = 0;
 		cycle_count++;
 
 	}
