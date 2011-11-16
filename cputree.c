@@ -324,7 +324,7 @@ static void clear_obj_stats(struct topo_obj *d, void *data __attribute__((unused
  * which level does how much work and the actual lists of interrupts 
  * assigned to each component
  */
-void clear_work_stats()
+void clear_work_stats(void)
 {
 	for_each_object(numa_nodes, clear_obj_stats, NULL);
 }

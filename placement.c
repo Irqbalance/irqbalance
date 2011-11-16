@@ -181,7 +181,7 @@ static void validate_object(struct topo_obj *d, void *data __attribute__((unused
 		for_each_irq(d->interrupts, validate_irq, d);
 }
 
-static void validate_object_tree_placement()
+static void validate_object_tree_placement(void)
 {
 	for_each_object(packages, validate_object, NULL);	
 	for_each_object(cache_domains, validate_object, NULL);

@@ -132,21 +132,21 @@ static void parse_command_line(int argc, char **argv)
  * Object workload is the aggregate sum of the
  * workload of the objects below it
  */
-static void build_object_tree()
+static void build_object_tree(void)
 {
 	build_numa_node_list();
 	parse_cpu_tree();
 	rebuild_irq_db();
 }
 
-static void free_object_tree()
+static void free_object_tree(void)
 {
 	free_numa_node_list();
 	clear_cpu_tree();
 	free_irq_db();
 }
 
-static void dump_object_tree()
+static void dump_object_tree(void)
 {
 	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }

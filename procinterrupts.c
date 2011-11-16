@@ -184,7 +184,7 @@ static void reset_load(struct topo_obj *d, void *data __attribute__((unused)))
 	d->load = 0;
 }
 
-void parse_proc_stat()
+void parse_proc_stat(void)
 {
 	FILE *file;
 	char *line = NULL;
