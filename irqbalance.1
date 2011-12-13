@@ -39,7 +39,11 @@ Causes irqbalance to be run once, after which the daemon exits
 .TP
 
 .B --debug
-Causes irqbalance to run in the foreground and extra debug information to be printed
+Causes irqbalance to print extra debug information.  Implies --foreground
+
+.TP
+.B --foreground
+Causes irqbalance to run in the foreground (without --debug)
 
 .TP
 .B --hintpolicy=[exact | subset | ignore]

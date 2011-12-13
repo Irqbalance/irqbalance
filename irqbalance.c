@@ -39,6 +39,7 @@
 volatile int keep_going = 1;
 int one_shot_mode;
 int debug_mode;
+int foreground_mode;
 int numa_avail;
 int need_cpu_rescan;
 extern cpumask_t banned_cpus;
@@ -64,6 +65,7 @@ void sleep_approx(int seconds)
 struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
 	{"debug", 0, NULL, 'd'},
+	{"foreground", 0, NULL, 'f'},
 	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
 	{0, 0, 0, 0}
@@ -71,7 +73,7 @@ struct option lopts[] = {
 
 static void usage(void)
 {
-	printf("irqbalance [--oneshot | -o] [--debug | -d] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	printf("irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
 	printf("	[--powerthresh= | -p <off> | <n>]\n");
 }
 
@@ -81,7 +83,7 @@ static void parse_command_line(int argc, char **argv)
 	int longind;
 
 	while ((opt = getopt_long(argc, argv,
-		"odh:p:",
+		"odfh:p:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -90,6 +92,10 @@ static void parse_command_line(int argc, char **argv)
 				exit(1);
 			case 'd':
 				debug_mode=1;
+				foreground_mode=1;
+				break;
+			case 'f':
+				foreground_mode=1;
 				break;
 			case 'h':
 				if (!strncmp(optarg, "exact", strlen(optarg)))
@@ -179,8 +185,12 @@ int main(int argc, char** argv)
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
 #else
-	if (argc>1 && strstr(argv[1],"--debug"))
+	if (argc>1 && strstr(argv[1],"--debug")) {
 		debug_mode=1;
+		foreground_mode=1;
+	}
+	if (argc>1 && strstr(argv[1],"--foreground"))
+		foreground_mode=1;
 	if (argc>1 && strstr(argv[1],"--oneshot"))
 		one_shot_mode=1;
 #endif
@@ -218,7 +228,7 @@ int main(int argc, char** argv)
 	if (cache_domain_count==1)
 		one_shot_mode = 1;
 
-	if (!debug_mode)
+	if (!foreground_mode)
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
 
