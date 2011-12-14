@@ -3,8 +3,8 @@ Description=irqbalance daemon
 After=syslog.target
 
 [Service]
-EnvironmentFile=/etc/sysconfig/irqbalance
-ExecStart=/usr/sbin/irqbalance --foreground $ONESHOT
+EnvironmentFile=/path/to/irqbalance.env
+ExecStart=/usr/sbin/irqbalance --foreground
 
 [Install]
 WantedBy=multi-user.target
