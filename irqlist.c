@@ -45,6 +45,7 @@ struct load_balance_info {
 	unsigned int num_within;
 	unsigned int num_over;
 	unsigned int num_under;
+	unsigned int num_powersave;
 	struct topo_obj *powersave;
 };
 
@@ -105,6 +106,9 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 	int deviation;
+
+	if (obj->powersave_mode)
+		info->num_powersave++;
 
 	/*
  	 * Don't rebalance irqs on objects whos load is below the average
@@ -178,7 +182,7 @@ void update_migration_status(void)
 			info.powersave->powersave_mode = 1;
 			if (g_list_length(info.powersave->interrupts) > 0)
 				for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
-		} else if (info.num_over) {
+		} else if ((info.num_over) && (info.num_powersave)) {
 			syslog(LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
 			for_each_object(cpus, clear_powersave_mode, NULL);
 		}
