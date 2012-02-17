@@ -103,6 +103,7 @@ extern int get_cpu_count(void);
  */
 extern void rebuild_irq_db(void);
 extern void free_irq_db(void);
+extern void add_banned_irq(int irq);
 extern void for_each_irq(GList *list, void (*cb)(struct irq_info *info,  void *data), void *data);
 extern struct irq_info *get_irq_info(int irq);
 extern void migrate_irq(GList **from, GList **to, struct irq_info *info);

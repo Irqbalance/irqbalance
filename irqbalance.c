@@ -68,22 +68,24 @@ struct option lopts[] = {
 	{"foreground", 0, NULL, 'f'},
 	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
+	{"banirq", 1 , NULL, 'i'},
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
 	printf("irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	printf("	[--powerthresh= | -p <off> | <n>]\n");
+	printf("	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
 {
 	int opt;
 	int longind;
+	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:p:",
+		"odfh:i:p:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -108,6 +110,14 @@ static void parse_command_line(int argc, char **argv)
 					usage();
 					exit(1);
 				}
+				break;
+			case 'i':
+				val = strtoull(optarg, NULL, 10);
+				if (val == ULONG_MAX) {
+					usage();
+					exit(1);
+				}
+				add_banned_irq((int)val);
 				break;
 			case 'p':
 				if (!strncmp(optarg, "off", strlen(optarg)))

@@ -52,6 +52,7 @@ static short class_codes[MAX_CLASS] = {
 };
 
 static GList *interrupts_db;
+static GList *banned_irqs;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
 
@@ -63,6 +64,30 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
+void add_banned_irq(int irq)
+{
+	struct irq_info find, *new;
+	GList *entry;
+
+	find.irq = irq;
+	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
+	if (entry)
+		return;
+
+	new = calloc(sizeof(struct irq_info), 1);
+	if (!new) {
+		if (debug_mode)
+			printf("No memory to ban irq %d\n", irq);
+		return;
+	}
+
+	new->irq = irq;
+
+	banned_irqs = g_list_append(banned_irqs, new);
+	return;
+}
+
+			
 /*
  * Inserts an irq_info struct into the intterupts_db list
  * devpath points to the device directory in sysfs for the 
@@ -87,6 +112,13 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 	if (entry) {
 		if (debug_mode)
 			printf("DROPPING DUPLICATE ENTRY FOR IRQ %d on path %s\n", irq, devpath);
+		return NULL;
+	}
+
+	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
+	if (entry) {
+		if (debug_mode)
+			printf("SKIPPING BANNED IRQ %d\n", irq);
 		return NULL;
 	}
 

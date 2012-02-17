@@ -66,6 +66,13 @@ average cpu softirq workload, and no cpus are more than 1 standard deviation
 above (and have more than 1 irq assigned to them), attempt to place 1 cpu in
 powersave mode.  In powersave mode, a cpu will not have any irqs balanced to it,
 in an effort to prevent that cpu from waking up without need.
+
+.TP
+.B --banirq=<irqnum>
+Add the specified irq list to the set of banned irqs. irqbalance will not affect
+the affinity of any irqs on the banned list, allowing them to be specified
+manually.  This option is addative and can be specified multiple times
+
 .SH "ENVIRONMENT VARIABLES"
 .TP
 .B IRQBALANCE_ONESHOT
@@ -78,10 +85,6 @@ Same as --debug
 .TP
 .B IRQBALANCE_BANNED_CPUS
 Provides a mask of cpus which irqbalance should ignore and never assign interrupts to
-
-.TP
-.B IRQBALANCE_BANNED_INTERRUPTS
-A list of space delimited IRQ numbers that irqbalance should not touch
 
 .SH "Homepage"
 http://code.google.com/p/irqbalance
