@@ -32,6 +32,8 @@
 
 #define LINESIZE 4096
 
+extern cpumask_t banned_cpus;
+
 static int proc_int_has_msi = 0;
 static int msi_found_in_sysfs = 0;
 
@@ -216,6 +218,9 @@ void parse_proc_stat(void)
 			break;
 
 		cpunr = strtoul(&line[3], NULL, 10);
+
+		if (cpu_isset(cpunr, banned_cpus))
+			continue;
 
 		rc = sscanf(line, "%*s %*d %*d %*d %*d %*d %d %d", &irq_load, &softirq_load);
 		if (rc < 2)
