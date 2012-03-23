@@ -48,7 +48,7 @@ static void find_best_object(struct topo_obj *d, void *data)
 	/*
  	 * Don't consider the unspecified numa node here
  	 */
-	if ((d->obj_type == OBJ_TYPE_NODE) && (d->number == -1))
+	if (numa_avail && (d->obj_type == OBJ_TYPE_NODE) && (d->number == -1))
 		return;
 
 	/*
