@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif

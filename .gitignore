@@ -1,5 +1,8 @@
+*.a
 *.o
 *~
+
+.deps
 
 *.diff
 *.patch
@@ -9,6 +12,8 @@
 /INSTALL
 /Makefile
 /Makefile.in
+*/Makefile
+*/Makefile.in
 /aclocal.m4
 /autom4te.cache
 /compile
@@ -25,6 +30,7 @@
 /m4
 /missing
 /stamp-h1
+/depcomp
 
 /irqbalance
 irqbalance-*.tar.*

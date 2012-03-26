@@ -36,7 +36,6 @@ AM_CONFIG_HEADER(config.h)
 echo Configuring irqbalance $VERSION
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
@@ -70,10 +69,39 @@ AC_C_CONST
 AC_C_INLINE
 AM_PROG_CC_C_O
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28])
+AC_ARG_WITH([glib2],
+  [AS_HELP_STRING([--without-glib2],
+    [Don't use system glib2 library. Use local implementation instead.])],
+  [],
+  [with_glib2=check])
+
+local_glib2=
+AS_IF(
+  [test "x$with_glib2" = xyes],
+  [PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28])],
+  
+  [test "x$with_glib2" = xno],
+  [local_glib2="yes"],
+
+  [PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28], [], [local_glib2="yes"])]
+)
+
+AS_IF(
+  [test "x$local_glib2" = xyes],
+  [
+  GLIB_CFLAGS=-I./glib-local
+  GLIB_LIBS=glib-local/libglib.a
+  GLIB_SUBDIR=glib-local
+  AC_SUBST(GLIB_CFLAGS)
+  AC_SUBST(GLIB_LIBS)
+  AC_SUBST(GLIB_SUBDIR)
+  AC_MSG_WARN(Using locale implementation of GList functions)
+  ]
+)
+
 LIBCAP_NG_PATH
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile glib-local/Makefile)
 
 AC_MSG_NOTICE()
 AC_MSG_NOTICE([irqbalance Version:     $VERSION])

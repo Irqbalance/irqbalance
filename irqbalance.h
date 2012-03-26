@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <glib.h>
 #include <syslog.h>
+#include <limits.h>
 
 #include "types.h"
 #ifdef HAVE_NUMA_H
