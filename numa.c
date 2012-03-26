@@ -110,7 +110,10 @@ static void free_numa_node(gpointer data)
 		return;
 
 	g_list_free(obj->children);
-	free(data);
+	g_list_free(obj->interrupts);
+
+	if (data != &unspecified_node)
+		free(data);
 }
 
 void free_numa_node_list(void)
