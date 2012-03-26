@@ -28,6 +28,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif
@@ -47,6 +50,7 @@ extern cpumask_t banned_cpus;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long long cycle_count = 0;
+char *pidfile = NULL;
 
 void sleep_approx(int seconds)
 {
@@ -70,6 +74,7 @@ struct option lopts[] = {
 	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
+	{"pid", 1, NULL, 's'},
 	{0, 0, 0, 0}
 };
 
@@ -86,7 +91,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:i:p:",
+		"odfh:i:p:s:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -133,6 +138,9 @@ static void parse_command_line(int argc, char **argv)
 				break;
 			case 'o':
 				one_shot_mode=1;
+				break;
+			case 's':
+				pidfile = optarg;
 				break;
 		}
 	}
@@ -239,9 +247,20 @@ int main(int argc, char** argv)
 	if (cache_domain_count==1)
 		one_shot_mode = 1;
 
-	if (!foreground_mode)
+	if (!foreground_mode) {
+		int pidfd = -1;
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
+		/* Write pidfile */
+		if (pidfile && (pidfd = open(pidfile,
+			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
+			char str[16];
+			snprintf(str, sizeof(str), "%u\n", getpid());
+			write(pidfd, str, strlen(str));
+			close(pidfd);
+		}
+	}
 
 	openlog(argv[0], 0, LOG_DAEMON);
 
@@ -303,5 +322,10 @@ int main(int argc, char** argv)
 
 	}
 	free_object_tree();
+
+	/* Remove pidfile */
+	if (!foreground_mode && pidfile)
+		unlink(pidfile);
+
 	return EXIT_SUCCESS;
 }

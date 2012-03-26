@@ -73,6 +73,12 @@ Add the specified irq list to the set of banned irqs. irqbalance will not affect
 the affinity of any irqs on the banned list, allowing them to be specified
 manually.  This option is addative and can be specified multiple times
 
+.TP
+.B --pid=<file>
+Have irqbalance write its process id to the specified file.  By default no
+pidfile is written.  The written pidfile is automatically unlinked when
+irqbalance exits.
+
 .SH "ENVIRONMENT VARIABLES"
 .TP
 .B IRQBALANCE_ONESHOT
