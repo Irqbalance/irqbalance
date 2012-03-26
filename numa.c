@@ -106,9 +106,6 @@ void build_numa_node_list(void)
 static void free_numa_node(gpointer data)
 {
 	struct topo_obj *obj = data;
-	if (data == &unspecified_node)
-		return;
-
 	g_list_free(obj->children);
 	g_list_free(obj->interrupts);
 
