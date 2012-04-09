@@ -41,4 +41,6 @@ clean-generic:
 	rm -rf autom4te*.cache 
 	rm -f *.rej *.orig *~
 
-SUBDIRS = $(GLIB_SUBDIR)
+if LOCAL_GLIB
+SUBDIRS = glib-local
+endif

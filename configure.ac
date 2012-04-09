@@ -52,13 +52,13 @@ AS_IF(
   [
   GLIB_CFLAGS=-I./glib-local
   GLIB_LIBS=glib-local/libglib.a
-  GLIB_SUBDIR=glib-local
   AC_SUBST(GLIB_CFLAGS)
   AC_SUBST(GLIB_LIBS)
-  AC_SUBST(GLIB_SUBDIR)
   AC_MSG_WARN(Using locale implementation of GList functions)
   ]
 )
+
+AM_CONDITIONAL([LOCAL_GLIB], [test "x$local_glib2" = "xyes"])
 
 LIBCAP_NG_PATH
 
