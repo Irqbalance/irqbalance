@@ -22,18 +22,17 @@
 
 AUTOMAKE_OPTIONS = no-dependencies
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = INSTALL COPYING autogen.sh m4/cap-ng.m4 misc/irqbalance.service
- 
+EXTRA_DIST = INSTALL COPYING autogen.sh misc/irqbalance.service
+
 INCLUDES = -I${top_srcdir} 
-LIBS = $(CAPNG_LDADD) @LIBS@
-AM_CFLAGS = $(GLIB_CFLAGS)
+AM_CFLAGS = $(LIBCAP_NG_CFLAGS) $(GLIB_CFLAGS)
 AM_CPPFLAGS = -W -Wall -Wshadow -Wformat -Wundef -D_GNU_SOURCE
 noinst_HEADERS = bitmap.h constants.h cpumask.h irqbalance.h non-atomic.h \
 	types.h
 sbin_PROGRAMS = irqbalance
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
 	irqlist.c numa.c placement.c powermode.c procinterrupts.c
-irqbalance_LDADD = $(CAPNG_LDADD) $(GLIB_LIBS)
+irqbalance_LDADD = $(LIBCAP_NG_LIBS) $(GLIB_LIBS)
 dist_man_MANS = irqbalance.1
 
 CONFIG_CLEAN_FILES = debug*.list config/*

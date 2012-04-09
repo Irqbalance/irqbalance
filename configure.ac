@@ -60,7 +60,25 @@ AS_IF(
 
 AM_CONDITIONAL([LOCAL_GLIB], [test "x$local_glib2" = "xyes"])
 
-LIBCAP_NG_PATH
+AC_ARG_WITH([libcap-ng],
+  AS_HELP_STRING([libcap-ng], [Add libcap-ng-support @<:@default=auto@:>@]))
+
+AS_IF(
+  [test "x$libcap_ng" != "xno"],
+  [
+  PKG_CHECK_MODULES([LIBCAP_NG], [libcap-ng],
+    [AC_DEFINE(HAVE_LIBCAP_NG,1,[libcap-ng support])],
+    [
+     AS_IF(
+       [test "x$libcap_ng" = "xyes"],
+       [
+       AC_MSG_ERROR([libcap-ng not found])
+       ]
+       )
+    ]
+  )
+  ]
+)
 
 AC_OUTPUT(Makefile glib-local/Makefile)
 
