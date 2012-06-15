@@ -357,18 +357,9 @@ static gint sort_irqs(gconstpointer A, gconstpointer B)
         a = (struct irq_info*)A;
         b = (struct irq_info*)B;
 
-	if (a->class < b->class)
-		return 1;
-	if (a->class > b->class)
-		return -1;
-	if (a->load < b->load)
-		return 1;
-	if (a->load > b->load)
-		return -1;
-	if (a<b)
+	if (a->class < b->class || a->load < b->load || a < b)
 		return 1;
         return -1;
-
 }
 
 void sort_irq_list(GList **list)
