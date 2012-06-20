@@ -1,5 +1,6 @@
 /* 
  * Copyright (C) 2006, Intel Corporation
+ * Copyright (C) 2012, Neil Horman <nhorman@tuxdriver.com> 
  * 
  * This file is part of irqbalance
  *
