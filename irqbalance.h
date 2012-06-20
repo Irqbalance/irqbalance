@@ -41,7 +41,6 @@ void dump_tree(void);
 
 void activate_mappings(void);
 void account_for_nic_stats(void);
-void check_power_mode(void);
 void clear_cpu_tree(void);
 void pci_numa_scan(void);
 

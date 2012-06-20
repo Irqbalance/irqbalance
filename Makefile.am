@@ -31,7 +31,7 @@ noinst_HEADERS = bitmap.h constants.h cpumask.h irqbalance.h non-atomic.h \
 	types.h
 sbin_PROGRAMS = irqbalance
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
-	irqlist.c numa.c placement.c powermode.c procinterrupts.c
+	irqlist.c numa.c placement.c procinterrupts.c
 irqbalance_LDADD = $(LIBCAP_NG_LIBS) $(GLIB_LIBS)
 dist_man_MANS = irqbalance.1
 
