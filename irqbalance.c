@@ -213,6 +213,12 @@ int main(int argc, char** argv)
 	if (argc>1 && strstr(argv[1],"--oneshot"))
 		one_shot_mode=1;
 #endif
+
+	/*
+ 	 * Open the syslog connection
+ 	 */
+	openlog(argv[0], 0, LOG_DAEMON);
+
 	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
 		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
 	}
@@ -241,8 +247,16 @@ int main(int argc, char** argv)
 
 
 	/* On single core UP systems irqbalance obviously has no work to do */
-	if (core_count<2) 
+	if (core_count<2) {
+		char *msg = "Balaincing is ineffective on systems with a "
+			    "single cache domain.  Shutting down\n";
+
+		if (debug_mode)
+			printf("%s", msg);
+		else
+			syslog(LOG_INFO, "%s", msg);
 		exit(EXIT_SUCCESS);
+	}
 	/* On dual core/hyperthreading shared cache systems just do a one shot setup */
 	if (cache_domain_count==1)
 		one_shot_mode = 1;
@@ -262,7 +276,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	openlog(argv[0], 0, LOG_DAEMON);
 
 #ifdef HAVE_LIBCAP_NG
 	// Drop capabilities
