@@ -83,8 +83,18 @@ void parse_proc_interrupts(void)
 		c++;
 		number = strtoul(line, NULL, 10);
 		info = get_irq_info(number);
-		if (!info)
+		if (!info) {
+			/*
+ 			 * If this is our 0th pass through this routine
+ 			 * this is an irq that wasn't reported in sysfs
+ 			 * and we should just add it.  If we've been running
+ 			 * a while then this irq just appeared and its time  
+ 			 * to rescan our irqs
+ 			 */
+			if (cycle_count)
+				need_rescan = 1;
 			info = add_misc_irq(number);
+		}
 
 		count = 0;
 		cpunr = 0;
@@ -100,7 +110,7 @@ void parse_proc_interrupts(void)
 			cpunr++;
 		}
 		if (cpunr != core_count) 
-			need_cpu_rescan = 1;
+			need_rescan = 1;
 
 		info->last_irq_count = info->irq_count;		
 		info->irq_count = count;

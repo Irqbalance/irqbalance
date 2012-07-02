@@ -46,7 +46,7 @@ int one_shot_mode;
 int debug_mode;
 int foreground_mode;
 int numa_avail;
-int need_cpu_rescan;
+int need_rescan;
 extern cpumask_t banned_cpus;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
@@ -301,8 +301,8 @@ int main(int argc, char** argv)
 		parse_proc_stat();
 
 		/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-		if (need_cpu_rescan) {
-			need_cpu_rescan = 0;
+		if (need_rescan) {
+			need_rescan = 0;
 			/* if there's a hotplug event we better turn off power mode for a bit until things settle */
 			power_mode = 0;
 			if (debug_mode)
