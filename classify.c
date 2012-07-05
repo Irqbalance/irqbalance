@@ -207,6 +207,43 @@ out:
 	return new;
 }
 
+static int check_for_irq_ban(char *path, int irq)
+{
+	char *cmd;
+	int rc;
+
+	if (!banscript)
+		return 0;
+
+	cmd = alloca(strlen(path)+strlen(banscript)+32);
+	if (!cmd)
+		return 0;
+	
+	sprintf(cmd, "%s %s %d",banscript, path, irq);
+	rc = system(cmd);
+
+	/*
+ 	 * The system command itself failed
+ 	 */
+	if (rc == -1) {
+		if (debug_mode)
+			printf("%s failed, please check the --banscript option\n", cmd);
+		else
+			syslog(LOG_INFO, "%s failed, please check the --banscript option\n", cmd);
+		return 0;
+	}
+
+	if (WEXITSTATUS(rc)) {
+		if (debug_mode)
+			printf("irq %d is baned by %s\n", irq, banscript);
+		else
+			syslog(LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
+		return 1;
+	}
+	return 0;
+
+}
+
 /*
  * Figures out which interrupt(s) relate to the device we're looking at in dirname
  */
@@ -231,6 +268,10 @@ static void build_one_dev_entry(const char *dirname)
 			irqnum = strtol(entry->d_name, NULL, 10);
 			if (irqnum) {
 				sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
+				if (check_for_irq_ban(path, irqnum)) {
+					add_banned_irq(irqnum);
+					continue;
+				}
 				new = add_one_irq_to_db(path, irqnum);
 				if (!new)
 					continue;
@@ -253,6 +294,11 @@ static void build_one_dev_entry(const char *dirname)
 	 */
 	if (irqnum) {
 		sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
+		if (check_for_irq_ban(path, irqnum)) {
+			add_banned_irq(irqnum);
+			goto done;
+		}
+
 		new = add_one_irq_to_db(path, irqnum);
 		if (!new)
 			goto done;

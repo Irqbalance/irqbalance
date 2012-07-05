@@ -52,6 +52,7 @@ enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long long cycle_count = 0;
 char *pidfile = NULL;
+char *banscript = NULL;
 
 void sleep_approx(int seconds)
 {
@@ -75,6 +76,7 @@ struct option lopts[] = {
 	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
+	{"banscript", 1, NULL, 'b'},
 	{"pid", 1, NULL, 's'},
 	{0, 0, 0, 0}
 };
@@ -99,6 +101,10 @@ static void parse_command_line(int argc, char **argv)
 			case '?':
 				usage();
 				exit(1);
+				break;
+			case 'b':
+				banscript = strdup(optarg);
+				break;
 			case 'd':
 				debug_mode=1;
 				foreground_mode=1;

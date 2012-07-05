@@ -74,6 +74,17 @@ the affinity of any irqs on the banned list, allowing them to be specified
 manually.  This option is addative and can be specified multiple times
 
 .TP
+.B --banscript=<script>
+Execute the specified script for each irq that is discovered, passing the sysfs
+path to the associated device as the first argument, and the irq vector as the
+second.  An exit value of 0 tells irqbalance that this interrupt should balanced
+and managed as a normal irq, while a non-zero exit code indicates this irq
+should be ignored by irqbalance completely (see --banirq above).  Use of this
+script provides users the ability to dynamically select which irqs get exluded
+from balancing, and provides an opportunity for manual affinity setting in one
+single code point.
+
+.TP
 .B --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when
