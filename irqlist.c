@@ -117,7 +117,7 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 	if (obj->load <= info->avg_load) {
 		if ((obj->load + info->std_deviation) <= info->avg_load) {
 			info->num_under++;
-			if (!info->powersave)
+			if (power_thresh != ULONG_MAX && !info->powersave)
 				if (!obj->powersave_mode)
 					info->powersave = obj;
 		} else
@@ -177,7 +177,7 @@ void update_migration_status(void)
 {
 	struct load_balance_info info;
 	find_overloaded_objs(cpus, info);
-	if (cycle_count > 5) {
+	if (power_thresh != ULONG_MAX && cycle_count > 5) {
 		if (!info.num_over && (info.num_under >= power_thresh) && info.powersave) {
 			syslog(LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
 			info.powersave->powersave_mode = 1;
