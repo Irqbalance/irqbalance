@@ -4,7 +4,7 @@ After=syslog.target
 
 [Service]
 EnvironmentFile=/path/to/irqbalance.env
-ExecStart=/usr/sbin/irqbalance --foreground
+ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
 
 [Install]
 WantedBy=multi-user.target
