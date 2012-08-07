@@ -70,6 +70,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	} else if (info->assigned_obj) {
 		applied_mask = info->assigned_obj->mask;
 		valid_mask = 1;
+		if ((hint_policy == HINT_POLICY_SUBSET) &&
+		    (!cpus_empty(info->affinity_hint)))
+			cpus_and(applied_mask, applied_mask, info->affinity_hint);
 	}
 
 	/*
