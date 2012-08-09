@@ -204,9 +204,15 @@ static void handler(int signum)
 	keep_going = 0;
 }
 
+static void force_rescan(int signum)
+{
+	if (cycle_count)
+		need_rescan = 1;
+}
+
 int main(int argc, char** argv)
 {
-	struct sigaction action;
+	struct sigaction action, hupaction;
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
@@ -295,6 +301,11 @@ int main(int argc, char** argv)
 
 	parse_proc_interrupts();
 	parse_proc_stat();
+
+	hupaction.sa_handler = force_rescan;
+	sigemptyset(&hupaction.sa_mask);
+	hupaction.sa_flags = 0;
+	sigaction(SIGHUP, &hupaction, NULL);
 
 	while (keep_going) {
 		sleep_approx(SLEEP_INTERVAL);
