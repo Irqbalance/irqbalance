@@ -412,7 +412,7 @@ struct irq_info *get_irq_info(int irq)
 void migrate_irq(GList **from, GList **to, struct irq_info *info)
 {
 	GList *entry;
-	struct irq_info find, *tmp;;
+	struct irq_info find, *tmp;
 
 	find.irq = info->irq;
 	entry = g_list_find_custom(*from, &find, compare_ints);
