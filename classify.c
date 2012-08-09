@@ -52,6 +52,7 @@ static short class_codes[MAX_CLASS] = {
 };
 
 static GList *interrupts_db;
+static GList *new_irq_list;
 static GList *banned_irqs;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
@@ -326,6 +327,8 @@ void rebuild_irq_db(void)
 {
 	DIR *devdir = opendir(SYSDEV_DIR);
 	struct dirent *entry;
+	GList *gentry;
+	struct irq_info *ninfo, *iinfo;
 
 	free_irq_db();
 		
@@ -341,22 +344,46 @@ void rebuild_irq_db(void)
 	build_one_dev_entry(entry->d_name);
 
 	} while (entry != NULL);
+
 	closedir(devdir);
+
+	if (!new_irq_list)
+		return;
+	gentry = g_list_first(new_irq_list);	
+	while(gentry) {
+		ninfo = gentry->data;
+		iinfo = get_irq_info(ninfo->irq);
+		new_irq_list = g_list_remove(gentry, ninfo);
+		if (!iinfo) {
+			if (debug_mode)
+				printf("Adding untracked IRQ %d to database\n", ninfo->irq);
+			interrupts_db = g_list_append(interrupts_db, ninfo);
+		} else 
+			free(ninfo);
+
+		gentry = g_list_first(new_irq_list);
+	}
+	g_list_free(new_irq_list);
+	new_irq_list = NULL;
+		
 }
 
-struct irq_info *add_misc_irq(int irq)
+struct irq_info *add_new_irq(int irq)
 {
-	struct irq_info *new;
+	struct irq_info *new, *nnew;
 
 	new = calloc(sizeof(struct irq_info), 1);
-	if (!new)
+	nnew = calloc(sizeof(struct irq_info), 1);
+	if (!new || !nnew)
 		return NULL;
 
 	new->irq = irq;
 	new->type = IRQ_TYPE_LEGACY;
 	new->class = IRQ_OTHER;
 	new->numa_node = get_numa_node(-1);
+	memcpy(nnew, new, sizeof(struct irq_info));
 	interrupts_db = g_list_append(interrupts_db, new);
+	new_irq_list = g_list_append(new_irq_list, nnew);
 	return new;
 }
 
