@@ -165,6 +165,7 @@ static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__(
 	int ___load_sources;\
 	memset(&(info), 0, sizeof(struct load_balance_info));\
 	for_each_object((name), gather_load_stats, &(info));\
+	(info).load_sources = ((info).load_sources == 0) ? 1 : ((info).load_sources);\
 	(info).avg_load = (info).total_load / (info).load_sources;\
 	for_each_object((name), compute_deviations, &(info));\
 	___load_sources = ((info).load_sources == 1) ? 1 : ((info).load_sources - 1);\
