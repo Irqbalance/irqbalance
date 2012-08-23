@@ -94,7 +94,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:i:p:s:",
+		"odfh:i:p:s:b:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
