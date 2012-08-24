@@ -38,7 +38,7 @@
 
 GList *numa_nodes = NULL;
 
-static struct topo_obj unspecified_node = {
+static struct topo_obj unspecified_node_template = {
 	.load = 0,
 	.number = -1,
 	.obj_type = OBJ_TYPE_NODE,
@@ -48,6 +48,8 @@ static struct topo_obj unspecified_node = {
 	.parent = NULL,
 	.obj_type_list = &numa_nodes,
 };
+
+static struct topo_obj unspecified_node;
 
 static void add_one_node(const char *nodename)
 {
@@ -84,6 +86,13 @@ void build_numa_node_list(void)
 {
 	DIR *dir = opendir(SYSFS_NODE_PATH);
 	struct dirent *entry;
+
+	/*
+	 * Note that we copy the unspcified node from the template here
+	 * in the event we just freed the object tree during a rescan.
+	 * This ensures we don't get stale list pointers anywhere
+	 */
+	memcpy(&unspecified_node, &unspecified_node_template, sizeof (struct topo_obj));
 
 	/*
 	 * Add the unspecified node
