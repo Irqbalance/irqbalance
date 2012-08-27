@@ -22,7 +22,7 @@
 
 AUTOMAKE_OPTIONS = no-dependencies
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = INSTALL COPYING autogen.sh misc/irqbalance.service
+EXTRA_DIST = COPYING autogen.sh misc/irqbalance.service
 
 INCLUDES = -I${top_srcdir} 
 AM_CFLAGS = $(LIBCAP_NG_CFLAGS) $(GLIB_CFLAGS)
