@@ -379,3 +379,37 @@ g_list_find_custom (GList         *list,
 
   return NULL;
 }
+
+/**
+ * g_list_remove:
+ * @list: a #GList
+ * @data: the data of the element to remove
+ *
+ * Removes an element from a #GList.
+ * If two elements contain the same data, only the first is removed.
+ * If none of the elements contain the data, the #GList is unchanged.
+ *
+ * Returns: the new start of the #GList
+ */
+GList*
+g_list_remove (GList         *list,
+               gconstpointer  data)
+{
+  GList *tmp;
+ 
+  tmp = list;
+  while (tmp)
+    {
+      if (tmp->data != data)
+        tmp = tmp->next;
+      else
+        {
+          list = _g_list_remove_link(list, tmp);
+          g_list_free(tmp);
+
+          break;
+        }
+    }
+  return list;
+}
+

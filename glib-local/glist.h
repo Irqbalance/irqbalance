@@ -43,6 +43,8 @@ void     g_list_free_full               (GList            *list,
 GList*   g_list_find_custom             (GList            *list,
 					 gconstpointer     data,
 					 GCompareFunc      func);
+GList*   g_list_remove                  (GList            *list,
+                                         gconstpointer     data);
 
 #define g_list_previous(list)	        ((list) ? (((GList *)(list))->prev) : NULL)
 #define g_list_next(list)	        ((list) ? (((GList *)(list))->next) : NULL)

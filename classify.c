@@ -353,12 +353,12 @@ void rebuild_irq_db(void)
 	while(gentry) {
 		ninfo = gentry->data;
 		iinfo = get_irq_info(ninfo->irq);
-		new_irq_list = g_list_remove(gentry, ninfo);
+		new_irq_list = g_list_remove(new_irq_list, ninfo);
 		if (!iinfo) {
 			if (debug_mode)
 				printf("Adding untracked IRQ %d to database\n", ninfo->irq);
 			interrupts_db = g_list_append(interrupts_db, ninfo);
-		} else 
+		} else
 			free(ninfo);
 
 		gentry = g_list_first(new_irq_list);
