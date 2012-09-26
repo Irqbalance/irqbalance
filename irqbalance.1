@@ -69,9 +69,12 @@ in an effort to prevent that cpu from waking up without need.
 
 .TP
 .B --banirq=<irqnum>
-Add the specified irq list to the set of banned irqs. irqbalance will not affect
+Add the specified irq to the set of banned irqs. irqbalance will not affect
 the affinity of any irqs on the banned list, allowing them to be specified
-manually.  This option is addative and can be specified multiple times
+manually.  This option is addative and can be specified multiple times. For
+example to ban irqs 43 and 44 from balancing, use the following command line:
+.B irqbalance --banirq=43 --banirq=44
+
 
 .TP
 .B --banscript=<script>
