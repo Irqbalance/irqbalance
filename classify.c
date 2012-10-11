@@ -104,6 +104,8 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 	FILE *fd;
 	char *lcpu_mask;
 	GList *entry;
+	ssize_t ret;
+	size_t blen;
 
 	/*
 	 * First check to make sure this isn't a duplicate entry
@@ -178,13 +180,12 @@ assign_node:
 		goto assign_affinity_hint;
 	}
 	lcpu_mask = NULL;
-	rc = fscanf(fd, "%as", &lcpu_mask);
+	ret = getline(&lcpu_mask, &blen, fd);
 	fclose(fd);
-	if (!lcpu_mask || !rc) {
+	if (ret <= 0) {
 		cpus_setall(new->cpumask);
 	} else {
-		cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
-				   new->cpumask);
+		cpumask_parse_user(lcpu_mask, ret, new->cpumask);
 	}
 	free(lcpu_mask);
 
@@ -195,12 +196,11 @@ assign_affinity_hint:
 	if (!fd)
 		goto out;
 	lcpu_mask = NULL;
-	rc = fscanf(fd, "%as", &lcpu_mask);
+	ret = getline(&lcpu_mask, &blen, fd);
 	fclose(fd);
-	if (!lcpu_mask)
+	if (ret <= 0)
 		goto out;
-	cpumask_parse_user(lcpu_mask, strlen(lcpu_mask),
-			   new->affinity_hint);
+	cpumask_parse_user(lcpu_mask, ret, new->affinity_hint);
 	free(lcpu_mask);
 out:
 	if (debug_mode)

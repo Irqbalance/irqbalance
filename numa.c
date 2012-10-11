@@ -55,9 +55,10 @@ static void add_one_node(const char *nodename)
 {
 	char path[PATH_MAX];
 	struct topo_obj *new;
-	char *cpustr;
+	char *cpustr = NULL;
 	FILE *f;
-	int ret;
+	ssize_t ret;
+	size_t blen;
 
 	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
@@ -67,11 +68,11 @@ static void add_one_node(const char *nodename)
 	if (ferror(f)) {
 		cpus_clear(new->mask);
 	} else {
-		ret = fscanf(f, "%as", &cpustr);
-		if (!ret || !cpustr) {
+		ret = getline(&cpustr, &blen, f);
+		if (ret <= 0) {
 			cpus_clear(new->mask);
 		} else {
-			cpumask_parse_user(cpustr, strlen(cpustr), new->mask);
+			cpumask_parse_user(cpustr, ret, new->mask);
 			free(cpustr);
 		}
 	}
