@@ -51,6 +51,11 @@ static short class_codes[MAX_CLASS] = {
 	IRQ_OTHER,
 };
 
+struct user_irq_policy {
+	int ban;
+	int level;
+};
+
 static GList *interrupts_db;
 static GList *new_irq_list;
 static GList *banned_irqs;
@@ -94,7 +99,7 @@ void add_banned_irq(int irq)
  * devpath points to the device directory in sysfs for the 
  * related device
  */
-static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
+static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
 {
 	int class = 0;
 	int rc;
@@ -158,7 +163,10 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq)
 		goto get_numa_node;
 
 	new->class = class_codes[class];
-	new->level = map_class_to_level[class_codes[class]];
+	if (pol->level >= 0)
+		new->level = pol->level;
+	else
+		new->level = map_class_to_level[class_codes[class]];
 
 get_numa_node:
 	numa_node = -1;
@@ -208,6 +216,103 @@ out:
 	return new;
 }
 
+static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
+{
+	char *key, *value, *end;
+	char *levelvals[] = { "none", "package", "cache", "core" };
+	int idx;
+
+	key = buf;
+	value = strchr(buf, '=');
+
+	if (!value) {
+		syslog(LOG_WARNING, "Bad format for policy, ignoring: %s\n", buf);
+		return;
+	}
+
+	/* NULL terminate the key and advance value to the start of the value
+	 * string
+	 */
+	*value = '\0';
+	value++;
+	end = strchr(value, '\n');
+	if (end)
+		*end = '\0';
+
+	if (!strcasecmp("ban", key)) {
+		if (!strcasecmp("false", value))
+			pol->ban = 0;
+		else if (!strcasecmp("true", value))
+			pol->ban = 1;
+		else {
+			if (!debug_mode)
+				syslog(LOG_WARNING, "Unknown value for ban poilcy: %s\n", value);
+			else
+				printf("Unknown value for ban poilcy: %s\n", value);
+			return;
+		}
+	} else if (!strcasecmp("balance_level", key)) {
+		for (idx=0; idx<4; idx++) {
+			if (!strcasecmp(levelvals[idx], value))
+				break;
+		}
+
+		if (idx>3)
+			if (!debug_mode)
+				syslog(LOG_WARNING, "Bad value for balance_level policy: %s\n", value);
+			else
+				printf("Bad value for balance_level policy: %s\n", value);
+		else
+			pol->level = idx;
+	} else
+		if (!debug_mode)
+			syslog(LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
+		else
+			printf("Unknown key returned, ignoring: %s\n", key);
+	
+}
+
+/*
+ * Calls out to a possibly user defined script to get user assigned poilcy
+ * aspects for a given irq.  A value of -1 in a given field indicates no
+ * policy was given and that system defaults should be used
+ */
+static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol)
+{
+	char *cmd;
+	FILE *output;
+	char buffer[128];
+	char *brc;
+
+	pol->ban = -1;
+	pol->level = -1;
+
+	/* Return defaults if no script was given */
+	if (!polscript)
+		return;
+
+	cmd = alloca(strlen(path)+strlen(polscript)+64);
+	if (!cmd)
+		return;
+
+	sprintf(cmd, "exec %s %s %d", polscript, path, irq);
+	output = popen(cmd, "r");
+	if (!output) {
+		if (debug_mode)
+			printf("Unable to execute user policy script %s\n", polscript);
+		else
+			syslog(LOG_WARNING, "Unable to execute user policy script %s\n", polscript);
+		return;
+	}
+
+	while(!feof(output)) {
+		brc = fgets(buffer, 128, output);
+		if (brc)
+			parse_user_policy_key(brc, pol);
+	}
+	pclose(output);
+}
+
 static int check_for_irq_ban(char *path, int irq)
 {
 	char *cmd;
@@ -220,7 +325,7 @@ static int check_for_irq_ban(char *path, int irq)
 	if (!cmd)
 		return 0;
 	
-	sprintf(cmd, "%s %s %d",banscript, path, irq);
+	sprintf(cmd, "%s %s %d > /dev/null",banscript, path, irq);
 	rc = system(cmd);
 
 	/*
@@ -256,6 +361,7 @@ static void build_one_dev_entry(const char *dirname)
 	int irqnum;
 	struct irq_info *new;
 	char path[PATH_MAX];
+	struct user_irq_policy pol;
 
 	sprintf(path, "%s/%s/msi_irqs", SYSDEV_DIR, dirname);
 	
@@ -268,12 +374,13 @@ static void build_one_dev_entry(const char *dirname)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
 			if (irqnum) {
+				get_irq_user_policy(path, irqnum, &pol);
 				sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
-				if (check_for_irq_ban(path, irqnum)) {
+				if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
 					add_banned_irq(irqnum);
 					continue;
 				}
-				new = add_one_irq_to_db(path, irqnum);
+				new = add_one_irq_to_db(path, irqnum, &pol);
 				if (!new)
 					continue;
 				new->type = IRQ_TYPE_MSIX;
@@ -295,12 +402,13 @@ static void build_one_dev_entry(const char *dirname)
 	 */
 	if (irqnum) {
 		sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
-		if (check_for_irq_ban(path, irqnum)) {
+		get_irq_user_policy(path, irqnum, &pol);
+		if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
 			add_banned_irq(irqnum);
 			goto done;
 		}
 
-		new = add_one_irq_to_db(path, irqnum);
+		new = add_one_irq_to_db(path, irqnum, &pol);
 		if (!new)
 			goto done;
 		new->type = IRQ_TYPE_LEGACY;

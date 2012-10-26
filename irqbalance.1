@@ -86,6 +86,28 @@ should be ignored by irqbalance completely (see --banirq above).  Use of this
 script provides users the ability to dynamically select which irqs get exluded
 from balancing, and provides an opportunity for manual affinity setting in one
 single code point.
+.B NOTE: The banscript option is deprecated. Please use the
+.B --polscript option instead
+
+.TP
+.B --policyscript=<script>
+An superset of the functionality found in the --banscript option.  When
+specified, the referenced script will execute once for each discovered irq  The
+script may specify zero or more key=value pairs that will guide irqbalance in
+the management of that irq.  The script will be passed the path to the sysfs
+device that owns the irq and the irq number itself as the first and second
+arguments.  Key=value pairs are printed by the script on stdout, and will be
+captured and interpreted by irqbalance.  Irqbalance expects a zero exit code
+from the provided utility.  Recognized key=value pairs are:
+.TP
+.I ban=[true | false]
+.tP
+Directs irqbalance to exclude the passed in irq from balancing
+.TP
+.I balance_level=[none | package | cache | core]
+This allows a user to override the balance level of a given irq.  By default the
+balance level is determined automatically based on the pci device class of the
+device that owns the irq.
 
 .TP
 .B --pid=<file>

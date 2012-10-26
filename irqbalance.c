@@ -53,6 +53,7 @@ unsigned long power_thresh = ULONG_MAX;
 unsigned long long cycle_count = 0;
 char *pidfile = NULL;
 char *banscript = NULL;
+char *polscript = NULL;
 
 void sleep_approx(int seconds)
 {
@@ -77,6 +78,7 @@ struct option lopts[] = {
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
 	{"banscript", 1, NULL, 'b'},
+	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
 	{0, 0, 0, 0}
 };
@@ -84,7 +86,7 @@ struct option lopts[] = {
 static void usage(void)
 {
 	printf("irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	printf("	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>]\n");
+	printf("	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -94,7 +96,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:i:p:s:b:",
+		"odfh:i:p:s:b:l:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -131,6 +133,9 @@ static void parse_command_line(int argc, char **argv)
 					exit(1);
 				}
 				add_banned_irq((int)val);
+				break;
+			case 'l':
+				polscript = strdup(optarg);
 				break;
 			case 'p':
 				if (!strncmp(optarg, "off", strlen(optarg)))
@@ -247,6 +252,14 @@ int main(int argc, char** argv)
 	} else {
 		if (debug_mode)
 			printf("This machine seems not NUMA capable.\n");
+	}
+
+	if (banscript) {
+		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
+		if (debug_mode)
+			printf("%s\n", note);
+		else
+			syslog(LOG_WARNING, "%s\n", note);
 	}
 
 	action.sa_handler = handler;
