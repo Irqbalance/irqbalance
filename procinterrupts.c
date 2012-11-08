@@ -114,9 +114,9 @@ void parse_proc_interrupts(void)
 			msi_found_in_sysfs = 1;
 	}		
 	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {
-		syslog(LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");
-		syslog(LOG_WARNING, "But none found in sysfs, you need to update your kernel\n");
-		syslog(LOG_WARNING, "Until then, IRQs will be improperly classified\n");
+		log(TO_ALL, LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");
+		log(TO_ALL, LOG_WARNING, "But none found in sysfs, you need to update your kernel\n");
+		log(TO_ALL, LOG_WARNING, "Until then, IRQs will be improperly classified\n");
 		/*
  		 * Set msi_foun_in_sysfs, so we don't get this error constantly
  		 */
@@ -202,14 +202,14 @@ void parse_proc_stat(void)
 
 	file = fopen("/proc/stat", "r");
 	if (!file) {
-		syslog(LOG_WARNING, "WARNING cant open /proc/stat.  balacing is broken\n");
+		log(TO_ALL, LOG_WARNING, "WARNING cant open /proc/stat.  balacing is broken\n");
 		return;
 	}
 
 	/* first line is the header we don't need; nuke it */
 	if (getline(&line, &size, file)==0) {
 		free(line);
-		syslog(LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
+		log(TO_ALL, LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
 		fclose(file);
 		return;
 	}
@@ -258,7 +258,7 @@ void parse_proc_stat(void)
 	fclose(file);
 	free(line);
 	if (cpucount != get_cpu_count()) {
-		syslog(LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
+		log(TO_ALL, LOG_WARNING, "WARNING, didn't collect load info for all cpus, balancing is broken\n");
 		return;
 	}
 

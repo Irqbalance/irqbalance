@@ -172,7 +172,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 static void validate_irq(struct irq_info *info, void *data)
 {
 	if (info->assigned_obj != data)
-		printf("object validation error: irq %d is wrong, points to %p, should be %p\n",
+		log(TO_CONSOLE, LOG_INFO, "object validation error: irq %d is wrong, points to %p, should be %p\n",
 			info->irq, info->assigned_obj, data);
 }
 

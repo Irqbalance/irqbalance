@@ -145,8 +145,7 @@ void add_package_to_node(struct topo_obj *p, int nodeid)
 	node = get_numa_node(nodeid);
 
 	if (!node) {
-		if (debug_mode)
-			printf("Could not find numa node for node id %d\n", nodeid);
+		log(TO_CONSOLE, LOG_INFO, "Could not find numa node for node id %d\n", nodeid);
 		return;
 	}
 
@@ -161,10 +160,10 @@ void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)
 {
 	char buffer[4096];
 
-	printf("NUMA NODE NUMBER: %d\n", d->number);
+	log(TO_CONSOLE, LOG_INFO, "NUMA NODE NUMBER: %d\n", d->number);
 	cpumask_scnprintf(buffer, 4096, d->mask); 
-	printf("LOCAL CPU MASK: %s\n", buffer);
-	printf("\n");
+	log(TO_CONSOLE, LOG_INFO, "LOCAL CPU MASK: %s\n", buffer);
+	log(TO_CONSOLE, LOG_INFO, "\n");
 }
 
 struct topo_obj *get_numa_node(int nodeid)

@@ -82,8 +82,7 @@ void add_banned_irq(int irq)
 
 	new = calloc(sizeof(struct irq_info), 1);
 	if (!new) {
-		if (debug_mode)
-			printf("No memory to ban irq %d\n", irq);
+		log(TO_CONSOLE, LOG_WARNING, "No memory to ban irq %d\n", irq);
 		return;
 	}
 
@@ -118,15 +117,13 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 	find.irq = irq;
 	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
 	if (entry) {
-		if (debug_mode)
-			printf("DROPPING DUPLICATE ENTRY FOR IRQ %d on path %s\n", irq, devpath);
+		log(TO_CONSOLE, LOG_INFO, "DROPPING DUPLICATE ENTRY FOR IRQ %d on path %s\n", irq, devpath);
 		return NULL;
 	}
 
 	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
 	if (entry) {
-		if (debug_mode)
-			printf("SKIPPING BANNED IRQ %d\n", irq);
+		log(TO_ALL, LOG_INFO, "SKIPPING BANNED IRQ %d\n", irq);
 		return NULL;
 	}
 
@@ -211,8 +208,7 @@ assign_affinity_hint:
 	cpumask_parse_user(lcpu_mask, ret, new->affinity_hint);
 	free(lcpu_mask);
 out:
-	if (debug_mode)
-		printf("Adding IRQ %d to database\n", irq);
+	log(TO_CONSOLE, LOG_INFO, "Adding IRQ %d to database\n", irq);
 	return new;
 }
 
@@ -226,7 +222,7 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 	value = strchr(buf, '=');
 
 	if (!value) {
-		syslog(LOG_WARNING, "Bad format for policy, ignoring: %s\n", buf);
+		log(TO_SYSLOG, LOG_WARNING, "Bad format for policy, ignoring: %s\n", buf);
 		return;
 	}
 
@@ -245,11 +241,7 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 		else if (!strcasecmp("true", value))
 			pol->ban = 1;
 		else {
-			if (!debug_mode)
-				syslog(LOG_WARNING, "Unknown value for ban poilcy: %s\n", value);
-			else
-				printf("Unknown value for ban poilcy: %s\n", value);
-			return;
+			log(TO_ALL, LOG_WARNING, "Unknown value for ban poilcy: %s\n", value);
 		}
 	} else if (!strcasecmp("balance_level", key)) {
 		for (idx=0; idx<4; idx++) {
@@ -258,17 +250,11 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 		}
 
 		if (idx>3)
-			if (!debug_mode)
-				syslog(LOG_WARNING, "Bad value for balance_level policy: %s\n", value);
-			else
-				printf("Bad value for balance_level policy: %s\n", value);
+			log(TO_ALL, LOG_WARNING, "Bad value for balance_level policy: %s\n", value);
 		else
 			pol->level = idx;
 	} else
-		if (!debug_mode)
-			syslog(LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
-		else
-			printf("Unknown key returned, ignoring: %s\n", key);
+		log(TO_ALL, LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
 	
 }
 
@@ -298,10 +284,7 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	sprintf(cmd, "exec %s %s %d", polscript, path, irq);
 	output = popen(cmd, "r");
 	if (!output) {
-		if (debug_mode)
-			printf("Unable to execute user policy script %s\n", polscript);
-		else
-			syslog(LOG_WARNING, "Unable to execute user policy script %s\n", polscript);
+		log(TO_ALL, LOG_WARNING, "Unable to execute user policy script %s\n", polscript);
 		return;
 	}
 
@@ -332,18 +315,12 @@ static int check_for_irq_ban(char *path, int irq)
  	 * The system command itself failed
  	 */
 	if (rc == -1) {
-		if (debug_mode)
-			printf("%s failed, please check the --banscript option\n", cmd);
-		else
-			syslog(LOG_INFO, "%s failed, please check the --banscript option\n", cmd);
+		log(TO_ALL, LOG_WARNING, "%s failed, please check the --banscript option\n", cmd);
 		return 0;
 	}
 
 	if (WEXITSTATUS(rc)) {
-		if (debug_mode)
-			printf("irq %d is baned by %s\n", irq, banscript);
-		else
-			syslog(LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
+		log(TO_ALL, LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
 		return 1;
 	}
 	return 0;
@@ -463,8 +440,7 @@ void rebuild_irq_db(void)
 		iinfo = get_irq_info(ninfo->irq);
 		new_irq_list = g_list_remove(new_irq_list, ninfo);
 		if (!iinfo) {
-			if (debug_mode)
-				printf("Adding untracked IRQ %d to database\n", ninfo->irq);
+			log(TO_CONSOLE, LOG_INFO, "Adding untracked IRQ %d to database\n", ninfo->irq);
 			interrupts_db = g_list_append(interrupts_db, ninfo);
 		} else
 			free(ninfo);

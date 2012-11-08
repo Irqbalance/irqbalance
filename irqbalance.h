@@ -127,5 +127,20 @@ static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,
 	}
 }
 
+/*
+ * Logging functions
+ */
+#define TO_SYSLOG	(1 << 0)
+#define TO_CONSOLE	(1 << 1)
+#define TO_ALL		(TO_SYSLOG | TO_CONSOLE)
+
+extern unsigned int log_mask;
+#define log(mask, lvl, fmt, args...) do {\
+	if (log_mask & mask & TO_SYSLOG)\
+		syslog(lvl, fmt, ##args);\
+	if (log_mask & mask & TO_CONSOLE)\
+		printf(fmt, ##args);\
+}while(0)
+
 #endif
 

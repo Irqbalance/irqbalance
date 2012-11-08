@@ -269,14 +269,16 @@ static void dump_irq(struct irq_info *info, void *data)
 {
 	int spaces = (long int)data;
 	int i;
-	for (i=0; i<spaces; i++) printf(" ");
-	printf("Interrupt %i node_num is %d (%s/%u) \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
+	for (i=0; i<spaces; i++) log(TO_CONSOLE, LOG_INFO, " ");
+	log(TO_CONSOLE, LOG_INFO, "Interrupt %i node_num is %d (%s/%u) \n",
+	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
 
 static void dump_topo_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	struct topo_obj *c = (struct topo_obj *)d;
-	printf("                CPU number %i  numa_node is %d (load %lu)\n", c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
+	log(TO_CONSOLE, LOG_INFO, "                CPU number %i  numa_node is %d (load %lu)\n",
+	    c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
 	if (c->interrupts)
 		for_each_irq(c->interrupts, dump_irq, (void *)18);
 }
@@ -285,7 +287,8 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4095, d->mask);
-	printf("        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n", d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
+	log(TO_CONSOLE, LOG_INFO, "        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n",
+	    d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_topo_obj, NULL);
 	if (g_list_length(d->interrupts) > 0)
@@ -296,7 +299,8 @@ static void dump_package(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4096, d->mask);
-	printf("Package %i:  numa_node is %d cpu mask is %s (load %lu)\n", d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
+	log(TO_CONSOLE, LOG_INFO, "Package %i:  numa_node is %d cpu mask is %s (load %lu)\n",
+	    d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_cache_domain, buffer);
 	if (g_list_length(d->interrupts) > 0)

@@ -95,8 +95,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 
 	*remaining_deviation -= info->load;
 
-	if (debug_mode)
-		printf("Selecting irq %d for rebalancing\n", info->irq);
+	log(TO_CONSOLE, LOG_INFO, "Selecting irq %d for rebalancing\n", info->irq);
 
 	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
 
@@ -180,12 +179,12 @@ void update_migration_status(void)
 	find_overloaded_objs(cpus, info);
 	if (power_thresh != ULONG_MAX && cycle_count > 5) {
 		if (!info.num_over && (info.num_under >= power_thresh) && info.powersave) {
-			syslog(LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
+			log(TO_ALL, LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
 			info.powersave->powersave_mode = 1;
 			if (g_list_length(info.powersave->interrupts) > 0)
 				for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
 		} else if ((info.num_over) && (info.num_powersave)) {
-			syslog(LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
+			log(TO_ALL, LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
 			for_each_object(cpus, clear_powersave_mode, NULL);
 		}
 	}
@@ -209,7 +208,8 @@ void reset_counts(void)
 
 static void dump_workload(struct irq_info *info, void *unused __attribute__((unused)))
 {
-	printf("Interrupt %i node_num %d (class %s) has workload %lu \n", info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned long)info->load);
+	log(TO_CONSOLE, LOG_INFO, "Interrupt %i node_num %d (class %s) has workload %lu \n",
+	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned long)info->load);
 }
 
 void dump_workloads(void)

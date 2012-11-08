@@ -47,6 +47,7 @@ int debug_mode;
 int foreground_mode;
 int numa_avail;
 int need_rescan;
+unsigned int log_mask = TO_SYSLOG;
 extern cpumask_t banned_cpus;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
@@ -247,19 +248,17 @@ int main(int argc, char** argv)
 	if (getenv("IRQBALANCE_DEBUG")) 
 		debug_mode=1;
 
+	if (debug_mode)
+		log_mask |= TO_CONSOLE;
+
 	if (numa_available() > -1) {
 		numa_avail = 1;
-	} else {
-		if (debug_mode)
-			printf("This machine seems not NUMA capable.\n");
-	}
+	} else 
+		log(TO_CONSOLE, LOG_INFO, "This machine seems not NUMA capable.\n");
 
 	if (banscript) {
 		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
-		if (debug_mode)
-			printf("%s\n", note);
-		else
-			syslog(LOG_WARNING, "%s\n", note);
+		log(TO_ALL, LOG_WARNING, "%s\n", note);
 	}
 
 	action.sa_handler = handler;
@@ -277,10 +276,7 @@ int main(int argc, char** argv)
 		char *msg = "Balaincing is ineffective on systems with a "
 			    "single cache domain.  Shutting down\n";
 
-		if (debug_mode)
-			printf("%s", msg);
-		else
-			syslog(LOG_INFO, "%s", msg);
+		log(TO_ALL, LOG_WARNING, "%s", msg);
 		exit(EXIT_SUCCESS);
 	}
 	/* On dual core/hyperthreading shared cache systems just do a one shot setup */
@@ -322,8 +318,7 @@ int main(int argc, char** argv)
 
 	while (keep_going) {
 		sleep_approx(SLEEP_INTERVAL);
-		if (debug_mode)
-			printf("\n\n\n-----------------------------------------------------------------------------\n");
+		log(TO_CONSOLE, LOG_INFO, "\n\n\n-----------------------------------------------------------------------------\n");
 
 
 		clear_work_stats();
@@ -335,8 +330,7 @@ int main(int argc, char** argv)
 			need_rescan = 0;
 			/* if there's a hotplug event we better turn off power mode for a bit until things settle */
 			power_mode = 0;
-			if (debug_mode)
-				printf("Rescanning cpu topology \n");
+			log(TO_CONSOLE, LOG_INFO, "Rescanning cpu topology \n");
 			reset_counts();
 			clear_work_stats();
 
