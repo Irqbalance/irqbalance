@@ -106,6 +106,15 @@ static void parse_command_line(int argc, char **argv)
 				exit(1);
 				break;
 			case 'b':
+#ifndef INCLUDE_BANSCRIPT
+				/*
+				 * Banscript is no longer supported unless
+				 * explicitly enabled
+				 */
+				log(TO_ALL, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --polscript");
+				usage();
+				exit(1);
+#endif
 				banscript = strdup(optarg);
 				break;
 			case 'd':
