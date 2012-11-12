@@ -47,7 +47,7 @@ int debug_mode;
 int foreground_mode;
 int numa_avail;
 int need_rescan;
-unsigned int log_mask = TO_SYSLOG;
+unsigned int log_mask = TO_ALL;
 extern cpumask_t banned_cpus;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
@@ -86,8 +86,8 @@ struct option lopts[] = {
 
 static void usage(void)
 {
-	printf("irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	printf("	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>]\n");
+	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -111,7 +111,7 @@ static void parse_command_line(int argc, char **argv)
 				 * Banscript is no longer supported unless
 				 * explicitly enabled
 				 */
-				log(TO_ALL, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --polscript");
+				log(TO_CONSOLE, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --polscript");
 				usage();
 				exit(1);
 #endif
@@ -257,8 +257,12 @@ int main(int argc, char** argv)
 	if (getenv("IRQBALANCE_DEBUG")) 
 		debug_mode=1;
 
-	if (debug_mode)
-		log_mask |= TO_CONSOLE;
+	/*
+ 	 * If we are't in debug mode, don't dump anything to the console
+ 	 * note that everything goes to the console before we check this
+ 	 */
+	if (!debug_mode)
+		log_mask &= ~TO_CONSOLE;
 
 	if (numa_available() > -1) {
 		numa_avail = 1;
