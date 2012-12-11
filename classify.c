@@ -457,9 +457,13 @@ struct irq_info *add_new_irq(int irq)
 	struct irq_info *new, *nnew;
 
 	new = calloc(sizeof(struct irq_info), 1);
-	nnew = calloc(sizeof(struct irq_info), 1);
-	if (!new || !nnew)
+	if (!new)
 		return NULL;
+	nnew = calloc(sizeof(struct irq_info), 1);
+	if (!nnew) {
+		free(new);
+		return NULL;
+	}
 
 	new->irq = irq;
 	new->type = IRQ_TYPE_LEGACY;
@@ -500,6 +504,10 @@ void migrate_irq(GList **from, GList **to, struct irq_info *info)
 
 	find.irq = info->irq;
 	entry = g_list_find_custom(*from, &find, compare_ints);
+
+	if (!entry)
+		return;
+
 	tmp = entry->data;
 	*from = g_list_delete_link(*from, entry);
 

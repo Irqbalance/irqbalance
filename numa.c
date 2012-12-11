@@ -65,6 +65,10 @@ static void add_one_node(const char *nodename)
 		return;
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
 	f = fopen(path, "r");
+	if (!f) {
+		free(new);
+		return;
+	}
 	if (ferror(f)) {
 		cpus_clear(new->mask);
 	} else {
