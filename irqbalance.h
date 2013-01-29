@@ -71,6 +71,7 @@ extern unsigned long power_thresh;
 extern char *banscript;
 extern char *polscript;
 extern cpumask_t banned_cpus;
+extern cpumask_t unbanned_cpus;
 
 /*
  * Numa node access routines

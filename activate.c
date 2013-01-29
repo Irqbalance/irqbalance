@@ -63,22 +63,40 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_t applied_mask;
 	int valid_mask = 0;
 
-	if ((hint_policy == HINT_POLICY_EXACT) &&
-	    (!cpus_empty(info->affinity_hint))) {
-		applied_mask = info->affinity_hint;
-		valid_mask = 1;
-	} else if (info->assigned_obj) {
-		applied_mask = info->assigned_obj->mask;
-		valid_mask = 1;
-		if ((hint_policy == HINT_POLICY_SUBSET) &&
-		    (!cpus_empty(info->affinity_hint)))
-			cpus_and(applied_mask, applied_mask, info->affinity_hint);
-	}
-
 	/*
  	 * only activate mappings for irqs that have moved
  	 */
-	if (!info->moved && (!valid_mask || check_affinity(info, applied_mask)))
+	if (!info->moved)
+		return;
+
+	if ((hint_policy == HINT_POLICY_EXACT) &&
+	    (!cpus_empty(info->affinity_hint))) {
+		if (cpus_intersects(info->affinity_hint, banned_cpus))
+			log(TO_ALL, LOG_WARNING,
+			    "irq %d affinity_hint and banned cpus confict\n",
+			    info->irq);
+		else {
+			applied_mask = info->affinity_hint;
+			valid_mask = 1;
+		}
+	} else if (info->assigned_obj) {
+		applied_mask = info->assigned_obj->mask;
+		if ((hint_policy == HINT_POLICY_SUBSET) &&
+		    (!cpus_empty(info->affinity_hint))) {
+			cpus_and(applied_mask, applied_mask, info->affinity_hint);
+			if (!cpus_intersects(applied_mask, unbanned_cpus))
+				log(TO_ALL, LOG_WARNING,
+				    "irq %d affinity_hint subset empty\n",
+				   info->irq);
+			else
+				valid_mask = 1;
+		}
+	}
+
+	/*
+ 	 * Don't activate anything for which we have an invalid mask 
+ 	 */
+	if (!valid_mask || check_affinity(info, applied_mask))
 		return;
 
 	if (!info->assigned_obj)

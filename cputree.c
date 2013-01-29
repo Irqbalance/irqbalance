@@ -55,7 +55,7 @@ cpumask_t cpu_possible_map;
    it's convenient to have the complement of banned_cpus available so that 
    the AND operator can be used to mask out unwanted cpus
 */
-static cpumask_t unbanned_cpus;
+cpumask_t unbanned_cpus;
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
 						    cpumask_t package_mask)
