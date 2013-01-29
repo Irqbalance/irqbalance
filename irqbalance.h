@@ -40,9 +40,7 @@ void calculate_placement(void);
 void dump_tree(void);
 
 void activate_mappings(void);
-void account_for_nic_stats(void);
 void clear_cpu_tree(void);
-void pci_numa_scan(void);
 
 /*===================NEW BALANCER FUNCTIONS============================*/
 
