@@ -33,8 +33,6 @@
 
 #define LINESIZE 4096
 
-extern cpumask_t banned_cpus;
-
 static int proc_int_has_msi = 0;
 static int msi_found_in_sysfs = 0;
 

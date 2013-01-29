@@ -70,6 +70,7 @@ extern unsigned long long cycle_count;
 extern unsigned long power_thresh;
 extern char *banscript;
 extern char *polscript;
+extern cpumask_t banned_cpus;
 
 /*
  * Numa node access routines

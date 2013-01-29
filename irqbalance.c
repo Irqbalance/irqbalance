@@ -48,7 +48,6 @@ int foreground_mode;
 int numa_avail;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
-extern cpumask_t banned_cpus;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long long cycle_count = 0;
