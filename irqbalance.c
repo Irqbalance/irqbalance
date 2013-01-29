@@ -220,6 +220,7 @@ static void handler(int signum)
 
 static void force_rescan(int signum)
 {
+	(void)signum;
 	if (cycle_count)
 		need_rescan = 1;
 }
