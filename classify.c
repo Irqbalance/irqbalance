@@ -54,6 +54,8 @@ static short class_codes[MAX_CLASS] = {
 struct user_irq_policy {
 	int ban;
 	int level;
+	int numa_node_set;
+	int numa_node;
 };
 
 static GList *interrupts_db;
@@ -176,7 +178,10 @@ get_numa_node:
 	fclose(fd);
 
 assign_node:
-	new->numa_node = get_numa_node(numa_node);
+	if (pol->numa_node_set)
+		new->numa_node = get_numa_node(pol->numa_node);
+	else
+		new->numa_node = get_numa_node(numa_node);
 
 	sprintf(path, "%s/local_cpus", devpath);
 	fd = fopen(path, "r");
@@ -253,6 +258,15 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 			log(TO_ALL, LOG_WARNING, "Bad value for balance_level policy: %s\n", value);
 		else
 			pol->level = idx;
+	} else if (!strcasecmp("numa_node", key)) {
+		idx = strtoul(value, NULL, 10);	
+		if (!get_numa_node(idx)) {
+			log(TO_ALL, LOG_WARNING, "NUMA node %d doesn't exist\n",
+				idx);
+			return;
+		}
+		pol->numa_node = idx;
+		pol->numa_node_set = 1;
 	} else
 		log(TO_ALL, LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
 	

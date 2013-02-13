@@ -108,7 +108,15 @@ Directs irqbalance to exclude the passed in irq from balancing
 This allows a user to override the balance level of a given irq.  By default the
 balance level is determined automatically based on the pci device class of the
 device that owns the irq.
-
+.TP
+.I numa_node=<integer>
+This allows a user to override the numa node that sysfs indicates a given device
+irq is local to.  Often, systems will not specify this information in ACPI, and as a
+result devicesa are considered equidistant from all numa nodes in a system.
+This option allows for that hardware provided information to be overridden, so
+that irqbalance can bias irq affinity for these devices toward its most local
+node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
+from a device to be equidistant from all nodes.
 .TP
 .B --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
