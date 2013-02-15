@@ -90,6 +90,8 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 				   info->irq);
 			else
 				valid_mask = 1;
+		} else {
+			valid_mask = 1;
 		}
 	}
 
