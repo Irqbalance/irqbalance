@@ -4,6 +4,8 @@
 /* interval between rebalance attempts in seconds */
 #define SLEEP_INTERVAL 10
 
+#define NSEC_PER_SEC 1e9
+
 /* NUMA topology refresh intervals, in units of SLEEP_INTERVAL */
 #define NUMA_REFRESH_INTERVAL 32
 /* NIC interrupt refresh interval, in units of SLEEP_INTERVAL */

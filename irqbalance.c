@@ -54,6 +54,7 @@ unsigned long long cycle_count = 0;
 char *pidfile = NULL;
 char *banscript = NULL;
 char *polscript = NULL;
+long HZ;
 
 void sleep_approx(int seconds)
 {
@@ -272,6 +273,12 @@ int main(int argc, char** argv)
 	if (banscript) {
 		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
 		log(TO_ALL, LOG_WARNING, "%s\n", note);
+	}
+
+	HZ = sysconf(_SC_CLK_TCK);
+	if (HZ == -1) {
+		log(TO_ALL, LOG_WARNING, "Unable to determin HZ defaulting to 100\n");
+		HZ = 100;
 	}
 
 	action.sa_handler = handler;

@@ -243,12 +243,12 @@ void parse_proc_stat(void)
 		if (cycle_count) {
 			cpu->load = (irq_load + softirq_load) - (cpu->last_load);
 			/*
-			 * the [soft]irq_load values are in jiffies, which are
-			 * units of 10ms, multiply by 1000 to convert that to
-			 * 1/10 milliseconds.  This give us a better integer
-			 * distribution of load between irqs
+			 * the [soft]irq_load values are in jiffies, with
+			 * HZ jiffies per second.  Convert the load to nanoseconds
+			 * to get a better integer resolution of nanoseconds per
+			 * interrupt.
 			 */
-			cpu->load *= 1000;
+			cpu->load *= NSEC_PER_SEC/HZ;
 		}
 		cpu->last_load = (irq_load + softirq_load);
 	}
