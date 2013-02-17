@@ -178,7 +178,7 @@ get_numa_node:
 	fclose(fd);
 
 assign_node:
-	if (pol->numa_node_set)
+	if (pol->numa_node_set == 1)
 		new->numa_node = get_numa_node(pol->numa_node);
 	else
 		new->numa_node = get_numa_node(numa_node);
@@ -284,8 +284,7 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	char buffer[128];
 	char *brc;
 
-	pol->ban = -1;
-	pol->level = -1;
+	memset(pol, -1, sizeof(struct user_irq_policy));
 
 	/* Return defaults if no script was given */
 	if (!polscript)
