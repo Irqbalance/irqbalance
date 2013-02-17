@@ -58,7 +58,7 @@ cpumask_t cpu_possible_map;
 cpumask_t unbanned_cpus;
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
-						    cpumask_t package_mask)
+						    int packageid, cpumask_t package_mask)
 {
 	GList *entry;
 	struct topo_obj *package;
@@ -68,8 +68,11 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 
 	while (entry) {
 		package = entry->data;
-		if (cpus_equal(package_mask, package->mask))
+		if (cpus_equal(package_mask, package->mask)) {
+			if (packageid != package->number)
+				log(TO_ALL, LOG_WARNING, "package_mask with different physical_package_id found!\n");
 			break;
+		}
 		entry = g_list_next(entry);
 	}
 
@@ -80,6 +83,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		package->mask = package_mask;
 		package->obj_type = OBJ_TYPE_PACKAGE;
 		package->obj_type_list = &packages;
+		package->number = packageid;
 		packages = g_list_append(packages, package);
 		package_count++;
 	}
@@ -154,6 +158,7 @@ static void do_one_cpu(char *path)
 	DIR *dir;
 	struct dirent *entry;
 	int nodeid;
+	int packageid = 0;
 
 	/* skip offline cpus */
 	snprintf(new_path, PATH_MAX, "%s/online", path);
@@ -210,6 +215,17 @@ static void do_one_cpu(char *path)
 		fclose(file);
 		free(line);
 	}
+	/* try to read the package id */
+	snprintf(new_path, PATH_MAX, "%s/topology/physical_package_id", path);
+	file = fopen(new_path, "r");
+	if (file) {
+		char *line = NULL;
+		size_t size = 0;
+		if (getline(&line, &size, file))
+			packageid = strtoul(line, NULL, 10);
+		fclose(file);
+		free(line);
+	}
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available so try index1 first, then index2 */
@@ -249,7 +265,7 @@ static void do_one_cpu(char *path)
 	closedir(dir);
 
 	cache = add_cpu_to_cache_domain(cpu, cache_mask);
-	package = add_cache_domain_to_package(cache, package_mask);
+	package = add_cache_domain_to_package(cache, packageid, package_mask);
 	add_package_to_node(package, nodeid);	
  
 	/* 
