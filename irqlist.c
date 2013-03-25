@@ -160,23 +160,34 @@ static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__(
 	obj->powersave_mode = 0;
 }
 
-#define find_overloaded_objs(name, info) do {\
-	int ___load_sources;\
-	memset(&(info), 0, sizeof(struct load_balance_info));\
-	for_each_object((name), gather_load_stats, &(info));\
-	(info).load_sources = ((info).load_sources == 0) ? 1 : ((info).load_sources);\
-	(info).avg_load = (info).total_load / (info).load_sources;\
-	for_each_object((name), compute_deviations, &(info));\
-	___load_sources = ((info).load_sources == 1) ? 1 : ((info).load_sources - 1);\
-	(info).std_deviation = (long double)((info).deviations / ___load_sources);\
-	(info).std_deviation = sqrt((info).std_deviation);\
-	for_each_object((name), migrate_overloaded_irqs, &(info));\
-}while(0)
+static void find_overloaded_objs(GList *name, struct load_balance_info *info) {
+	int ___load_sources;
+	memset(info, 0, sizeof(struct load_balance_info));
+	for_each_object(name, gather_load_stats, info);
+	info->load_sources = (info->load_sources == 0) ? 1 : (info->load_sources);
+	info->avg_load = info->total_load / info->load_sources;
+	for_each_object(name, compute_deviations, info);
+	___load_sources = (info->load_sources == 1) ? 1 : (info->load_sources - 1);
+	info->std_deviation = (long double)(info->deviations / info->load_sources - 1);
+	info->std_deviation = sqrt(info->std_deviation);
+
+	/*
+ 	 * For two core systems, std deviation will always at best equal the 
+ 	 * deviation of any data point, so cut it in half.  that should allow us
+ 	 * to trigger migration on the more loaded of the two cpus.  Note that
+ 	 * we actually divide by 4 here rather than two.  We do that so as to
+ 	 * keep the bessel correction in tact.
+ 	 */
+	if (info->load_sources <=2)
+		info->std_deviation = info->std_deviation/4;
+
+	for_each_object(name, migrate_overloaded_irqs, info);
+}
 
 void update_migration_status(void)
 {
 	struct load_balance_info info;
-	find_overloaded_objs(cpus, info);
+	find_overloaded_objs(cpus, &info);
 	if (power_thresh != ULONG_MAX && cycle_count > 5) {
 		if (!info.num_over && (info.num_under >= power_thresh) && info.powersave) {
 			log(TO_ALL, LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
@@ -188,9 +199,9 @@ void update_migration_status(void)
 			for_each_object(cpus, clear_powersave_mode, NULL);
 		}
 	}
-	find_overloaded_objs(cache_domains, info);
-	find_overloaded_objs(packages, info);
-	find_overloaded_objs(numa_nodes, info);
+	find_overloaded_objs(cache_domains, &info);
+	find_overloaded_objs(packages, &info);
+	find_overloaded_objs(numa_nodes, &info);
 }
 
 
