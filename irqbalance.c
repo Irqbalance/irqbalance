@@ -293,7 +293,7 @@ int main(int argc, char** argv)
 
 	/* On single core UP systems irqbalance obviously has no work to do */
 	if (core_count<2) {
-		char *msg = "Balaincing is ineffective on systems with a "
+		char *msg = "Balancing is ineffective on systems with a "
 			    "single cache domain.  Shutting down\n";
 
 		log(TO_ALL, LOG_WARNING, "%s", msg);
