@@ -18,11 +18,12 @@ char *classes[] = {
 	"ethernet",
 	"gbit-ethernet",
 	"10gbit-ethernet",
+	"virt-event",
 	0
 };
 
-int map_class_to_level[7] = 
-{ BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
+int map_class_to_level[8] =
+{ BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CACHE, BALANCE_NONE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
 
 #define MAX_CLASS 0x12
@@ -465,7 +466,7 @@ void rebuild_irq_db(void)
 		
 }
 
-struct irq_info *add_new_irq(int irq)
+struct irq_info *add_new_irq(int irq, const char *irq_name)
 {
 	struct irq_info *new, *nnew;
 
@@ -479,8 +480,17 @@ struct irq_info *add_new_irq(int irq)
 	}
 
 	new->irq = irq;
-	new->type = IRQ_TYPE_LEGACY;
-	new->class = IRQ_OTHER;
+	/* Do classification here. As Xen PV is the first resident
+	 * here, this is done rather simple.
+	 */
+	if (strstr(irq_name, "xen-dyn-event") != NULL) {
+		new->type = IRQ_TYPE_VIRT_EVENT;
+		new->class = IRQ_VIRT_EVENT;
+	} else {
+		new->type = IRQ_TYPE_LEGACY;
+		new->class = IRQ_OTHER;
+	}
+	new->level = map_class_to_level[new->class];
 	new->numa_node = get_numa_node(-1);
 	memcpy(nnew, new, sizeof(struct irq_info));
 	interrupts_db = g_list_append(interrupts_db, new);

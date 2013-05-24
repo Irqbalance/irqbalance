@@ -59,6 +59,8 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 		struct irq_info *info;
+		char *irq_name, *last_token, *p, *savedptr;
+		char savedline[1024];
 
 		if (getline(&line, &size, file)==0)
 			break;
@@ -77,15 +79,38 @@ void parse_proc_interrupts(void)
 		c = strchr(line, ':');
 		if (!c)
 			continue;
+
+		strncpy(savedline, line, sizeof(savedline));
+
 		*c = 0;
 		c++;
 		number = strtoul(line, NULL, 10);
+
+		/* Extract interrupt name such as "IO-APIC-fasteoi". At
+		 * this point "savedline" is string like (note that
+		 * special interrupts are all ignored above):
+		 *
+		 *  4:      150    IO-APIC-fasteoi  serial
+		 *
+		 * The string contains at least four fields
+		 * delineated by white spaces. The first field is
+		 * interrupt number, followed by nr_cpus (>=1)
+		 * interrupt counts, followed by interrupt name, then
+		 * followed by device name.
+		 */
+		irq_name = strtok_r(savedline, " ", &savedptr);
+		last_token = strtok_r(NULL, " ", &savedptr);
+		while ((p = strtok_r(NULL, " ", &savedptr))) {
+			irq_name = last_token;
+			last_token = p;
+		}
+
 		info = get_irq_info(number);
 		if (!info) {
 			if (!cycle_count)
 				continue;
 			need_rescan = 1;
-			info = add_new_irq(number);
+			info = add_new_irq(number, irq_name);
 		}
 
 		count = 0;
