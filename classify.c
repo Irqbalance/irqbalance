@@ -362,9 +362,11 @@ static void build_one_dev_entry(const char *dirname)
 	int irqnum;
 	struct irq_info *new;
 	char path[PATH_MAX];
+	char devpath[PATH_MAX];
 	struct user_irq_policy pol;
 
 	sprintf(path, "%s/%s/msi_irqs", SYSDEV_DIR, dirname);
+	sprintf(devpath, "%s/%s", SYSDEV_DIR, dirname);
 	
 	msidir = opendir(path);
 
@@ -375,13 +377,12 @@ static void build_one_dev_entry(const char *dirname)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
 			if (irqnum) {
-				get_irq_user_policy(path, irqnum, &pol);
-				sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
-				if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
+				get_irq_user_policy(devpath, irqnum, &pol);
+				if ((pol.ban == 1) || (check_for_irq_ban(devpath, irqnum))) {
 					add_banned_irq(irqnum);
 					continue;
 				}
-				new = add_one_irq_to_db(path, irqnum, &pol);
+				new = add_one_irq_to_db(devpath, irqnum, &pol);
 				if (!new)
 					continue;
 				new->type = IRQ_TYPE_MSIX;
@@ -402,14 +403,13 @@ static void build_one_dev_entry(const char *dirname)
 	 * no pci device has irq 0
 	 */
 	if (irqnum) {
-		sprintf(path, "%s/%s", SYSDEV_DIR, dirname);
-		get_irq_user_policy(path, irqnum, &pol);
+		get_irq_user_policy(devpath, irqnum, &pol);
 		if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
 			add_banned_irq(irqnum);
 			goto done;
 		}
 
-		new = add_one_irq_to_db(path, irqnum, &pol);
+		new = add_one_irq_to_db(devpath, irqnum, &pol);
 		if (!new)
 			goto done;
 		new->type = IRQ_TYPE_LEGACY;
