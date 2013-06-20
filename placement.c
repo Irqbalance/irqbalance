@@ -115,7 +115,7 @@ static void find_best_object_for_irq(struct irq_info *info, void *data)
 	place.info = info;
 	place.best = NULL;
 	place.least_irqs = NULL;
-	place.best_cost = INT_MAX;
+	place.best_cost = ULLONG_MAX;
 
 	for_each_object(d->children, find_best_object, &place);
 
