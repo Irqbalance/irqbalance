@@ -95,6 +95,17 @@ void add_banned_irq(int irq)
 	return;
 }
 
+int is_banned_irq(int irq)
+{
+	GList *entry;
+	struct irq_info find;
+
+	find.irq = irq;
+
+	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
+	return entry ? 1:0;
+}
+
 			
 /*
  * Inserts an irq_info struct into the intterupts_db list
@@ -124,8 +135,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 		return NULL;
 	}
 
-	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
-	if (entry) {
+	if (is_banned_irq(irq)) {
 		log(TO_ALL, LOG_INFO, "SKIPPING BANNED IRQ %d\n", irq);
 		return NULL;
 	}
@@ -420,6 +430,9 @@ void free_irq_db(void)
 	for_each_irq(NULL, free_irq, NULL);
 	g_list_free(interrupts_db);
 	interrupts_db = NULL;
+	for_each_irq(banned_irqs, free_irq, NULL);
+	g_list_free(banned_irqs);
+	banned_irqs = NULL;
 }
 
 void rebuild_irq_db(void)
@@ -440,7 +453,7 @@ void rebuild_irq_db(void)
 		if (!entry)
 			break;
 
-	build_one_dev_entry(entry->d_name);
+		build_one_dev_entry(entry->d_name);
 
 	} while (entry != NULL);
 
@@ -453,12 +466,17 @@ void rebuild_irq_db(void)
 		ninfo = gentry->data;
 		iinfo = get_irq_info(ninfo->irq);
 		new_irq_list = g_list_remove(new_irq_list, ninfo);
+
+		/* Skip banned irqs here */
+		if (is_banned_irq(ninfo->irq))
+			goto next;
+
 		if (!iinfo) {
 			log(TO_CONSOLE, LOG_INFO, "Adding untracked IRQ %d to database\n", ninfo->irq);
 			interrupts_db = g_list_append(interrupts_db, ninfo);
 		} else
 			free(ninfo);
-
+next:
 		gentry = g_list_first(new_irq_list);
 	}
 	g_list_free(new_irq_list);
