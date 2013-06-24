@@ -96,7 +96,7 @@ void add_banned_irq(int irq)
 	return;
 }
 
-int is_banned_irq(int irq)
+static int is_banned_irq(int irq)
 {
 	GList *entry;
 	struct irq_info find;
