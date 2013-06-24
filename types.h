@@ -30,6 +30,11 @@
 #define IRQ_TYPE_MSIX       2
 #define IRQ_TYPE_VIRT_EVENT 3
 
+/*
+ * IRQ Internal tracking flags
+ */
+#define IRQ_FLAG_BANNED	1
+
 enum obj_type_e {
 	OBJ_TYPE_CPU,
 	OBJ_TYPE_CACHE,
@@ -55,6 +60,7 @@ struct irq_info {
         int class;
         int type;
 	int level;
+	int flags;
         struct topo_obj *numa_node;
         cpumask_t cpumask;
         cpumask_t affinity_hint;

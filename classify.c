@@ -90,6 +90,7 @@ void add_banned_irq(int irq)
 	}
 
 	new->irq = irq;
+	new->flags |= IRQ_FLAG_BANNED;
 
 	banned_irqs = g_list_append(banned_irqs, new);
 	return;
@@ -535,6 +536,10 @@ struct irq_info *get_irq_info(int irq)
 
 	find.irq = irq;
 	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+
+	if (!entry)
+		entry = g_list_find_custom(banned_irqs, &find, compare_ints);
+
 	return entry ? entry->data : NULL;
 }
 
