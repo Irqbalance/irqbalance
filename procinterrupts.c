@@ -221,7 +221,7 @@ void parse_proc_stat(void)
 	size_t size = 0;
 	int cpunr, rc, cpucount;
 	struct topo_obj *cpu;
-	int irq_load, softirq_load;
+	unsigned long long irq_load, softirq_load;
 
 	file = fopen("/proc/stat", "r");
 	if (!file) {
@@ -250,7 +250,7 @@ void parse_proc_stat(void)
 		if (cpu_isset(cpunr, banned_cpus))
 			continue;
 
-		rc = sscanf(line, "%*s %*d %*d %*d %*d %*d %d %d", &irq_load, &softirq_load);
+		rc = sscanf(line, "%*s %*u %*u %*u %*u %*u %llu %llu", &irq_load, &softirq_load);
 		if (rc < 2)
 			break;	
 
