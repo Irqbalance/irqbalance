@@ -264,17 +264,16 @@ static void do_one_cpu(char *path)
 	} while (entry);
 	closedir(dir);
 
-	cache = add_cpu_to_cache_domain(cpu, cache_mask);
-	package = add_cache_domain_to_package(cache, packageid, package_mask);
-	add_package_to_node(package, nodeid);	
- 
-	/* 
+	/*
 	   blank out the banned cpus from the various masks so that interrupts
 	   will never be told to go there
 	 */
-	cpus_and(cpu_cache_domain(cpu)->mask, cpu_cache_domain(cpu)->mask, unbanned_cpus);
-	cpus_and(cpu_package(cpu)->mask, cpu_package(cpu)->mask, unbanned_cpus);
-	cpus_and(cpu->mask, cpu->mask, unbanned_cpus);
+	cpus_and(cache_mask, cache_mask, unbanned_cpus);
+	cpus_and(package_mask, package_mask, unbanned_cpus);
+
+	cache = add_cpu_to_cache_domain(cpu, cache_mask);
+	package = add_cache_domain_to_package(cache, packageid, package_mask);
+	add_package_to_node(package, nodeid);
 
 	cpu->obj_type_list = &cpus;
 	cpus = g_list_append(cpus, cpu);
