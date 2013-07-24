@@ -72,7 +72,7 @@ static void compute_deviations(struct topo_obj *obj, void *data)
 
 static void move_candidate_irqs(struct irq_info *info, void *data)
 {
-	int *remaining_deviation = (int *)data;
+	long long *remaining_deviation = (long long *)data;
 
 	/* never move an irq that has an afinity hint when 
  	 * hint_policy is HINT_POLICY_EXACT 
@@ -105,7 +105,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
-	int deviation;
+	long long deviation;
 
 	if (obj->powersave_mode)
 		info->num_powersave++;
