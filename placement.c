@@ -153,7 +153,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		return;
 	}
 
-	place.best_cost = INT_MAX;
+	place.best_cost = ULLONG_MAX;
 	place.best = NULL;
 	place.least_irqs = NULL;
 	place.info = info;
