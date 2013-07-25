@@ -40,10 +40,11 @@
 struct load_balance_info {
 	unsigned long long int total_load;
 	unsigned long long avg_load;
+	unsigned long long min_load;
+	unsigned long long adjustment_load;
 	int load_sources;
 	unsigned long long int deviations;
 	long double std_deviation;
-	unsigned int num_within;
 	unsigned int num_over;
 	unsigned int num_under;
 	unsigned int num_powersave;
@@ -54,6 +55,8 @@ static void gather_load_stats(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 
+	if (info->min_load == 0 || obj->load < info->min_load)
+		info->min_load = obj->load;
 	info->total_load += obj->load;
 	info->load_sources += 1;
 }
@@ -72,7 +75,7 @@ static void compute_deviations(struct topo_obj *obj, void *data)
 
 static void move_candidate_irqs(struct irq_info *info, void *data)
 {
-	long long *remaining_deviation = (long long *)data;
+	struct load_balance_info *lb_info = data;
 
 	/* never move an irq that has an afinity hint when 
  	 * hint_policy is HINT_POLICY_EXACT 
@@ -89,11 +92,18 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	if (g_list_length(info->assigned_obj->interrupts) <= 1)
 		return;
 
-	/* Stop rebalancing if we've estimated a full reduction of deviation */
-	if (*remaining_deviation <= 0)
+	/* IRQs with a load of 1 have most likely not had any interrupts and
+	 * aren't worth migrating
+	 */
+	if (info->load <= 1)
 		return;
 
-	*remaining_deviation -= info->load;
+	/* If we can migrate an irq without swapping the imbalance do it. */
+	if ((lb_info->adjustment_load - info->load) > (lb_info->min_load + info->load)) {
+		lb_info->adjustment_load -= info->load;
+		lb_info->min_load += info->load;
+	} else
+		return;
 
 	log(TO_CONSOLE, LOG_INFO, "Selecting irq %d for rebalancing\n", info->irq);
 
@@ -105,49 +115,34 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
-	long long deviation;
 
 	if (obj->powersave_mode)
 		info->num_powersave++;
 
-	/*
- 	 * Don't rebalance irqs on objects whos load is below the average
- 	 */
-	if (obj->load <= info->avg_load) {
-		if ((obj->load + info->std_deviation) <= info->avg_load) {
-			info->num_under++;
-			if (power_thresh != ULONG_MAX && !info->powersave)
-				if (!obj->powersave_mode)
-					info->powersave = obj;
-		} else
-			info->num_within++; 
-		return;
+	if ((obj->load + info->std_deviation) <= info->avg_load) {
+		info->num_under++;
+		if (power_thresh != ULONG_MAX && !info->powersave)
+			if (!obj->powersave_mode)
+				info->powersave = obj;
+	} else if ((obj->load - info->std_deviation) >=info->avg_load) {
+		info->num_over++;
 	}
 
-	deviation = obj->load - info->avg_load;
-
-	if ((deviation > info->std_deviation) &&
+	if ((obj->load > info->min_load) &&
 	    (g_list_length(obj->interrupts) > 1)) {
-
-		info->num_over++;
-		/*
- 		 * We have a cpu that is overloaded and 
- 		 * has irqs that can be moved to fix that
- 		 */
-
 		/* order the list from least to greatest workload */
 		sort_irq_list(&obj->interrupts);
 		/*
- 		 * Each irq carries a weighted average amount of load
- 		 * we think its responsible for.  Set deviation to be the load
- 		 * of the difference between this objects load and the averate,
- 		 * and migrate irqs until we only have one left, or until that
- 		 * difference reaches zero
- 		 */
-		for_each_irq(obj->interrupts, move_candidate_irqs, &deviation);
-	} else
-		info->num_within++;
-
+		 * Each irq carries a weighted average amount of load
+		 * we think it's responsible for. This object's load is larger
+		 * than the object with the minimum load. Select irqs for
+		 * migration if we could move them to the minimum object
+		 * without reversing the imbalance or until we only have one
+		 * left.
+		 */
+		info->adjustment_load = obj->load;
+		for_each_irq(obj->interrupts, move_candidate_irqs, info);
+	}
 }
 
 static void force_irq_migration(struct irq_info *info, void *data __attribute__((unused)))
@@ -169,16 +164,6 @@ static void find_overloaded_objs(GList *name, struct load_balance_info *info) {
 	for_each_object(name, compute_deviations, info);
 	info->std_deviation = (long double)(info->deviations / info->load_sources - 1);
 	info->std_deviation = sqrt(info->std_deviation);
-
-	/*
- 	 * For two core systems, std deviation will always at best equal the 
- 	 * deviation of any data point, so cut it in half.  that should allow us
- 	 * to trigger migration on the more loaded of the two cpus.  Note that
- 	 * we actually divide by 4 here rather than two.  We do that so as to
- 	 * keep the bessel correction in tact.
- 	 */
-	if (info->load_sources <=2)
-		info->std_deviation = info->std_deviation/4;
 
 	for_each_object(name, migrate_overloaded_irqs, info);
 }
