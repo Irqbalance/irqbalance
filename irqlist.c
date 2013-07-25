@@ -153,6 +153,7 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 static void force_irq_migration(struct irq_info *info, void *data __attribute__((unused)))
 {
 	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
+	info->assigned_obj = NULL;
 }
 
 static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__((unused)))
