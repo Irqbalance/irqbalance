@@ -87,7 +87,7 @@ struct option lopts[] = {
 static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>] [--pid= | -s <file>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
