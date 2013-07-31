@@ -50,6 +50,7 @@ int need_rescan;
 unsigned int log_mask = TO_ALL;
 enum hp_e hint_policy = HINT_POLICY_SUBSET;
 unsigned long power_thresh = ULONG_MAX;
+unsigned long deepest_cache = ULONG_MAX;
 unsigned long long cycle_count = 0;
 char *pidfile = NULL;
 char *banscript = NULL;
@@ -79,6 +80,7 @@ struct option lopts[] = {
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
 	{"banscript", 1, NULL, 'b'},
+	{"deepestcache", 1, NULL, 'c'},
 	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
 	{0, 0, 0, 0}
@@ -87,7 +89,7 @@ struct option lopts[] = {
 static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>] [--pid= | -s <file>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>] [--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -97,7 +99,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:i:p:s:b:l:",
+		"odfh:i:p:s:c:b:l:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -116,6 +118,13 @@ static void parse_command_line(int argc, char **argv)
 				exit(1);
 #endif
 				banscript = strdup(optarg);
+				break;
+			case 'c':
+				deepest_cache = strtoul(optarg, NULL, 10);
+				if (deepest_cache == ULONG_MAX || deepest_cache < 1) {
+					usage();
+					exit(1);
+				}
 				break;
 			case 'd':
 				debug_mode=1;

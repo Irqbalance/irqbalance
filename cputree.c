@@ -31,6 +31,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 #include <glib.h>
@@ -159,6 +160,7 @@ static void do_one_cpu(char *path)
 	struct dirent *entry;
 	int nodeid;
 	int packageid = 0;
+	unsigned int max_cache_index, cache_index, cache_stat;
 
 	/* skip offline cpus */
 	snprintf(new_path, PATH_MAX, "%s/online", path);
@@ -228,27 +230,34 @@ static void do_one_cpu(char *path)
 	}
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
-	/* We want the deepest cache level available so try index1 first, then index2 */
+	/* We want the deepest cache level available */
 	cpu_set(cpu->number, cache_mask);
-	snprintf(new_path, PATH_MAX, "%s/cache/index1/shared_cpu_map", path);
-	file = fopen(new_path, "r");
-	if (file) {
-		char *line = NULL;
-		size_t size = 0;
-		if (getline(&line, &size, file)) 
-			cpumask_parse_user(line, strlen(line), cache_mask);
-		fclose(file);
-		free(line);
-	}
-	snprintf(new_path, PATH_MAX, "%s/cache/index2/shared_cpu_map", path);
-	file = fopen(new_path, "r");
-	if (file) {
-		char *line = NULL;
-		size_t size = 0;
-		if (getline(&line, &size, file)) 
-			cpumask_parse_user(line, strlen(line), cache_mask);
-		fclose(file);
-		free(line);
+	max_cache_index = 0;
+	cache_index = 1;
+	cache_stat = 0;
+	do {
+		struct stat sb;
+		snprintf(new_path, PATH_MAX, "%s/cache/index%d/shared_cpu_map", path, cache_index);
+		cache_stat = stat(new_path, &sb);
+		if (!cache_stat) {
+			max_cache_index = cache_index;
+			if (max_cache_index == deepest_cache)
+				break;
+			cache_index ++;
+		}
+	} while(!cache_stat);
+
+	if (max_cache_index > 0) {
+		snprintf(new_path, PATH_MAX, "%s/cache/index%d/shared_cpu_map", path, max_cache_index);
+		file = fopen(new_path, "r");
+		if (file) {
+			char *line = NULL;
+			size_t size = 0;
+			if (getline(&line, &size, file))
+				cpumask_parse_user(line, strlen(line), cache_mask);
+			fclose(file);
+			free(line);
+		}
 	}
 
 	nodeid=-1;
