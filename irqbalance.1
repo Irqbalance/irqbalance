@@ -75,6 +75,15 @@ manually.  This option is addative and can be specified multiple times. For
 example to ban irqs 43 and 44 from balancing, use the following command line:
 .B irqbalance --banirq=43 --banirq=44
 
+.TP
+.B --deepestcache=<integer>
+This allows a user to specify the cache level at which irqbalance partitions
+cache domains. Without specified, irqbalance searches the available deepest
+cache. This can affect how irqbalance builds up the CPU tree. For example, on
+a system where all the CPU cores being within the same L3 cache domain, one
+can let irqbalance build up the CPU tree on L2 cache by using the following
+command line: 
+.B irqbalance --deepestcache=2
 
 .TP
 .B --policyscript=<script>
