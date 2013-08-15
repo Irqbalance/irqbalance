@@ -434,6 +434,8 @@ void free_irq_db(void)
 	for_each_irq(banned_irqs, free_irq, NULL);
 	g_list_free(banned_irqs);
 	banned_irqs = NULL;
+	g_list_free(rebalance_irq_list);
+	rebalance_irq_list = NULL;
 }
 
 void rebuild_irq_db(void)
