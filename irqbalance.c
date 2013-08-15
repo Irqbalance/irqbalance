@@ -357,8 +357,6 @@ int main(int argc, char** argv)
 		/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
 		if (need_rescan) {
 			need_rescan = 0;
-			/* if there's a hotplug event we better turn off power mode for a bit until things settle */
-			power_mode = 0;
 			log(TO_CONSOLE, LOG_INFO, "Rescanning cpu topology \n");
 			reset_counts();
 			clear_work_stats();

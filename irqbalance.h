@@ -61,7 +61,6 @@ enum hp_e {
 
 extern int debug_mode;
 extern int one_shot_mode;
-extern int power_mode;
 extern int need_rescan;
 extern enum hp_e hint_policy;
 extern unsigned long long cycle_count;

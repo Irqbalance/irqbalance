@@ -29,8 +29,6 @@
 #include "irqbalance.h"
 
 
-int power_mode;
-
 GList *rebalance_irq_list;
 
 struct obj_placement {
