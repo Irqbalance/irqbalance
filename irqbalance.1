@@ -34,19 +34,19 @@ The purpose of \fBirqbalance\fR is distribute hardware interrupts across process
 .SH "OPTIONS"
 
 .TP
-.B --oneshot
+.B -o, --oneshot
 Causes irqbalance to be run once, after which the daemon exits
 .TP
 
-.B --debug
+.B -d, --debug
 Causes irqbalance to print extra debug information.  Implies --foreground
 
 .TP
-.B --foreground
+.B -f, --foreground
 Causes irqbalance to run in the foreground (without --debug)
 
 .TP
-.B --hintpolicy=[exact | subset | ignore]
+.B -h, --hintpolicy=[exact | subset | ignore]
 Set the policy for how irq kernel affinity hinting is treated.  Can be one of:
 .P
 .I exact
@@ -59,7 +59,7 @@ irq is balanced, but the assigned object will be a subset of the affintiy hint
 irq affinity hint value is completely ignored
 
 .TP
-.B --powerthresh=<threshold>
+.B -p, --powerthresh=<threshold>
 Set the threshold at which we attempt to move a cpu into powersave mode
 If more than <threshold> cpus are more than 1 standard deviation below the
 average cpu softirq workload, and no cpus are more than 1 standard deviation
@@ -68,7 +68,7 @@ powersave mode.  In powersave mode, a cpu will not have any irqs balanced to it,
 in an effort to prevent that cpu from waking up without need.
 
 .TP
-.B --banirq=<irqnum>
+.B -i, --banirq=<irqnum>
 Add the specified irq to the set of banned irqs. irqbalance will not affect
 the affinity of any irqs on the banned list, allowing them to be specified
 manually.  This option is addative and can be specified multiple times. For
@@ -86,7 +86,7 @@ command line:
 .B irqbalance --deepestcache=2
 
 .TP
-.B --policyscript=<script>
+.B -l, --policyscript=<script>
 When specified, the referenced script will execute once for each discovered irq,
 with the sysfs device path and irq number passed as arguments.  Note that the
 device path argument will point to the parent directory from which the irq
@@ -114,7 +114,7 @@ that irqbalance can bias irq affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
 from a device to be equidistant from all nodes.
 .TP
-.B --pid=<file>
+.B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when
 irqbalance exits.
