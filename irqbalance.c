@@ -209,7 +209,7 @@ static void dump_object_tree(void)
 	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }
 
-static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
 	if (info->level == BALANCE_NONE)
 		return;
@@ -357,6 +357,7 @@ int main(int argc, char** argv)
 		/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
 		if (need_rescan) {
 			need_rescan = 0;
+			cycle_count = 0;
 			log(TO_CONSOLE, LOG_INFO, "Rescanning cpu topology \n");
 			reset_counts();
 			clear_work_stats();
@@ -370,7 +371,6 @@ int main(int argc, char** argv)
 			clear_work_stats();
 			parse_proc_interrupts();
 			parse_proc_stat();
-			cycle_count = 0;
 		} 
 
 		if (cycle_count)	

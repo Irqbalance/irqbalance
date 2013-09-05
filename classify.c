@@ -60,7 +60,6 @@ struct user_irq_policy {
 };
 
 static GList *interrupts_db;
-static GList *new_irq_list;
 static GList *banned_irqs;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
@@ -442,8 +441,6 @@ void rebuild_irq_db(void)
 {
 	DIR *devdir = opendir(SYSDEV_DIR);
 	struct dirent *entry;
-	GList *gentry;
-	struct irq_info *ninfo, *iinfo;
 
 	free_irq_db();
 		
@@ -461,61 +458,36 @@ void rebuild_irq_db(void)
 	} while (entry != NULL);
 
 	closedir(devdir);
-
-	if (!new_irq_list)
-		return;
-	gentry = g_list_first(new_irq_list);	
-	while(gentry) {
-		ninfo = gentry->data;
-		iinfo = get_irq_info(ninfo->irq);
-		new_irq_list = g_list_remove(new_irq_list, ninfo);
-
-		/* Skip banned irqs here */
-		if (is_banned_irq(ninfo->irq))
-			goto next;
-
-		if (!iinfo) {
-			log(TO_CONSOLE, LOG_INFO, "Adding untracked IRQ %d to database\n", ninfo->irq);
-			interrupts_db = g_list_append(interrupts_db, ninfo);
-		} else
-			free(ninfo);
-next:
-		gentry = g_list_first(new_irq_list);
-	}
-	g_list_free(new_irq_list);
-	new_irq_list = NULL;
-		
 }
 
 struct irq_info *add_new_irq(int irq, const char *irq_name)
 {
-	struct irq_info *new, *nnew;
+	struct irq_info *new;
+	struct user_irq_policy pol;
 
-	new = calloc(sizeof(struct irq_info), 1);
-	if (!new)
-		return NULL;
-	nnew = calloc(sizeof(struct irq_info), 1);
-	if (!nnew) {
-		free(new);
+	get_irq_user_policy("/sys", irq, &pol);
+	if (pol.ban == 1) {
+		add_banned_irq(irq);
+		new = get_irq_info(irq);
+	} else
+		new = add_one_irq_to_db("/sys", irq, &pol);
+
+	if (!new) {
+		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
 		return NULL;
 	}
 
-	new->irq = irq;
-	/* Do classification here. As Xen PV is the first resident
-	 * here, this is done rather simple.
+	/*
+	 * Override some of the new irq defaults here
 	 */
 	if (strstr(irq_name, "xen-dyn-event") != NULL) {
 		new->type = IRQ_TYPE_VIRT_EVENT;
 		new->class = IRQ_VIRT_EVENT;
-	} else {
+	} else
 		new->type = IRQ_TYPE_LEGACY;
-		new->class = IRQ_OTHER;
-	}
+
 	new->level = map_class_to_level[new->class];
-	new->numa_node = get_numa_node(-1);
-	memcpy(nnew, new, sizeof(struct irq_info));
-	interrupts_db = g_list_append(interrupts_db, new);
-	new_irq_list = g_list_append(new_irq_list, nnew);
+	force_rebalance_irq(new, NULL);
 	return new;
 }
 

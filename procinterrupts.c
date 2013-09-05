@@ -107,10 +107,18 @@ void parse_proc_interrupts(void)
 
 		info = get_irq_info(number);
 		if (!info) {
-			if (!cycle_count)
-				continue;
-			need_rescan = 1;
+			/*
+			 * If this is our 0th pass through this routine
+			 * this is an irq that wasn't reported in sysfs
+			 * and we should just add it.  If we've been running
+			 * a while then this irq just appeared and its time
+			 * to rescan our irqs
+			 */
+			if (cycle_count)
+				need_rescan = 1;
 			info = add_new_irq(number, irq_name);
+			if (!info)
+				continue;
 		}
 
 		count = 0;
