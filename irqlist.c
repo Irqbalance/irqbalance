@@ -188,19 +188,6 @@ void update_migration_status(void)
 	find_overloaded_objs(numa_nodes, &info);
 }
 
-
-static void reset_irq_count(struct irq_info *info, void *unused __attribute__((unused)))
-{
-	info->last_irq_count = info->irq_count;
-	info->irq_count = 0;
-}
-
-void reset_counts(void)
-{
-	for_each_irq(NULL, reset_irq_count, NULL);
-}
-
-
 static void dump_workload(struct irq_info *info, void *unused __attribute__((unused)))
 {
 	log(TO_CONSOLE, LOG_INFO, "Interrupt %i node_num %d (class %s) has workload %lu \n",

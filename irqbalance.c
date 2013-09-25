@@ -356,7 +356,6 @@ int main(int argc, char** argv)
 			need_rescan = 0;
 			cycle_count = 0;
 			log(TO_CONSOLE, LOG_INFO, "Rescanning cpu topology \n");
-			reset_counts();
 			clear_work_stats();
 
 			free_object_tree();
