@@ -36,6 +36,77 @@
 static int proc_int_has_msi = 0;
 static int msi_found_in_sysfs = 0;
 
+GList* collect_full_irq_list()
+{
+	GList *tmp_list = NULL;
+	FILE *file;
+	char *line = NULL;
+	size_t size = 0;
+	char *irq_name, *savedptr, *last_token, *p;
+
+	file = fopen("/proc/interrupts", "r");
+	if (!file)
+		return NULL;
+
+	/* first line is the header we don't need; nuke it */
+	if (getline(&line, &size, file)==0) {
+		free(line);
+		fclose(file);
+		return NULL;
+	}
+
+	while (!feof(file)) {
+		int	 number;
+		struct irq_info *info;
+		char *c;
+		char savedline[1024];
+
+		if (getline(&line, &size, file)==0)
+			break;
+
+		/* lines with letters in front are special, like NMI count. Ignore */
+		c = line;
+		while (isblank(*(c)))
+			c++;
+			
+		if (!(*c>='0' && *c<='9'))
+			break;
+		c = strchr(line, ':');
+		if (!c)
+			continue;
+
+		strncpy(savedline, line, sizeof(savedline));
+
+		irq_name = strtok_r(savedline, " ", &savedptr);
+		last_token = strtok_r(NULL, " ", &savedptr);
+		while ((p = strtok_r(NULL, " ", &savedptr))) {
+			irq_name = last_token;
+			last_token = p;
+		}
+
+		*c = 0;
+		c++;
+		number = strtoul(line, NULL, 10);
+
+		info = calloc(sizeof(struct irq_info), 1);
+		if (info) {
+			info->irq = number;
+			if (strstr(irq_name, "xen-dyn-event") != NULL) {
+				info->type = IRQ_TYPE_VIRT_EVENT;
+				info->class = IRQ_VIRT_EVENT;
+			} else {
+				info->type = IRQ_TYPE_LEGACY;
+				info->class = IRQ_OTHER;
+			} 
+			tmp_list = g_list_append(tmp_list, info);
+		}
+
+	}
+	fclose(file);
+	free(line);
+	return tmp_list;
+}
+
 void parse_proc_interrupts(void)
 {
 	FILE *file;
@@ -59,7 +130,6 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 		struct irq_info *info;
-		char *irq_name, *last_token, *p, *savedptr;
 		char savedline[1024];
 
 		if (getline(&line, &size, file)==0)
@@ -86,39 +156,10 @@ void parse_proc_interrupts(void)
 		c++;
 		number = strtoul(line, NULL, 10);
 
-		/* Extract interrupt name such as "IO-APIC-fasteoi". At
-		 * this point "savedline" is string like (note that
-		 * special interrupts are all ignored above):
-		 *
-		 *  4:      150    IO-APIC-fasteoi  serial
-		 *
-		 * The string contains at least four fields
-		 * delineated by white spaces. The first field is
-		 * interrupt number, followed by nr_cpus (>=1)
-		 * interrupt counts, followed by interrupt name, then
-		 * followed by device name.
-		 */
-		irq_name = strtok_r(savedline, " ", &savedptr);
-		last_token = strtok_r(NULL, " ", &savedptr);
-		while ((p = strtok_r(NULL, " ", &savedptr))) {
-			irq_name = last_token;
-			last_token = p;
-		}
-
 		info = get_irq_info(number);
 		if (!info) {
-			/*
-			 * If this is our 0th pass through this routine
-			 * this is an irq that wasn't reported in sysfs
-			 * and we should just add it.  If we've been running
-			 * a while then this irq just appeared and its time
-			 * to rescan our irqs
-			 */
-			if (cycle_count)
-				need_rescan = 1;
-			info = add_new_irq(number, irq_name);
-			if (!info)
-				continue;
+			need_rescan = 1;
+			break;
 		}
 
 		count = 0;
@@ -134,8 +175,10 @@ void parse_proc_interrupts(void)
 			c=c2;
 			cpunr++;
 		}
-		if (cpunr != core_count) 
+		if (cpunr != core_count) {
 			need_rescan = 1;
+			break;
+		}
 
 		info->last_irq_count = info->irq_count;		
 		info->irq_count = count;

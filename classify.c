@@ -377,6 +377,9 @@ static void build_one_dev_entry(const char *dirname)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
 			if (irqnum) {
+				new = get_irq_info(irqnum);
+				if (new)
+					continue;
 				get_irq_user_policy(devpath, irqnum, &pol);
 				if ((pol.ban == 1) || (check_for_irq_ban(devpath, irqnum))) {
 					add_banned_irq(irqnum);
@@ -403,6 +406,9 @@ static void build_one_dev_entry(const char *dirname)
 	 * no pci device has irq 0
 	 */
 	if (irqnum) {
+		new = get_irq_info(irqnum);
+		if (new)
+			goto done;
 		get_irq_user_policy(devpath, irqnum, &pol);
 		if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
 			add_banned_irq(irqnum);
@@ -437,13 +443,27 @@ void free_irq_db(void)
 	rebalance_irq_list = NULL;
 }
 
+static void add_missing_irq(struct irq_info *info, void *unused __attribute__((unused)))
+{
+	struct irq_info *lookup = get_irq_info(info->irq);
+
+	if (!lookup)
+		add_new_irq(info->irq, info);
+	
+}
+
+
 void rebuild_irq_db(void)
 {
-	DIR *devdir = opendir(SYSDEV_DIR);
+	DIR *devdir;
 	struct dirent *entry;
+	GList *tmp_irqs = NULL;
 
 	free_irq_db();
 		
+	tmp_irqs = collect_full_irq_list();
+
+	devdir = opendir(SYSDEV_DIR);
 	if (!devdir)
 		return;
 
@@ -458,12 +478,22 @@ void rebuild_irq_db(void)
 	} while (entry != NULL);
 
 	closedir(devdir);
+
+
+	for_each_irq(tmp_irqs, add_missing_irq, NULL);
+
+	g_list_free_full(tmp_irqs, free);
+
 }
 
-struct irq_info *add_new_irq(int irq, const char *irq_name)
+struct irq_info *add_new_irq(int irq, struct irq_info *hint)
 {
 	struct irq_info *new;
 	struct user_irq_policy pol;
+
+	new = get_irq_info(irq);
+	if (new)
+		return NULL;
 
 	get_irq_user_policy("/sys", irq, &pol);
 	if (pol.ban == 1) {
@@ -480,14 +510,12 @@ struct irq_info *add_new_irq(int irq, const char *irq_name)
 	/*
 	 * Override some of the new irq defaults here
 	 */
-	if (strstr(irq_name, "xen-dyn-event") != NULL) {
-		new->type = IRQ_TYPE_VIRT_EVENT;
-		new->class = IRQ_VIRT_EVENT;
-	} else
-		new->type = IRQ_TYPE_LEGACY;
+	if (hint) {
+		new->type = hint->type;
+		new->class = hint->class;
+	}
 
 	new->level = map_class_to_level[new->class];
-	force_rebalance_irq(new, NULL);
 	return new;
 }
 

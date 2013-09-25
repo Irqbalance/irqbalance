@@ -26,6 +26,7 @@ extern char *classes[];
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
 extern void parse_proc_interrupts(void);
+extern GList* collect_full_irq_list();
 extern void parse_proc_stat(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
@@ -110,7 +111,7 @@ extern void add_banned_irq(int irq);
 extern void for_each_irq(GList *list, void (*cb)(struct irq_info *info,  void *data), void *data);
 extern struct irq_info *get_irq_info(int irq);
 extern void migrate_irq(GList **from, GList **to, struct irq_info *info);
-extern struct irq_info *add_new_irq(int irq, const char *irq_name);
+extern struct irq_info *add_new_irq(int irq, struct irq_info *hint);
 extern void force_rebalance_irq(struct irq_info *info, void *data);
 #define irq_numa_node(irq) ((irq)->numa_node)
 
