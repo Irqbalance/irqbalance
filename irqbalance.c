@@ -308,9 +308,6 @@ int main(int argc, char** argv)
 		log(TO_ALL, LOG_WARNING, "%s", msg);
 		exit(EXIT_SUCCESS);
 	}
-	/* On dual core/hyperthreading shared cache systems just do a one shot setup */
-	if (cache_domain_count==1)
-		one_shot_mode = 1;
 
 	if (!foreground_mode) {
 		int pidfd = -1;
