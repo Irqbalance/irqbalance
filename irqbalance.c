@@ -303,7 +303,7 @@ int main(int argc, char** argv)
 	/* On single core UP systems irqbalance obviously has no work to do */
 	if (core_count<2) {
 		char *msg = "Balancing is ineffective on systems with a "
-			    "single cache domain.  Shutting down\n";
+			    "single cpu.  Shutting down\n";
 
 		log(TO_ALL, LOG_WARNING, "%s", msg);
 		exit(EXIT_SUCCESS);
