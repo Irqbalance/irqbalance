@@ -187,7 +187,7 @@ void parse_proc_interrupts(void)
 		if ((info->type == IRQ_TYPE_MSI) || (info->type == IRQ_TYPE_MSIX))
 			msi_found_in_sysfs = 1;
 	}		
-	if ((proc_int_has_msi) && (!msi_found_in_sysfs)) {
+	if ((proc_int_has_msi) && (!msi_found_in_sysfs) && (!need_rescan)) {
 		log(TO_ALL, LOG_WARNING, "WARNING: MSI interrupts found in /proc/interrupts\n");
 		log(TO_ALL, LOG_WARNING, "But none found in sysfs, you need to update your kernel\n");
 		log(TO_ALL, LOG_WARNING, "Until then, IRQs will be improperly classified\n");
