@@ -261,17 +261,19 @@ static void do_one_cpu(char *path)
 	}
 
 	nodeid=-1;
-	dir = opendir(path);
-	do {
-		entry = readdir(dir);
-		if (!entry)
-			break;
-		if (strstr(entry->d_name, "node")) {
-			nodeid = strtoul(&entry->d_name[4], NULL, 10);
-			break;
-		}
-	} while (entry);
-	closedir(dir);
+	if (numa_avail) {
+		dir = opendir(path);
+		do {
+			entry = readdir(dir);
+			if (!entry)
+				break;
+			if (strstr(entry->d_name, "node")) {
+				nodeid = strtoul(&entry->d_name[4], NULL, 10);
+				break;
+			}
+		} while (entry);
+		closedir(dir);
+	}
 
 	/*
 	   blank out the banned cpus from the various masks so that interrupts

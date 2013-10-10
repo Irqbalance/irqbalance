@@ -180,15 +180,15 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 get_numa_node:
 	numa_node = -1;
-	sprintf(path, "%s/numa_node", devpath);
-	fd = fopen(path, "r");
-	if (!fd)
-		goto assign_node;
+	if (numa_avail) {
+		sprintf(path, "%s/numa_node", devpath);
+		fd = fopen(path, "r");
+		if (fd) {
+			rc = fscanf(fd, "%d", &numa_node);
+			fclose(fd);
+		}
+	}
 
-	rc = fscanf(fd, "%d", &numa_node);
-	fclose(fd);
-
-assign_node:
 	if (pol->numa_node_set == 1)
 		new->numa_node = get_numa_node(pol->numa_node);
 	else

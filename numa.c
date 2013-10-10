@@ -89,7 +89,7 @@ static void add_one_node(const char *nodename)
 
 void build_numa_node_list(void)
 {
-	DIR *dir = opendir(SYSFS_NODE_PATH);
+	DIR *dir;
 	struct dirent *entry;
 
 	/*
@@ -104,6 +104,10 @@ void build_numa_node_list(void)
 	 */
 	numa_nodes = g_list_append(numa_nodes, &unspecified_node);
 
+	if (!numa_avail)
+		return;
+
+	dir = opendir(SYSFS_NODE_PATH);
 	if (!dir)
 		return;
 
