@@ -14,7 +14,7 @@ char *classes[] = {
 	"other",
 	"legacy",
 	"storage",
-	"timer",
+	"video",
 	"ethernet",
 	"gbit-ethernet",
 	"10gbit-ethernet",
