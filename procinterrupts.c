@@ -230,7 +230,7 @@ static uint64_t get_parent_branch_irq_count_share(struct topo_obj *d)
 
 	if (d->parent) {
 		total_irq_count = get_parent_branch_irq_count_share(d->parent);
-		total_irq_count /= g_list_length(*d->obj_type_list);
+		total_irq_count /= g_list_length((d->parent)->children);
 	}
 
 	if (g_list_length(d->interrupts) > 0)
