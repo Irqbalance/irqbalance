@@ -162,8 +162,13 @@ static void find_overloaded_objs(GList *name, struct load_balance_info *info) {
 	info->load_sources = (info->load_sources == 0) ? 1 : (info->load_sources);
 	info->avg_load = info->total_load / info->load_sources;
 	for_each_object(name, compute_deviations, info);
-	info->std_deviation = (long double)(info->deviations / info->load_sources - 1);
-	info->std_deviation = sqrt(info->std_deviation);
+	/* Don't divide by zero if there is a single load source */
+	if (info->load_sources == 1)
+		info->std_deviation = 0;
+	else {
+		info->std_deviation = (long double)(info->deviations / (info->load_sources - 1));
+		info->std_deviation = sqrt(info->std_deviation);
+	}
 
 	for_each_object(name, migrate_overloaded_irqs, info);
 }
