@@ -51,6 +51,14 @@ static void find_best_object(struct topo_obj *d, void *data)
 		return;
 
 	/*
+	 * also don't consider any node that doesn't have at least one cpu in
+	 * the unbanned list
+	 */
+	if ((d->obj_type == OBJ_TYPE_NODE) &&
+	    (!cpus_intersects(d->mask, unbanned_cpus)))
+		return;
+
+	/*
  	 * If the hint policy is subset, then we only want 
  	 * to consider objects that are within the irqs hint, but
  	 * only if that irq in fact has published a hint
@@ -137,10 +145,16 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 	struct obj_placement place;
 	struct topo_obj *asign;
 
-	if( info->level == BALANCE_NONE)
+	if ((info->level == BALANCE_NONE) && cpus_empty(banned_cpus))
 		return;
 
 	if (irq_numa_node(info)->number != -1) {
+		/*
+		 * Need to make sure this node is elligible for migration
+		 * given the banned cpu list
+		 */
+		if (!cpus_intersects(irq_numa_node(info)->mask, unbanned_cpus))
+			goto find_placement;
 		/*
  		 * This irq belongs to a device with a preferred numa node
  		 * put it on that node
@@ -151,6 +165,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		return;
 	}
 
+find_placement:
 	place.best_cost = ULLONG_MAX;
 	place.best = NULL;
 	place.least_irqs = NULL;
