@@ -80,12 +80,15 @@ example to ban irqs 43 and 44 from balancing, use the following command line:
 .TP
 .B --deepestcache=<integer>
 This allows a user to specify the cache level at which irqbalance partitions
-cache domains. Without specified, irqbalance searches the available deepest
-cache. This can affect how irqbalance builds up the CPU tree. For example, on
-a system where all the CPU cores being within the same L3 cache domain, one
-can let irqbalance build up the CPU tree on L2 cache by using the following
-command line: 
+cache domains.  Specifying a deeper cache may allow a greater degree of
+flexibility for irqbalance to assign irq affinity to achieve greater performance
+increases, but setting a cache depth too large on some systems (specifically
+where all cpus on a system share the deepest cache lavel), will cause irqbalance
+to see balancing as unnesessecary. 
 .B irqbalance --deepestcache=2
+.P
+The default value for deepestcache is 2.
+
 
 .TP
 .B -l, --policyscript=<script>

@@ -50,7 +50,7 @@ int need_rescan;
 unsigned int log_mask = TO_ALL;
 enum hp_e hint_policy = HINT_POLICY_IGNORE;
 unsigned long power_thresh = ULONG_MAX;
-unsigned long deepest_cache = ULONG_MAX;
+unsigned long deepest_cache = 2;
 unsigned long long cycle_count = 0;
 char *pidfile = NULL;
 char *banscript = NULL;
