@@ -22,7 +22,7 @@ irqbalance \- distribute hardware interrupts across processors on a multiprocess
 .SH "SYNOPSIS"
 
 .nf
-\fBirqbalance\fR 
+\fBirqbalance\fR
 .fi
 
 .SH "DESCRIPTION"
@@ -52,7 +52,7 @@ Set the policy for how irq kernel affinity hinting is treated.  Can be one of:
 irq affinity hint is applied unilaterally and never violated
 .P
 .I subset
-irq is balanced, but the assigned object will be a subset of the affintiy hint
+irq is balanced, but the assigned object will be a subset of the affinity hint
 .P
 .I ignore
 irq affinity hint value is completely ignored
@@ -82,8 +82,8 @@ This allows a user to specify the cache level at which irqbalance partitions
 cache domains.  Specifying a deeper cache may allow a greater degree of
 flexibility for irqbalance to assign irq affinity to achieve greater performance
 increases, but setting a cache depth too large on some systems (specifically
-where all cpus on a system share the deepest cache lavel), will cause irqbalance
-to see balancing as unnesessecary. 
+where all cpus on a system share the deepest cache level), will cause irqbalance
+to see balancing as unnecessary.
 .B irqbalance --deepestcache=2
 .P
 The default value for deepestcache is 2.
@@ -112,7 +112,7 @@ device that owns the irq.
 .I numa_node=<integer>
 This allows a user to override the numa node that sysfs indicates a given device
 irq is local to.  Often, systems will not specify this information in ACPI, and as a
-result devicesa are considered equidistant from all numa nodes in a system.
+result devices are considered equidistant from all numa nodes in a system.
 This option allows for that hardware provided information to be overridden, so
 that irqbalance can bias irq affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
