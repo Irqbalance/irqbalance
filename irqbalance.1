@@ -35,30 +35,30 @@ processors on a multiprocessor system in order to increase performance\&.
 
 .TP
 .B -o, --oneshot
-Causes irqbalance to be run once, after which the daemon exits
+Causes irqbalance to be run once, after which the daemon exits.
 .TP
 
 .B -d, --debug
-Causes irqbalance to print extra debug information.  Implies --foreground
+Causes irqbalance to print extra debug information.  Implies --foreground.
 
 .TP
 .B -f, --foreground
-Causes irqbalance to run in the foreground (without --debug)
+Causes irqbalance to run in the foreground (without --debug).
 
 .TP
 .B -h, --hintpolicy=[exact | subset | ignore]
 Set the policy for how IRQ kernel affinity hinting is treated.  Can be one of:
 .P
 .I exact
-IRQ affinity hint is applied unilaterally and never violated
+IRQ affinity hint is applied unilaterally and never violated.
 .P
 .I subset
-IRQ is balanced, but the assigned object will be a subset of the affinity hint
+IRQ is balanced, but the assigned object will be a subset of the affinity hint.
 .P
 .I ignore
-IRQ affinity hint value is completely ignored
+IRQ affinity hint value is completely ignored.
 .P
-The default value for hintpolicy is ignore
+The default value for hintpolicy is ignore.
 
 .TP
 .B -p, --powerthresh=<threshold>
@@ -89,7 +89,6 @@ to see balancing as unnecessary.
 .P
 The default value for deepestcache is 2.
 
-
 .TP
 .B -l, --policyscript=<script>
 When specified, the referenced script will execute once for each discovered IRQ,
@@ -103,7 +102,7 @@ exit code from the provided utility.  Recognized key=value pairs are:
 .TP
 .I ban=[true | false]
 .tP
-Directs irqbalance to exclude the passed in IRQ from balancing
+Directs irqbalance to exclude the passed in IRQ from balancing.
 .TP
 .I balance_level=[none | package | cache | core]
 This allows a user to override the balance level of a given IRQ.  By default the
@@ -127,20 +126,20 @@ irqbalance exits.
 .SH "ENVIRONMENT VARIABLES"
 .TP
 .B IRQBALANCE_ONESHOT
-Same as --oneshot
+Same as --oneshot.
 
 .TP
 .B IRQBALANCE_DEBUG
-Same as --debug
+Same as --debug.
 
 .TP
 .B IRQBALANCE_BANNED_CPUS
-Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to
+Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to.
 
 .SH "SIGNALS"
 .TP
 .B SIGHUP
-Forces a rescan of the available IRQs and system topology
+Forces a rescan of the available IRQs and system topology.
 
 .SH "Homepage"
 https://github.com/Irqbalance/irqbalance
