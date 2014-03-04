@@ -46,16 +46,16 @@ Causes irqbalance to run in the foreground (without --debug)
 
 .TP
 .B -h, --hintpolicy=[exact | subset | ignore]
-Set the policy for how irq kernel affinity hinting is treated.  Can be one of:
+Set the policy for how IRQ kernel affinity hinting is treated.  Can be one of:
 .P
 .I exact
-irq affinity hint is applied unilaterally and never violated
+IRQ affinity hint is applied unilaterally and never violated
 .P
 .I subset
-irq is balanced, but the assigned object will be a subset of the affinity hint
+IRQ is balanced, but the assigned object will be a subset of the affinity hint
 .P
 .I ignore
-irq affinity hint value is completely ignored
+IRQ affinity hint value is completely ignored
 .P
 The default value for hintpolicy is ignore
 
@@ -64,23 +64,23 @@ The default value for hintpolicy is ignore
 Set the threshold at which we attempt to move a CPU into powersave mode
 If more than <threshold> CPUs are more than 1 standard deviation below the
 average CPU softirq workload, and no CPUs are more than 1 standard deviation
-above (and have more than 1 irq assigned to them), attempt to place 1 CPU in
-powersave mode.  In powersave mode, a CPU will not have any irqs balanced to it,
+above (and have more than 1 IRQ assigned to them), attempt to place 1 CPU in
+powersave mode.  In powersave mode, a CPU will not have any IRQs balanced to it,
 in an effort to prevent that CPU from waking up without need.
 
 .TP
 .B -i, --banirq=<irqnum>
-Add the specified irq to the set of banned irqs. irqbalance will not affect
-the affinity of any irqs on the banned list, allowing them to be specified
+Add the specified IRQ to the set of banned IRQs. irqbalance will not affect
+the affinity of any IRQs on the banned list, allowing them to be specified
 manually.  This option is addative and can be specified multiple times. For
-example to ban irqs 43 and 44 from balancing, use the following command line:
+example to ban IRQs 43 and 44 from balancing, use the following command line:
 .B irqbalance --banirq=43 --banirq=44
 
 .TP
 .B --deepestcache=<integer>
 This allows a user to specify the cache level at which irqbalance partitions
 cache domains.  Specifying a deeper cache may allow a greater degree of
-flexibility for irqbalance to assign irq affinity to achieve greater performance
+flexibility for irqbalance to assign IRQ affinity to achieve greater performance
 increases, but setting a cache depth too large on some systems (specifically
 where all CPUs on a system share the deepest cache level), will cause irqbalance
 to see balancing as unnecessary.
@@ -91,30 +91,30 @@ The default value for deepestcache is 2.
 
 .TP
 .B -l, --policyscript=<script>
-When specified, the referenced script will execute once for each discovered irq,
-with the sysfs device path and irq number passed as arguments.  Note that the
-device path argument will point to the parent directory from which the irq
+When specified, the referenced script will execute once for each discovered IRQ,
+with the sysfs device path and IRQ number passed as arguments.  Note that the
+device path argument will point to the parent directory from which the IRQ
 attributes directory may be directly opened.
 The script may specify zero or more key=value pairs that will guide irqbalance in
-the management of that irq.  Key=value pairs are printed by the script on stdout
+the management of that IRQ.  Key=value pairs are printed by the script on stdout
 and will be captured and interpreted by irqbalance.  Irqbalance expects a zero
 exit code from the provided utility.  Recognized key=value pairs are:
 .TP
 .I ban=[true | false]
 .tP
-Directs irqbalance to exclude the passed in irq from balancing
+Directs irqbalance to exclude the passed in IRQ from balancing
 .TP
 .I balance_level=[none | package | cache | core]
-This allows a user to override the balance level of a given irq.  By default the
+This allows a user to override the balance level of a given IRQ.  By default the
 balance level is determined automatically based on the pci device class of the
-device that owns the irq.
+device that owns the IRQ.
 .TP
 .I numa_node=<integer>
 This allows a user to override the NUMA node that sysfs indicates a given device
-irq is local to.  Often, systems will not specify this information in ACPI, and as a
+IRQ is local to.  Often, systems will not specify this information in ACPI, and as a
 result devices are considered equidistant from all NUMA nodes in a system.
 This option allows for that hardware provided information to be overridden, so
-that irqbalance can bias irq affinity for these devices toward its most local
+that irqbalance can bias IRQ affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
 from a device to be equidistant from all nodes.
 .TP
@@ -139,7 +139,7 @@ Provides a mask of CPUs which irqbalance should ignore and never assign interrup
 .SH "SIGNALS"
 .TP
 .B SIGHUP
-Forces a rescan of the available irqs and system topology
+Forces a rescan of the available IRQs and system topology
 
 .SH "Homepage"
 https://github.com/Irqbalance/irqbalance
