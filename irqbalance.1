@@ -61,12 +61,12 @@ The default value for hintpolicy is ignore
 
 .TP
 .B -p, --powerthresh=<threshold>
-Set the threshold at which we attempt to move a cpu into powersave mode
-If more than <threshold> cpus are more than 1 standard deviation below the
-average cpu softirq workload, and no cpus are more than 1 standard deviation
-above (and have more than 1 irq assigned to them), attempt to place 1 cpu in
-powersave mode.  In powersave mode, a cpu will not have any irqs balanced to it,
-in an effort to prevent that cpu from waking up without need.
+Set the threshold at which we attempt to move a CPU into powersave mode
+If more than <threshold> CPUs are more than 1 standard deviation below the
+average CPU softirq workload, and no CPUs are more than 1 standard deviation
+above (and have more than 1 irq assigned to them), attempt to place 1 CPU in
+powersave mode.  In powersave mode, a CPU will not have any irqs balanced to it,
+in an effort to prevent that CPU from waking up without need.
 
 .TP
 .B -i, --banirq=<irqnum>
@@ -82,7 +82,7 @@ This allows a user to specify the cache level at which irqbalance partitions
 cache domains.  Specifying a deeper cache may allow a greater degree of
 flexibility for irqbalance to assign irq affinity to achieve greater performance
 increases, but setting a cache depth too large on some systems (specifically
-where all cpus on a system share the deepest cache level), will cause irqbalance
+where all CPUs on a system share the deepest cache level), will cause irqbalance
 to see balancing as unnecessary.
 .B irqbalance --deepestcache=2
 .P
@@ -134,7 +134,7 @@ Same as --debug
 
 .TP
 .B IRQBALANCE_BANNED_CPUS
-Provides a mask of cpus which irqbalance should ignore and never assign interrupts to
+Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to
 
 .SH "SIGNALS"
 .TP
