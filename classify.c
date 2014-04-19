@@ -465,7 +465,7 @@ void rebuild_irq_db(void)
 
 	devdir = opendir(SYSDEV_DIR);
 	if (!devdir)
-		return;
+		goto free;
 
 	do {
 		entry = readdir(devdir);
@@ -482,6 +482,7 @@ void rebuild_irq_db(void)
 
 	for_each_irq(tmp_irqs, add_missing_irq, NULL);
 
+free:
 	g_list_free_full(tmp_irqs, free);
 
 }
