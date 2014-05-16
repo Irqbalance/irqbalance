@@ -59,8 +59,9 @@ struct user_irq_policy {
 	int numa_node;
 };
 
-static GList *interrupts_db;
-static GList *banned_irqs;
+static GList *interrupts_db = NULL;
+static GList *banned_irqs = NULL;
+static GList *cl_banned_irqs = NULL;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
 
@@ -72,13 +73,13 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
-void add_banned_irq(int irq)
+void add_banned_irq(int irq, GList **list)
 {
 	struct irq_info find, *new;
 	GList *entry;
 
 	find.irq = irq;
-	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
+	entry = g_list_find_custom(*list, &find, compare_ints);
 	if (entry)
 		return;
 
@@ -91,9 +92,15 @@ void add_banned_irq(int irq)
 	new->irq = irq;
 	new->flags |= IRQ_FLAG_BANNED;
 
-	banned_irqs = g_list_append(banned_irqs, new);
+	*list = g_list_append(*list, new);
 	return;
 }
+
+void add_cl_banned_irq(int irq)
+{
+	add_banned_irq(irq, &cl_banned_irqs);
+}
+
 
 static int is_banned_irq(int irq)
 {
@@ -324,8 +331,21 @@ static int check_for_irq_ban(char *path, int irq)
 {
 	char *cmd;
 	int rc;
+	struct irq_info find;
+	GList *entry;
+
+	/*
+	 * Check to see if we banned this irq on the command line
+	 */
+	find.irq = irq;
+	entry = g_list_find_custom(cl_banned_irqs, &find, compare_ints);
+	if (entry)
+		return 1;
 
 	if (!banscript)
+		return 0;
+
+	if (!path)
 		return 0;
 
 	cmd = alloca(strlen(path)+strlen(banscript)+32);
@@ -382,7 +402,7 @@ static void build_one_dev_entry(const char *dirname)
 					continue;
 				get_irq_user_policy(devpath, irqnum, &pol);
 				if ((pol.ban == 1) || (check_for_irq_ban(devpath, irqnum))) {
-					add_banned_irq(irqnum);
+					add_banned_irq(irqnum, &banned_irqs);
 					continue;
 				}
 				new = add_one_irq_to_db(devpath, irqnum, &pol);
@@ -411,7 +431,7 @@ static void build_one_dev_entry(const char *dirname)
 			goto done;
 		get_irq_user_policy(devpath, irqnum, &pol);
 		if ((pol.ban == 1) || (check_for_irq_ban(path, irqnum))) {
-			add_banned_irq(irqnum);
+			add_banned_irq(irqnum, &banned_irqs);
 			goto done;
 		}
 
@@ -497,8 +517,8 @@ struct irq_info *add_new_irq(int irq, struct irq_info *hint)
 		return NULL;
 
 	get_irq_user_policy("/sys", irq, &pol);
-	if (pol.ban == 1) {
-		add_banned_irq(irq);
+	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq)) {
+		add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
 		new = add_one_irq_to_db("/sys", irq, &pol);

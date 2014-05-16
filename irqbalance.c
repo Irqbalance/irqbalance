@@ -151,7 +151,7 @@ static void parse_command_line(int argc, char **argv)
 					usage();
 					exit(1);
 				}
-				add_banned_irq((int)val);
+				add_cl_banned_irq((int)val);
 				break;
 			case 'l':
 				polscript = strdup(optarg);
