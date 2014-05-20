@@ -238,11 +238,12 @@ out:
 	return new;
 }
 
-static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
+static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *pol)
 {
 	char *key, *value, *end;
 	char *levelvals[] = { "none", "package", "cache", "core" };
 	int idx;
+	int key_set = 1;
 
 	key = buf;
 	value = strchr(buf, '=');
@@ -267,6 +268,7 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 		else if (!strcasecmp("true", value))
 			pol->ban = 1;
 		else {
+			key_set = 0;
 			log(TO_ALL, LOG_WARNING, "Unknown value for ban poilcy: %s\n", value);
 		}
 	} else if (!strcasecmp("balance_level", key)) {
@@ -275,9 +277,10 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 				break;
 		}
 
-		if (idx>3)
+		if (idx>3) {
+			key_set = 0;
 			log(TO_ALL, LOG_WARNING, "Bad value for balance_level policy: %s\n", value);
-		else
+		} else
 			pol->level = idx;
 	} else if (!strcasecmp("numa_node", key)) {
 		idx = strtoul(value, NULL, 10);	
@@ -295,10 +298,18 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 			pol->hintpolicy = HINT_POLICY_SUBSET;
 		else if (!strcasecmp("ignore", value))
 			pol->hintpolicy = HINT_POLICY_IGNORE;
-		else
+		else {
+			key_set = 0;
 			log(TO_ALL, LOG_WARNING, "Unknown value for hitpolicy: %s\n", value);
-	} else
+		}
+	} else {
+		key_set = 0;
 		log(TO_ALL, LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
+	}
+
+	if (key_set)
+		log(TO_ALL, LOG_INFO, "IRQ %d: Override %s to %s\n", irq, key, value);
+
 	
 }
 
@@ -335,7 +346,7 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	while(!feof(output)) {
 		brc = fgets(buffer, 128, output);
 		if (brc)
-			parse_user_policy_key(brc, pol);
+			parse_user_policy_key(brc, irq, pol);
 	}
 	pclose(output);
 }
