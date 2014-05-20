@@ -118,6 +118,10 @@ that irqbalance can bias IRQ affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
 from a device to be equidistant from all nodes.
 .TP
+.I hintpolicy=[exact | subset | ignore ]
+This allows a user to override the globally set hintpolicy for a given irq.  Use
+is identical to the --hintpolicy setting, but applied per irq
+.TP
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when

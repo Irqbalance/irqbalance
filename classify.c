@@ -57,6 +57,7 @@ struct user_irq_policy {
 	int level;
 	int numa_node_set;
 	int numa_node;
+	enum hp_e hintpolicy;
 };
 
 static GList *interrupts_db = NULL;
@@ -154,7 +155,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 	new->irq = irq;
 	new->class = IRQ_OTHER;
-	new->hint_policy = global_hint_policy;
+	new->hint_policy = pol->hintpolicy; 
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
@@ -287,6 +288,15 @@ static void parse_user_policy_key(char *buf, struct user_irq_policy *pol)
 		}
 		pol->numa_node = idx;
 		pol->numa_node_set = 1;
+	} else if (!strcasecmp("hintpolicy", key)) {
+		if (!strcasecmp("exact", value))
+			pol->hintpolicy = HINT_POLICY_EXACT;
+		else if (!strcasecmp("subset", value))
+			pol->hintpolicy = HINT_POLICY_SUBSET;
+		else if (!strcasecmp("ignore", value))
+			pol->hintpolicy = HINT_POLICY_IGNORE;
+		else
+			log(TO_ALL, LOG_WARNING, "Unknown value for hitpolicy: %s\n", value);
 	} else
 		log(TO_ALL, LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
 	
@@ -304,11 +314,12 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	char buffer[128];
 	char *brc;
 
-	memset(pol, -1, sizeof(struct user_irq_policy));
-
 	/* Return defaults if no script was given */
 	if (!polscript)
 		return;
+
+	memset(pol, -1, sizeof(struct user_irq_policy));
+	pol->hintpolicy = global_hint_policy;
 
 	cmd = alloca(strlen(path)+strlen(polscript)+64);
 	if (!cmd)
