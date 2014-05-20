@@ -91,6 +91,7 @@ void add_banned_irq(int irq, GList **list)
 
 	new->irq = irq;
 	new->flags |= IRQ_FLAG_BANNED;
+	new->hint_policy = HINT_POLICY_EXACT;
 
 	*list = g_list_append(*list, new);
 	return;
@@ -153,6 +154,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 	new->irq = irq;
 	new->class = IRQ_OTHER;
+	new->hint_policy = global_hint_policy;
 
 	interrupts_db = g_list_append(interrupts_db, new);
 

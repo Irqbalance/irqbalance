@@ -48,7 +48,7 @@ int foreground_mode;
 int numa_avail;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
-enum hp_e hint_policy = HINT_POLICY_IGNORE;
+enum hp_e global_hint_policy = HINT_POLICY_IGNORE;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long deepest_cache = 2;
 unsigned long long cycle_count = 0;
@@ -135,11 +135,11 @@ static void parse_command_line(int argc, char **argv)
 				break;
 			case 'h':
 				if (!strncmp(optarg, "exact", strlen(optarg)))
-					hint_policy = HINT_POLICY_EXACT;
+					global_hint_policy = HINT_POLICY_EXACT;
 				else if (!strncmp(optarg, "subset", strlen(optarg)))
-					hint_policy = HINT_POLICY_SUBSET;
+					global_hint_policy = HINT_POLICY_SUBSET;
 				else if (!strncmp(optarg, "ignore", strlen(optarg)))
-					hint_policy = HINT_POLICY_IGNORE;
+					global_hint_policy = HINT_POLICY_IGNORE;
 				else {
 					usage();
 					exit(1);

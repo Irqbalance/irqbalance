@@ -69,7 +69,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->moved)
 		return;
 
-	if ((hint_policy == HINT_POLICY_EXACT) &&
+	if ((info->hint_policy == HINT_POLICY_EXACT) &&
 	    (!cpus_empty(info->affinity_hint))) {
 		if (cpus_intersects(info->affinity_hint, banned_cpus))
 			log(TO_ALL, LOG_WARNING,
@@ -81,7 +81,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 		}
 	} else if (info->assigned_obj) {
 		applied_mask = info->assigned_obj->mask;
-		if ((hint_policy == HINT_POLICY_SUBSET) &&
+		if ((info->hint_policy == HINT_POLICY_SUBSET) &&
 		    (!cpus_empty(info->affinity_hint))) {
 			cpus_and(applied_mask, applied_mask, info->affinity_hint);
 			if (!cpus_intersects(applied_mask, unbanned_cpus))

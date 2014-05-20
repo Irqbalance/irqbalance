@@ -98,6 +98,7 @@ GList* collect_full_irq_list()
 				info->type = IRQ_TYPE_LEGACY;
 				info->class = IRQ_OTHER;
 			} 
+			info->hint_policy = global_hint_policy;
 			tmp_list = g_list_append(tmp_list, info);
 		}
 

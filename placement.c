@@ -63,7 +63,7 @@ static void find_best_object(struct topo_obj *d, void *data)
  	 * to consider objects that are within the irqs hint, but
  	 * only if that irq in fact has published a hint
  	 */
-	if (hint_policy == HINT_POLICY_SUBSET) {
+	if (best->info->hint_policy == HINT_POLICY_SUBSET) {
 		if (!cpus_empty(best->info->affinity_hint)) {
 			cpus_and(subset, best->info->affinity_hint, d->mask);
 			if (cpus_empty(subset))
