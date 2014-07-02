@@ -181,6 +181,14 @@ void parse_proc_interrupts(void)
 			break;
 		}
 
+		/* IRQ removed and reinserted, need restart or this will
+		 * cause an overflow and IRQ won't be rebalanced again
+		 */
+		if (count < info->irq_count) {
+			need_rescan = 1;
+			break;
+		}
+
 		info->last_irq_count = info->irq_count;		
 		info->irq_count = count;
 
