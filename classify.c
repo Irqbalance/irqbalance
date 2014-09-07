@@ -325,12 +325,12 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	char buffer[128];
 	char *brc;
 
+	memset(pol, -1, sizeof(struct user_irq_policy));
+	pol->hintpolicy = global_hint_policy;
+
 	/* Return defaults if no script was given */
 	if (!polscript)
 		return;
-
-	memset(pol, -1, sizeof(struct user_irq_policy));
-	pol->hintpolicy = global_hint_policy;
 
 	cmd = alloca(strlen(path)+strlen(polscript)+64);
 	if (!cmd)
