@@ -22,7 +22,7 @@ char *classes[] = {
 	0
 };
 
-int map_class_to_level[8] =
+static int map_class_to_level[8] =
 { BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
 
@@ -74,7 +74,7 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
-void add_banned_irq(int irq, GList **list)
+static void add_banned_irq(int irq, GList **list)
 {
 	struct irq_info find, *new;
 	GList *entry;
@@ -487,6 +487,38 @@ void free_irq_db(void)
 	rebalance_irq_list = NULL;
 }
 
+static void add_new_irq(int irq, struct irq_info *hint)
+{
+	struct irq_info *new;
+	struct user_irq_policy pol;
+
+	new = get_irq_info(irq);
+	if (new)
+		return;
+
+	get_irq_user_policy("/sys", irq, &pol);
+	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq)) {
+		add_banned_irq(irq, &banned_irqs);
+		new = get_irq_info(irq);
+	} else
+		new = add_one_irq_to_db("/sys", irq, &pol);
+
+	if (!new) {
+		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
+		return;
+	}
+
+	/*
+	 * Override some of the new irq defaults here
+	 */
+	if (hint) {
+		new->type = hint->type;
+		new->class = hint->class;
+	}
+
+	new->level = map_class_to_level[new->class];
+}
+
 static void add_missing_irq(struct irq_info *info, void *unused __attribute__((unused)))
 {
 	struct irq_info *lookup = get_irq_info(info->irq);
@@ -529,39 +561,6 @@ void rebuild_irq_db(void)
 free:
 	g_list_free_full(tmp_irqs, free);
 
-}
-
-struct irq_info *add_new_irq(int irq, struct irq_info *hint)
-{
-	struct irq_info *new;
-	struct user_irq_policy pol;
-
-	new = get_irq_info(irq);
-	if (new)
-		return NULL;
-
-	get_irq_user_policy("/sys", irq, &pol);
-	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq)) {
-		add_banned_irq(irq, &banned_irqs);
-		new = get_irq_info(irq);
-	} else
-		new = add_one_irq_to_db("/sys", irq, &pol);
-
-	if (!new) {
-		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
-		return NULL;
-	}
-
-	/*
-	 * Override some of the new irq defaults here
-	 */
-	if (hint) {
-		new->type = hint->type;
-		new->class = hint->class;
-	}
-
-	new->level = map_class_to_level[new->class];
-	return new;
 }
 
 void for_each_irq(GList *list, void (*cb)(struct irq_info *info, void *data), void *data)

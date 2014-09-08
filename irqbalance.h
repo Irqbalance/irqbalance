@@ -110,8 +110,6 @@ extern void add_cl_banned_irq(int irq);
 extern void for_each_irq(GList *list, void (*cb)(struct irq_info *info,  void *data), void *data);
 extern struct irq_info *get_irq_info(int irq);
 extern void migrate_irq(GList **from, GList **to, struct irq_info *info);
-extern struct irq_info *add_new_irq(int irq, struct irq_info *hint);
-extern void force_rebalance_irq(struct irq_info *info, void *data);
 #define irq_numa_node(irq) ((irq)->numa_node)
 
 
