@@ -57,7 +57,7 @@ char *banscript = NULL;
 char *polscript = NULL;
 long HZ;
 
-void sleep_approx(int seconds)
+static void sleep_approx(int seconds)
 {
 	struct timespec ts;
 	struct timeval tv;
@@ -209,7 +209,7 @@ static void dump_object_tree(void)
 	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }
 
-void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
 	if (info->level == BALANCE_NONE)
 		return;
