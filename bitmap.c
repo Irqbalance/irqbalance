@@ -291,10 +291,10 @@ int bitmap_scnprintf(char *buf, unsigned int buflen,
 		if (val!=0 || !first || i==0)  {
 			len += snprintf(buf+len, buflen-len, "%s%0*lx", sep,
 				(chunksz+3)/4, val);
-			chunksz = CHUNKSZ;
 			sep = ",";
 			first = 0;
 		}
+		chunksz = CHUNKSZ;
 	}
 	return len;
 }
