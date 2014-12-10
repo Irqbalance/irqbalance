@@ -234,7 +234,6 @@ static void do_one_cpu(char *path)
 	cpu_set(cpu->number, cache_mask);
 	max_cache_index = 0;
 	cache_index = 1;
-	cache_stat = 0;
 	do {
 		struct stat sb;
 		snprintf(new_path, PATH_MAX, "%s/cache/index%d/shared_cpu_map", path, cache_index);
