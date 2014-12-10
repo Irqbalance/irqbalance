@@ -288,6 +288,9 @@ int main(int argc, char** argv)
 	} else 
 		log(TO_CONSOLE, LOG_INFO, "This machine seems not NUMA capable.\n");
 
+	if (geteuid() != 0)
+		log(TO_ALL, LOG_WARNING, "Irqbalance hasn't been executed under root privileges, thus it won't in fact balance interrupts.\n");
+
 	if (banscript) {
 		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
 		log(TO_ALL, LOG_WARNING, "%s\n", note);
