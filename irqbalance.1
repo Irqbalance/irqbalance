@@ -125,7 +125,7 @@ is identical to the --hintpolicy setting, but applied per irq
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when
-irqbalance exits.
+irqbalance exits. It is ignored when used with --debug or --foreground.
 
 .SH "ENVIRONMENT VARIABLES"
 .TP
