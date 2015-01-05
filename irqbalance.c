@@ -238,6 +238,15 @@ static void force_rescan(int signum)
 int main(int argc, char** argv)
 {
 	struct sigaction action, hupaction;
+	sigset_t sigset, old_sigset;
+
+	sigemptyset(&sigset);
+	sigaddset(&sigset,SIGINT);
+	sigaddset(&sigset,SIGHUP);
+	sigaddset(&sigset,SIGTERM);
+	sigaddset(&sigset,SIGUSR1);
+	sigaddset(&sigset,SIGUSR2);
+	sigprocmask(SIG_BLOCK, &sigset, &old_sigset);
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
@@ -279,6 +288,9 @@ int main(int argc, char** argv)
 	} else 
 		log(TO_CONSOLE, LOG_INFO, "This machine seems not NUMA capable.\n");
 
+	if (geteuid() != 0)
+		log(TO_ALL, LOG_WARNING, "Irqbalance hasn't been executed under root privileges, thus it won't in fact balance interrupts.\n");
+
 	if (banscript) {
 		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
 		log(TO_ALL, LOG_WARNING, "%s\n", note);
@@ -289,11 +301,6 @@ int main(int argc, char** argv)
 		log(TO_ALL, LOG_WARNING, "Unable to determin HZ defaulting to 100\n");
 		HZ = 100;
 	}
-
-	action.sa_handler = handler;
-	sigemptyset(&action.sa_mask);
-	action.sa_flags = 0;
-	sigaction(SIGINT, &action, NULL);
 
 	build_object_tree();
 	if (debug_mode)
@@ -324,6 +331,20 @@ int main(int argc, char** argv)
 		}
 	}
 
+	action.sa_handler = handler;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGUSR1, &action, NULL);
+	sigaction(SIGUSR2, &action, NULL);
+
+	hupaction.sa_handler = force_rescan;
+	sigemptyset(&hupaction.sa_mask);
+	hupaction.sa_flags = 0;
+	sigaction(SIGHUP, &hupaction, NULL);
+
+	sigprocmask(SIG_SETMASK, &old_sigset, NULL);
 
 #ifdef HAVE_LIBCAP_NG
 	// Drop capabilities
@@ -336,11 +357,6 @@ int main(int argc, char** argv)
 
 	parse_proc_interrupts();
 	parse_proc_stat();
-
-	hupaction.sa_handler = force_rescan;
-	sigemptyset(&hupaction.sa_mask);
-	hupaction.sa_flags = 0;
-	sigaction(SIGHUP, &hupaction, NULL);
 
 	while (keep_going) {
 		sleep_approx(SLEEP_INTERVAL);
