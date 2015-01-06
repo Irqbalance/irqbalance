@@ -25,33 +25,6 @@ char *classes[] = {
 static int map_class_to_level[8] =
 { BALANCE_PACKAGE, BALANCE_CACHE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE, BALANCE_CORE };
 
-
-#define MAX_CLASS 0x12
-/*
- * Class codes lifted from pci spec, appendix D.
- * and mapped to irqbalance types here
- */
-static short class_codes[MAX_CLASS] = {
-	IRQ_OTHER,
-	IRQ_SCSI,
-	IRQ_ETH,
-	IRQ_VIDEO,
-	IRQ_OTHER,
-	IRQ_OTHER,
-	IRQ_LEGACY,
-	IRQ_OTHER,
-	IRQ_OTHER,
-	IRQ_LEGACY,
-	IRQ_OTHER,
-	IRQ_OTHER,
-	IRQ_LEGACY,
-	IRQ_ETH,
-	IRQ_SCSI,
-	IRQ_OTHER,
-	IRQ_OTHER,
-	IRQ_OTHER,
-};
-
 struct user_irq_policy {
 	int ban;
 	int level;
@@ -65,6 +38,79 @@ static GList *banned_irqs = NULL;
 static GList *cl_banned_irqs = NULL;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
+
+#define PCI_MAX_CLASS 0x12
+#define PCI_MAX_SERIAL_SUBCLASS 0x10
+
+static int get_pci_irq_class(int pci_class)
+{
+	int major = pci_class >> 16;
+	int sub = (pci_class & 0xFF00) >> 8;
+	short irq_class = IRQ_OTHER;
+	/*
+	 * Class codes lifted from pci spec, appendix D.
+	 * and mapped to irqbalance types here.
+	 *
+	 * -1 indicates that needs PCI sub-class code.
+	 */
+	static short major_class_codes[PCI_MAX_CLASS] = {
+		IRQ_OTHER,
+		IRQ_SCSI,
+		IRQ_ETH,
+		IRQ_VIDEO,
+		IRQ_OTHER,
+		IRQ_OTHER,
+		IRQ_LEGACY,
+		IRQ_OTHER,
+		IRQ_OTHER,
+		IRQ_LEGACY,
+		IRQ_OTHER,
+		IRQ_OTHER,
+		-1,
+		IRQ_ETH,
+		IRQ_SCSI,
+		IRQ_OTHER,
+		IRQ_OTHER,
+		IRQ_OTHER,
+	};
+
+	/*
+	 * All sub-class code for serial bus controllers.
+	 * The major class code is 0xc.
+	 */
+	static short serial_sub_codes[PCI_MAX_SERIAL_SUBCLASS] = {
+		IRQ_LEGACY,
+		IRQ_LEGACY,
+		IRQ_LEGACY,
+		IRQ_LEGACY,
+		IRQ_SCSI,
+		IRQ_LEGACY,
+		IRQ_SCSI,
+		IRQ_LEGACY,
+		IRQ_LEGACY,
+		IRQ_LEGACY,
+	};
+
+	/*
+	 * Check major class code first
+	 */
+
+	if (major >= PCI_MAX_CLASS)
+		return -1;
+
+	switch (major) {
+		case 0xc: /* Serial bus class */
+			if (sub >= PCI_MAX_SERIAL_SUBCLASS)
+				return -1;
+			irq_class = serial_sub_codes[sub];
+			break;
+		default: /* All other PCI classes */
+			irq_class = major_class_codes[major];
+			break;
+	}
+
+	return irq_class;
+}
 
 static gint compare_ints(gconstpointer a, gconstpointer b)
 {
@@ -123,7 +169,8 @@ static int is_banned_irq(int irq)
  */
 static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
 {
-	int class = 0;
+	int pci_class = 0;
+	int irq_class = IRQ_OTHER;
 	int rc;
 	struct irq_info *new, find;
 	int numa_node;
@@ -168,25 +215,28 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 		goto get_numa_node;
 	}
 
-	rc = fscanf(fd, "%x", &class);
+	rc = fscanf(fd, "%x", &pci_class);
 	fclose(fd);
 
 	if (!rc)
 		goto get_numa_node;
 
+
 	/*
-	 * Restrict search to major class code
+	 * Map PCI class code to irq class
 	 */
-	class >>= 16;
+	irq_class = get_pci_irq_class(pci_class);
 
-	if (class >= MAX_CLASS)
+	if (irq_class < 0) {
+		log(TO_CONSOLE, LOG_WARNING, "Invalid PCI class code %d\n", pci_class);
 		goto get_numa_node;
+	}
 
-	new->class = class_codes[class];
+	new->class = irq_class;
 	if (pol->level >= 0)
 		new->level = pol->level;
 	else
-		new->level = map_class_to_level[class_codes[class]];
+		new->level = map_class_to_level[irq_class];
 
 get_numa_node:
 	numa_node = -1;
