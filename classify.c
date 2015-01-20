@@ -46,12 +46,12 @@ static int get_pci_irq_class(int pci_class)
 {
 	int major = pci_class >> 16;
 	int sub = (pci_class & 0xFF00) >> 8;
-	short irq_class = IRQ_OTHER;
+	short irq_class = IRQ_NODEF;
 	/*
 	 * Class codes lifted from pci spec, appendix D.
 	 * and mapped to irqbalance types here.
 	 *
-	 * -1 indicates that needs PCI sub-class code.
+	 * IRQ_NODEF will go through classification by PCI sub-class code.
 	 */
 	static short major_class_codes[PCI_MAX_CLASS] = {
 		IRQ_OTHER,
@@ -66,7 +66,7 @@ static int get_pci_irq_class(int pci_class)
 		IRQ_LEGACY,
 		IRQ_OTHER,
 		IRQ_OTHER,
-		-1,
+		IRQ_NODEF,
 		IRQ_ETH,
 		IRQ_SCSI,
 		IRQ_OTHER,
@@ -96,12 +96,12 @@ static int get_pci_irq_class(int pci_class)
 	 */
 
 	if (major >= PCI_MAX_CLASS)
-		return -1;
+		return IRQ_NODEF;
 
 	switch (major) {
 		case 0xc: /* Serial bus class */
 			if (sub >= PCI_MAX_SERIAL_SUBCLASS)
-				return -1;
+				return IRQ_NODEF;
 			irq_class = serial_sub_codes[sub];
 			break;
 		default: /* All other PCI classes */
