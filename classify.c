@@ -39,8 +39,8 @@ static GList *cl_banned_irqs = NULL;
 
 #define SYSDEV_DIR "/sys/bus/pci/devices"
 
-#define PCI_MAX_CLASS 0x12
-#define PCI_MAX_SERIAL_SUBCLASS 0x10
+#define PCI_MAX_CLASS 0x14
+#define PCI_MAX_SERIAL_SUBCLASS 0x81
 
 static int get_pci_irq_class(int pci_class)
 {
@@ -48,7 +48,10 @@ static int get_pci_irq_class(int pci_class)
 	int sub = (pci_class & 0xFF00) >> 8;
 	short irq_class = IRQ_NODEF;
 	/*
-	 * Class codes lifted from pci spec, appendix D.
+	 * Class codes lifted from below PCI-SIG spec:
+	 *
+	 * PCI Code and ID Assignment Specification v1.5
+	 *
 	 * and mapped to irqbalance types here.
 	 *
 	 * IRQ_NODEF will go through classification by PCI sub-class code.
@@ -72,6 +75,8 @@ static int get_pci_irq_class(int pci_class)
 		IRQ_OTHER,
 		IRQ_OTHER,
 		IRQ_OTHER,
+		IRQ_LEGACY,
+		IRQ_LEGACY,
 	};
 
 	/*
@@ -88,6 +93,8 @@ static int get_pci_irq_class(int pci_class)
 		IRQ_SCSI,
 		IRQ_LEGACY,
 		IRQ_LEGACY,
+		IRQ_LEGACY,
+		[0xa ... 0x7f] = IRQ_NODEF,
 		IRQ_LEGACY,
 	};
 
