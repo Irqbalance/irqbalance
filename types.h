@@ -13,6 +13,7 @@
 /*
  * IRQ Classes
  */
+#define IRQ_NODEF	-1
 #define IRQ_OTHER       0
 #define IRQ_LEGACY      1
 #define IRQ_SCSI        2
