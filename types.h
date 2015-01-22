@@ -71,6 +71,7 @@ struct irq_info {
 	uint64_t load;
 	int moved;
 struct topo_obj *assigned_obj;
+   unsigned int warned;
 };
 
 #endif
