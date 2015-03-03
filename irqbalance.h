@@ -12,10 +12,15 @@
 #include <limits.h>
 
 #include "types.h"
+#include "config.h"
 #ifdef HAVE_NUMA_H
 #include <numa.h>
 #else
 #define numa_available() -1
+#endif
+
+#ifdef HAVE_LIBSYSTEMD
+#include <systemd/sd-journal.h>
 #endif
 
 extern int package_count;
@@ -137,9 +142,22 @@ static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,
 
 extern char * log_indent;
 extern unsigned int log_mask;
-#ifdef HAVE_SYSTEMD
+#ifdef HAVE_LIBSYSTEMD
 #define log(mask, lvl, fmt, args...) do {					\
-	if (journal_logging) { 							\
+	if (journal_logging) {							\
+		sd_journal_print(lvl, fmt, ##args);				\
+		if (log_mask & mask & TO_CONSOLE)				\
+			printf(fmt, ##args);					\
+	} else { 								\
+		if (log_mask & mask & TO_SYSLOG) 				\
+			syslog(lvl, fmt, ##args); 				\
+		if (log_mask & mask & TO_CONSOLE) 				\
+			printf(fmt, ##args); 					\
+	} 									\
+}while(0)
+#else /* ! HAVE_LIBSYSTEMD */
+#define log(mask, lvl, fmt, args...) do {					\
+	if (journal_logging) {							\
 		printf("<%d>", lvl); 						\
 		printf(fmt, ##args);						\
 	} else { 								\
@@ -149,14 +167,7 @@ extern unsigned int log_mask;
 			printf(fmt, ##args); 					\
 	} 									\
 }while(0)
-#else /* ! HAVE_SYSTEMD */
-#define log(mask, lvl, fmt, args...) do {\
-	if (log_mask & mask & TO_SYSLOG)\
-		syslog(lvl, fmt, ##args);\
-	if (log_mask & mask & TO_CONSOLE)\
-		printf(fmt, ##args);\
-}while(0)
-#endif /* HAVE_SYSTEMD */
+#endif /* HAVE_LIBSYSTEMD */
 
 #endif /* __INCLUDE_GUARD_IRQBALANCE_H_ */
 

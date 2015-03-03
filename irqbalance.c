@@ -85,9 +85,7 @@ struct option lopts[] = {
 	{"deepestcache", 1, NULL, 'c'},
 	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
-#ifdef HAVE_SYSTEMD
 	{"journal", 0, NULL, 'j'},
-#endif /* HAVE_SYSTEMD */
 	{0, 0, 0, 0}
 };
 
@@ -178,13 +176,10 @@ static void parse_command_line(int argc, char **argv)
 			case 's':
 				pidfile = optarg;
 				break;
-#ifdef HAVE_SYSTEMD
 			case 'j':
 				journal_logging=1;
 				foreground_mode=1;
-				debug_mode=1;
 				break;
-#endif /* HAVE_SYSTEMD */
 		}
 	}
 }
@@ -270,13 +265,10 @@ int main(int argc, char** argv)
 		foreground_mode=1;
 	if (argc>1 && strstr(argv[1],"--oneshot"))
 		one_shot_mode=1;
-#	ifdef HAVE_SYSTEMD
 	if (argc>1 && strstr(argv[1],"--journal")) {
 		journal_logging=1;
 		foreground_mode=1;
-		debug_mode=1;
 	}
-#	endif /* HAVE_SYSTEMD */
 #endif /* HAVE_GETOPT_LONG */
 
 	/*
