@@ -294,10 +294,13 @@ static void dump_irq(struct irq_info *info, void *data)
 {
 	int spaces = (long int)data;
 	int i;
-	char indent_char[2] = {log_indent[0], '\0'};
+	char * indent = malloc (sizeof(char) * (spaces + 1));
 
-	for (i=0; i<spaces; i++) log(TO_CONSOLE, LOG_INFO, indent_char);
-	log(TO_CONSOLE, LOG_INFO, "Interrupt %i node_num is %d (%s/%u) \n",
+	for ( i = 0; i < spaces; i++ )
+		indent[i] = log_indent[0];
+
+	indent[i] = '\0';
+	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%u) \n", indent,
 	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
 

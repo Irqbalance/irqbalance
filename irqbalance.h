@@ -138,18 +138,10 @@ static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,
 extern char * log_indent;
 extern unsigned int log_mask;
 #ifdef HAVE_SYSTEMD
-extern char *line_buffer_7ee22e61_f183;
-extern char *log_buffer_4c93_8665;
 #define log(mask, lvl, fmt, args...) do {					\
 	if (journal_logging) { 							\
-		sprintf(log_buffer_4c93_8665,fmt, ##args);			\
-		strcat(line_buffer_7ee22e61_f183, log_buffer_4c93_8665); 	\
-		if (line_buffer_7ee22e61_f183[strlen(line_buffer_7ee22e61_f183)-1]\
-		     == '\n' || strlen(line_buffer_7ee22e61_f183) > 256 ) {	\
-			printf("<%d>%s", lvl, line_buffer_7ee22e61_f183);	\
-			line_buffer_7ee22e61_f183[0] = '\0';			\
-			line_buffer_7ee22e61_f183[0] = '\0';			\
-		} 								\
+		printf("<%d>", lvl); 						\
+		printf(fmt, ##args);						\
 	} else { 								\
 		if (log_mask & mask & TO_SYSLOG) 				\
 			syslog(lvl, fmt, ##args); 				\
