@@ -134,6 +134,7 @@ static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,
 #define TO_CONSOLE	(1 << 1)
 #define TO_ALL		(TO_SYSLOG | TO_CONSOLE)
 
+extern char * log_indent;
 extern unsigned int log_mask;
 #define log(mask, lvl, fmt, args...) do {\
 	if (log_mask & mask & TO_SYSLOG)\

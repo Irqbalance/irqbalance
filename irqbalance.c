@@ -49,6 +49,7 @@ int numa_avail;
 int journal_logging = 0;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
+char * log_indent;
 enum hp_e global_hint_policy = HINT_POLICY_IGNORE;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long deepest_cache = 2;
@@ -180,6 +181,8 @@ static void parse_command_line(int argc, char **argv)
 #ifdef HAVE_SYSTEMD
 			case 'j':
 				journal_logging=1;
+				foreground_mode=1;
+				debug_mode=1;
 				break;
 #endif /* HAVE_SYSTEMD */
 		}
@@ -269,8 +272,11 @@ int main(int argc, char** argv)
 	if (argc>1 && strstr(argv[1],"--oneshot"))
 		one_shot_mode=1;
 #	ifdef HAVE_SYSTEMD
-	if (argc>1 && strstr(argv[1],"--journal"))
+	if (argc>1 && strstr(argv[1],"--journal")) {
 		journal_logging=1;
+		foreground_mode=1;
+		debug_mode=1;
+	}
 #	endif /* HAVE_SYSTEMD */
 #endif /* HAVE_GETOPT_LONG */
 
@@ -293,6 +299,11 @@ int main(int argc, char** argv)
  	 * If we are't in debug mode, don't dump anything to the console
  	 * note that everything goes to the console before we check this
  	 */
+	if (journal_logging)
+		log_indent = strdup("....");
+	else
+		log_indent = strdup("    ");
+
 	if (!debug_mode)
 		log_mask &= ~TO_CONSOLE;
 

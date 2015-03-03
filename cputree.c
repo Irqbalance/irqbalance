@@ -294,7 +294,9 @@ static void dump_irq(struct irq_info *info, void *data)
 {
 	int spaces = (long int)data;
 	int i;
-	for (i=0; i<spaces; i++) log(TO_CONSOLE, LOG_INFO, " ");
+	char indent_char[2] = {log_indent[0], '\0'};
+
+	for (i=0; i<spaces; i++) log(TO_CONSOLE, LOG_INFO, indent_char);
 	log(TO_CONSOLE, LOG_INFO, "Interrupt %i node_num is %d (%s/%u) \n",
 	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
@@ -302,7 +304,8 @@ static void dump_irq(struct irq_info *info, void *data)
 static void dump_topo_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	struct topo_obj *c = (struct topo_obj *)d;
-	log(TO_CONSOLE, LOG_INFO, "                CPU number %i  numa_node is %d (load %lu)\n",
+	log(TO_CONSOLE, LOG_INFO, "%s%s%s%sCPU number %i  numa_node is %d (load %lu)\n",
+	    log_indent, log_indent, log_indent, log_indent,
 	    c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
 	if (c->interrupts)
 		for_each_irq(c->interrupts, dump_irq, (void *)18);
@@ -312,7 +315,8 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4095, d->mask);
-	log(TO_CONSOLE, LOG_INFO, "        Cache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n",
+	log(TO_CONSOLE, LOG_INFO, "%s%sCache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n",
+	    log_indent, log_indent,
 	    d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_topo_obj, NULL);
