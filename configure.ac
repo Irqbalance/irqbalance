@@ -30,6 +30,14 @@ AC_C_CONST
 AC_C_INLINE
 AM_PROG_CC_C_O
 
+AC_ARG_WITH([systemd],
+  [ AS_HELP_STRING([--with-systemd],[Add systemd logging support])],
+)
+AS_IF(
+  [test "x$with_systemd" = xyes],
+    [AC_DEFINE(HAVE_SYSTEMD, 1, [systemd support])]
+)
+
 AC_ARG_WITH([glib2],
   [AS_HELP_STRING([--without-glib2],
     [Don't use system glib2 library. Use local implementation instead.])],

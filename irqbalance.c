@@ -46,6 +46,7 @@ int one_shot_mode;
 int debug_mode;
 int foreground_mode;
 int numa_avail;
+int journal_logging = 0;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
 enum hp_e global_hint_policy = HINT_POLICY_IGNORE;
@@ -83,12 +84,15 @@ struct option lopts[] = {
 	{"deepestcache", 1, NULL, 'c'},
 	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
+#ifdef HAVE_SYSTEMD
+	{"journal", 0, NULL, 'j'},
+#endif /* HAVE_SYSTEMD */
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
-	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j] [--hintpolicy= | -h [exact|subset|ignore]]\n");
 	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>] [--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
 }
 
@@ -99,7 +103,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfh:i:p:s:c:b:l:",
+		"odfjh:i:p:s:c:b:l:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -173,6 +177,11 @@ static void parse_command_line(int argc, char **argv)
 			case 's':
 				pidfile = optarg;
 				break;
+#ifdef HAVE_SYSTEMD
+			case 'j':
+				journal_logging=1;
+				break;
+#endif /* HAVE_SYSTEMD */
 		}
 	}
 }
@@ -250,7 +259,7 @@ int main(int argc, char** argv)
 
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
-#else
+#else /* ! HAVE_GETOPT_LONG */
 	if (argc>1 && strstr(argv[1],"--debug")) {
 		debug_mode=1;
 		foreground_mode=1;
@@ -259,7 +268,11 @@ int main(int argc, char** argv)
 		foreground_mode=1;
 	if (argc>1 && strstr(argv[1],"--oneshot"))
 		one_shot_mode=1;
-#endif
+#	ifdef HAVE_SYSTEMD
+	if (argc>1 && strstr(argv[1],"--journal"))
+		journal_logging=1;
+#	endif /* HAVE_SYSTEMD */
+#endif /* HAVE_GETOPT_LONG */
 
 	/*
  	 * Open the syslog connection
