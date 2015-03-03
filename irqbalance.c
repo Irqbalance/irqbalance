@@ -59,6 +59,11 @@ char *banscript = NULL;
 char *polscript = NULL;
 long HZ;
 
+#ifdef HAVE_SYSTEMD
+	char *line_buffer_7ee22e61_f183;
+	char *log_buffer_4c93_8665;
+#endif /* HAVE_SYSTEMD */
+
 static void sleep_approx(int seconds)
 {
 	struct timespec ts;
@@ -259,7 +264,10 @@ int main(int argc, char** argv)
 	sigaddset(&sigset,SIGUSR1);
 	sigaddset(&sigset,SIGUSR2);
 	sigprocmask(SIG_BLOCK, &sigset, &old_sigset);
-
+#ifdef HAVE_SYSTEMD
+	line_buffer_7ee22e61_f183 = malloc(sizeof(char) * 2048);
+	log_buffer_4c93_8665 = malloc(sizeof(char) * 2048);
+#endif /* HAVE_SYSTEMD */
 #ifdef HAVE_GETOPT_LONG
 	parse_command_line(argc, argv);
 #else /* ! HAVE_GETOPT_LONG */
