@@ -377,3 +377,87 @@ int __bitmap_parse(const char *buf, unsigned int buflen,
 
 	return 0;
 }
+
+/**
+ * __bitmap_parselist - convert list format ASCII string to bitmap
+ * @buf: read nul-terminated user string from this buffer
+ * @buflen: buffer size in bytes.  If string is smaller than this
+ *    then it must be terminated with a \0.
+ * @is_user: location of buffer, 0 indicates kernel space
+ * @maskp: write resulting mask here
+ * @nmaskbits: number of bits in mask to be written
+ *
+ * Input format is a comma-separated list of decimal numbers and
+ * ranges.  Consecutively set bits are shown as two hyphen-separated
+ * decimal numbers, the smallest and largest bit numbers set in
+ * the range.
+ *
+ * Returns 0 on success, -errno on invalid input strings.
+ * Error values:
+ *    %-EINVAL: second number in range smaller than first
+ *    %-EINVAL: invalid character in string
+ *    %-ERANGE: bit number specified too large for mask
+ */
+int __bitmap_parselist(const char *buf, unsigned int buflen,
+		int is_user __attribute((unused)), unsigned long *maskp,
+		int nmaskbits)
+{
+	int a, b, c, old_c, totaldigits;
+	int exp_digit, in_range;
+
+	totaldigits = c = 0;
+	bitmap_zero(maskp, nmaskbits);
+	do {
+		exp_digit = 1;
+		in_range = 0;
+		a = b = 0;
+
+		/* Get the next cpu# or a range of cpu#'s */
+		while (buflen) {
+			old_c = c;
+			c = *buf++;
+			buflen--;
+			if (isspace(c))
+				continue;
+
+			/*
+			 * If the last character was a space and the current
+			 * character isn't '\0', we've got embedded whitespace.
+			 * This is a no-no, so throw an error.
+			 */
+			if (totaldigits && c && isspace(old_c))
+				return -EINVAL;
+
+			/* A '\0' or a ',' signal the end of a cpu# or range */
+			if (c == '\0' || c == ',')
+				break;
+
+			if (c == '-') {
+				if (exp_digit || in_range)
+					return -EINVAL;
+				b = 0;
+				in_range = 1;
+				exp_digit = 1;
+				continue;
+			}
+
+			if (!isdigit(c))
+				return -EINVAL;
+
+			b = b * 10 + (c - '0');
+			if (!in_range)
+				a = b;
+			exp_digit = 0;
+			totaldigits++;
+		}
+		if (!(a <= b))
+			return -EINVAL;
+		if (b >= nmaskbits)
+			return -ERANGE;
+		while (a <= b) {
+			set_bit(a, maskp);
+			a++;
+		}
+	} while (buflen && c == ',');
+	return 0;
+}
