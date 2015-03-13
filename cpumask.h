@@ -281,10 +281,10 @@ static inline int __cpulist_scnprintf(char *buf, int len,
 	return bitmap_scnlistprintf(buf, len, srcp->bits, nbits);
 }
 
-#define cpulist_parse(buf, dst) __cpulist_parse((buf), &(dst), NR_CPUS)
-static inline int __cpulist_parse(const char *buf, cpumask_t *dstp, int nbits)
+#define cpulist_parse(buf, len, dst) __cpulist_parse((buf), (len), &(dst), NR_CPUS)
+static inline int __cpulist_parse(const char *buf, int len, cpumask_t *dstp, int nbits)
 {
-	return bitmap_parselist(buf, dstp->bits, nbits);
+	return bitmap_parselist(buf, len, dstp->bits, nbits);
 }
 
 #define cpu_remap(oldbit, old, new) \

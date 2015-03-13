@@ -276,10 +276,6 @@ int main(int argc, char** argv)
  	 */
 	openlog(argv[0], 0, LOG_DAEMON);
 
-	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
-		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
-	}
-
 	if (getenv("IRQBALANCE_ONESHOT")) 
 		one_shot_mode=1;
 

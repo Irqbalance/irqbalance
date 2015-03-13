@@ -58,6 +58,48 @@ cpumask_t cpu_possible_map;
 */
 cpumask_t unbanned_cpus;
 
+/*
+ * By default do not place IRQs on CPUs the kernel keeps isolated,
+ * as specified through the isolcpus= boot commandline. Users can
+ * override this with the IRQBALANCE_BANNED_CPUS environment variable.
+ */
+static void setup_banned_cpus(void)
+{
+	FILE *file;
+	char *c, *line = NULL;
+	size_t size = 0;
+	const char *isolcpus = "isolcpus=";
+	char buffer[4096];
+
+	/* A manually specified cpumask overrides auto-detection. */
+	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
+		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
+		goto out;
+	}
+
+	file = fopen("/proc/cmdline", "r");
+	if (!file)
+		goto out;
+
+	if (getline(&line, &size, file) <= 0)
+		goto out;
+
+	if ((c = strstr(line, isolcpus))) {
+		char *end;
+		int len;
+
+		c += strlen(isolcpus);
+		for (end = c; *end != ' ' && *end != '\0' && *end != '\n'; end++);
+		len = end - c;
+
+		cpulist_parse(c, len, banned_cpus);
+	}
+
+ out:
+	cpumask_scnprintf(buffer, 4096, banned_cpus);
+	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
+}
+
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
 						    int packageid, cpumask_t package_mask)
 {
@@ -371,6 +413,8 @@ void parse_cpu_tree(void)
 {
 	DIR *dir;
 	struct dirent *entry;
+
+	setup_banned_cpus();
 
 	cpus_complement(unbanned_cpus, banned_cpus);
 

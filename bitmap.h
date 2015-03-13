@@ -185,8 +185,8 @@ extern int __bitmap_parse(const char *buf, unsigned int buflen, int is_user,
 			unsigned long *dst, int nbits);
 extern int bitmap_scnlistprintf(char *buf, unsigned int len,
 			const unsigned long *src, int nbits);
-extern int bitmap_parselist(const char *buf, unsigned long *maskp,
-			int nmaskbits);
+extern int __bitmap_parselist(const char *buf, unsigned int buflen, int is_user,
+			unsigned long *dst, int nbits);
 extern void bitmap_remap(unsigned long *dst, const unsigned long *src,
 		const unsigned long *old, const unsigned long *new, int bits);
 extern int bitmap_bitremap(int oldbit,
@@ -349,6 +349,12 @@ static inline int bitmap_parse(const char *buf, unsigned int buflen,
 			unsigned long *maskp, int nmaskbits)
 {
 	return __bitmap_parse(buf, buflen, 0, maskp, nmaskbits);
+}
+
+static inline int bitmap_parselist(const char *buf, unsigned int buflen,
+			unsigned long *maskp, int nmaskbits)
+{
+	return __bitmap_parselist(buf, buflen, 0, maskp, nmaskbits);
 }
 
 #endif /* __ASSEMBLY__ */
