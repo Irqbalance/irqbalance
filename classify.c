@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "irqbalance.h"
 #include "types.h"
@@ -42,11 +43,72 @@ static GList *cl_banned_irqs = NULL;
 #define PCI_MAX_CLASS 0x14
 #define PCI_MAX_SERIAL_SUBCLASS 0x81
 
-static int get_pci_irq_class(int pci_class)
+#define PCI_INVAL_DATA 0xFFFFFFFF
+
+struct pci_info {
+	unsigned short vendor;
+	unsigned short device;
+	unsigned short sub_vendor;
+	unsigned short sub_device;
+	unsigned int class;
+};
+
+/* PCI vendor ID, device ID */
+#define PCI_VENDOR_PLX 0x10b5
+#define PCI_DEVICE_PLX_PEX8619 0x8619
+#define PCI_VENDOR_CAVIUM 0x177d
+#define PCI_DEVICE_CAVIUM_CN61XX 0x0093
+
+/* PCI subsystem vendor ID, subsystem device ID */
+#define PCI_SUB_VENDOR_EMC 0x1120
+#define PCI_SUB_DEVICE_EMC_055B 0x055b
+#define PCI_SUB_DEVICE_EMC_0568 0x0568
+#define PCI_SUB_DEVICE_EMC_dd00 0xdd00
+
+/*
+ * Apply software workarounds for some special devices
+ *
+ * The world is not perfect and supplies us with broken PCI devices.
+ * Usually there are two sort of cases:
+ *
+ *     1. The device is special
+ *        Before shipping the devices, PCI spec doesn't have the definitions.
+ *
+ *     2. Buggy PCI devices
+ *        Some PCI devices don't follow the PCI class code definitions.
+ */
+static void apply_pci_quirks(const struct pci_info *pci, int *irq_class)
 {
-	int major = pci_class >> 16;
-	int sub = (pci_class & 0xFF00) >> 8;
-	short irq_class = IRQ_NODEF;
+	if ((pci->vendor == PCI_VENDOR_PLX) &&
+	    (pci->device == PCI_DEVICE_PLX_PEX8619) &&
+	    (pci->sub_vendor == PCI_SUB_VENDOR_EMC)) {
+		switch (pci->sub_device) {
+			case PCI_SUB_DEVICE_EMC_055B:
+			case PCI_SUB_DEVICE_EMC_dd00:
+				*irq_class = IRQ_SCSI;
+				break;
+		}
+	}
+
+	if ((pci->vendor == PCI_VENDOR_CAVIUM) &&
+	    (pci->device == PCI_DEVICE_CAVIUM_CN61XX) &&
+	    (pci->sub_vendor == PCI_SUB_VENDOR_EMC)) {
+		switch (pci->sub_device) {
+			case PCI_SUB_DEVICE_EMC_0568:
+				*irq_class = IRQ_SCSI;
+				break;
+		}
+	}
+
+	return;
+}
+
+/* Determin IRQ class based on PCI class code */
+static int map_pci_irq_class(unsigned int pci_class)
+{
+	unsigned int major = pci_class >> 16;
+	unsigned int sub = (pci_class & 0xFF00) >> 8;
+	int irq_class = IRQ_NODEF;
 	/*
 	 * Class codes lifted from below PCI-SIG spec:
 	 *
@@ -119,6 +181,80 @@ static int get_pci_irq_class(int pci_class)
 	return irq_class;
 }
 
+/* Read specific data from sysfs */
+static unsigned int read_pci_data(const char *devpath, const char* file)
+{
+	char path[PATH_MAX];
+	FILE *fd;
+	unsigned int data = PCI_INVAL_DATA;
+
+	sprintf(path, "%s/%s", devpath, file);
+
+	fd = fopen(path, "r");
+
+	if (!fd) {
+		log(TO_CONSOLE, LOG_WARNING, "PCI: can't open file:%s\n", path);
+		return data;
+	}
+
+	(void) fscanf(fd, "%x", &data);
+	fclose(fd);
+
+	return data;
+}
+
+/* Get pci information for IRQ classification */
+static int get_pci_info(const char *devpath, struct pci_info *pci)
+{
+	unsigned int data = PCI_INVAL_DATA;
+
+	if ((data = read_pci_data(devpath, "vendor")) == PCI_INVAL_DATA)
+		return -ENODEV;
+	pci->vendor = (unsigned short)data;
+
+	if ((data = read_pci_data(devpath, "device")) == PCI_INVAL_DATA)
+		return -ENODEV;
+	pci->device = (unsigned short)data;
+
+	if ((data = read_pci_data(devpath, "subsystem_vendor")) == PCI_INVAL_DATA)
+		return -ENODEV;
+	pci->sub_vendor = (unsigned short)data;
+
+	if ((data = read_pci_data(devpath, "subsystem_device")) == PCI_INVAL_DATA)
+		return -ENODEV;
+	pci->sub_device = (unsigned short)data;
+
+	if ((data = read_pci_data(devpath, "class")) == PCI_INVAL_DATA)
+		return -ENODEV;
+	pci->class = data;
+
+	return 0;
+}
+
+/* Return IRQ class for given devpath */
+static int get_irq_class(const char *devpath)
+{
+	int irq_class = IRQ_NODEF;
+	struct pci_info pci;
+
+	/* Get PCI info from sysfs */
+	if (get_pci_info(devpath, &pci) < 0)
+		return IRQ_NODEF;
+
+	/* Map PCI class code to irq class */
+	irq_class = map_pci_irq_class(pci.class);
+	if (irq_class < 0) {
+		log(TO_CONSOLE, LOG_WARNING, "Invalid PCI class code %d\n",
+		    pci.class);
+		return IRQ_NODEF;
+	}
+
+	/* Reassign irq class for some buggy devices */
+	apply_pci_quirks(&pci, &irq_class);
+
+	return irq_class;
+}
+
 static gint compare_ints(gconstpointer a, gconstpointer b)
 {
 	const struct irq_info *ai = a;
@@ -176,7 +312,6 @@ static int is_banned_irq(int irq)
  */
 static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
 {
-	int pci_class = 0;
 	int irq_class = IRQ_OTHER;
 	int rc;
 	struct irq_info *new, find;
@@ -213,31 +348,10 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
-	sprintf(path, "%s/class", devpath);
-
-	fd = fopen(path, "r");
-
-	if (!fd) {
-		perror("Can't open class file: ");
+	/* Map PCI class code to irq class */
+	irq_class = get_irq_class(devpath);
+	if (irq_class < 0)
 		goto get_numa_node;
-	}
-
-	rc = fscanf(fd, "%x", &pci_class);
-	fclose(fd);
-
-	if (!rc)
-		goto get_numa_node;
-
-
-	/*
-	 * Map PCI class code to irq class
-	 */
-	irq_class = get_pci_irq_class(pci_class);
-
-	if (irq_class < 0) {
-		log(TO_CONSOLE, LOG_WARNING, "Invalid PCI class code %d\n", pci_class);
-		goto get_numa_node;
-	}
 
 	new->class = irq_class;
 	if (pol->level >= 0)
