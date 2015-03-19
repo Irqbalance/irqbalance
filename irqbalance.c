@@ -279,8 +279,10 @@ int main(int argc, char** argv)
 	if (getenv("IRQBALANCE_ONESHOT")) 
 		one_shot_mode=1;
 
-	if (getenv("IRQBALANCE_DEBUG")) 
+	if (getenv("IRQBALANCE_DEBUG")) {
 		debug_mode=1;
+		foreground_mode=1;
+	}
 
 	/*
  	 * If we are't in debug mode, don't dump anything to the console
