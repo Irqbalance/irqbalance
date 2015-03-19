@@ -70,8 +70,9 @@ struct irq_info {
 	uint64_t last_irq_count;
 	uint64_t load;
 	int moved;
-struct topo_obj *assigned_obj;
-   unsigned int warned;
+	struct topo_obj *assigned_obj;
+	unsigned int warned;
+	char *name;
 };
 
 #endif

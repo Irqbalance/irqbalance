@@ -86,13 +86,15 @@ struct option lopts[] = {
 	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
 	{"journal", 0, NULL, 'j'},
+	{"banmod", 1 , NULL, 'm'},
 	{0, 0, 0, 0}
 };
 
 static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript= | -l <script>] [--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--banmod= | -m <module>] [--policyscript= | -l <script>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -102,7 +104,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfjh:i:p:s:c:b:l:",
+		"odfjh:i:p:s:c:b:l:m:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -159,6 +161,9 @@ static void parse_command_line(int argc, char **argv)
 			case 'l':
 				polscript = strdup(optarg);
 				break;
+			case 'm':
+				add_cl_banned_module(optarg);
+				break;
 			case 'p':
 				if (!strncmp(optarg, "off", strlen(optarg)))
 					power_thresh = ULONG_MAX;
@@ -209,6 +214,7 @@ static void free_object_tree(void)
 	free_numa_node_list();
 	clear_cpu_tree();
 	free_irq_db();
+	free_cl_opts();
 }
 
 static void dump_object_tree(void)

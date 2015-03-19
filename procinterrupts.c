@@ -42,7 +42,7 @@ GList* collect_full_irq_list()
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
-	char *irq_name, *savedptr, *last_token, *p;
+	char *irq_name, *irq_mod, *savedptr, *last_token, *p;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -68,7 +68,7 @@ GList* collect_full_irq_list()
 		c = line;
 		while (isblank(*(c)))
 			c++;
-			
+
 		if (!(*c>='0' && *c<='9'))
 			break;
 		c = strchr(line, ':');
@@ -83,6 +83,7 @@ GList* collect_full_irq_list()
 			irq_name = last_token;
 			last_token = p;
 		}
+		irq_mod = last_token;
 
 		*c = 0;
 		c++;
@@ -97,11 +98,11 @@ GList* collect_full_irq_list()
 			} else {
 				info->type = IRQ_TYPE_LEGACY;
 				info->class = IRQ_OTHER;
-			} 
+			}
 			info->hint_policy = global_hint_policy;
+			info->name = strdupa(irq_mod);
 			tmp_list = g_list_append(tmp_list, info);
 		}
-
 	}
 	fclose(file);
 	free(line);
