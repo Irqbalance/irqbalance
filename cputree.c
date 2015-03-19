@@ -82,7 +82,7 @@ static void setup_banned_cpus(void)
 		goto out;
 
 	if (getline(&line, &size, file) <= 0)
-		goto out;
+		goto out2;
 
 	if ((c = strstr(line, isolcpus))) {
 		char *end;
@@ -95,6 +95,8 @@ static void setup_banned_cpus(void)
 		cpulist_parse(c, len, banned_cpus);
 	}
 
+ out2:
+	fclose(file);
  out:
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
