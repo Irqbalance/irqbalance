@@ -537,6 +537,17 @@ static int check_for_irq_ban(char *path, int irq)
 	if (entry)
 		return 1;
 
+	/*
+	 * Check to see if we banned module which the irq belongs to.
+	 */
+	entry = g_list_find_custom(proc_interrupts, &find, compare_ints);
+	if (entry) {
+		res = entry->data;
+		if (check_for_module_ban(res->name))
+			return 1;
+	}
+
+#ifdef INCLUDE_BANSCRIPT
 	if (!banscript)
 		return 0;
 
@@ -562,8 +573,8 @@ static int check_for_irq_ban(char *path, int irq)
 		log(TO_ALL, LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
 		return 1;
 	}
+#endif
 	return 0;
-
 }
 
 /*
