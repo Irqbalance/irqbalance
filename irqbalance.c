@@ -92,7 +92,7 @@ struct option lopts[] = {
 static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j] [--hintpolicy= | -h [exact|subset|ignore]]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript=<script>] [--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--policyscript= | -l <script>] [--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -116,7 +116,7 @@ static void parse_command_line(int argc, char **argv)
 				 * Banscript is no longer supported unless
 				 * explicitly enabled
 				 */
-				log(TO_CONSOLE, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --polscript");
+				log(TO_CONSOLE, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --policyscript\n");
 				usage();
 				exit(1);
 #endif
