@@ -346,7 +346,7 @@ static void dump_irq(struct irq_info *info, void *data)
 	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
 }
 
-static void dump_topo_obj(struct topo_obj *d, void *data __attribute__((unused)))
+static void dump_balance_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	struct topo_obj *c = (struct topo_obj *)d;
 	log(TO_CONSOLE, LOG_INFO, "%s%s%s%sCPU number %i  numa_node is %d (load %lu)\n",
@@ -364,7 +364,7 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 	    log_indent, log_indent,
 	    d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
 	if (d->children)
-		for_each_object(d->children, dump_topo_obj, NULL);
+		for_each_object(d->children, dump_balance_obj, NULL);
 	if (g_list_length(d->interrupts) > 0)
 		for_each_irq(d->interrupts, dump_irq, (void *)10);
 }
