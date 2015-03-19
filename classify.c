@@ -658,7 +658,14 @@ void free_irq_db(void)
 	rebalance_irq_list = NULL;
 }
 
-static void add_new_irq(int irq, struct irq_info *hint)
+void free_cl_opts(void)
+{
+	g_list_free_full(cl_banned_modules, free);
+	g_list_free_full(cl_banned_irqs, free);
+	g_list_free(banned_irqs);
+}
+
+static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 {
 	struct irq_info *new;
 	struct user_irq_policy pol;
