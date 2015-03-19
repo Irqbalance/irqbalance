@@ -142,7 +142,7 @@ static inline void for_each_object(GList *list, void (*cb)(struct topo_obj *obj,
 #define TO_CONSOLE	(1 << 1)
 #define TO_ALL		(TO_SYSLOG | TO_CONSOLE)
 
-extern char * log_indent;
+extern const char * log_indent;
 extern unsigned int log_mask;
 #ifdef HAVE_LIBSYSTEMD
 #define log(mask, lvl, fmt, args...) do {					\

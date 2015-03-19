@@ -98,6 +98,7 @@ static void setup_banned_cpus(void)
  out:
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
+	free(line);
 }
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
@@ -344,6 +345,7 @@ static void dump_irq(struct irq_info *info, void *data)
 	indent[i] = '\0';
 	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%u) \n", indent,
 	    info->irq, irq_numa_node(info)->number, classes[info->class], (unsigned int)info->load);
+	free(indent);
 }
 
 static void dump_balance_obj(struct topo_obj *d, void *data __attribute__((unused)))

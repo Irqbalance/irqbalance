@@ -49,7 +49,7 @@ int numa_avail;
 int journal_logging = 0;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
-char * log_indent;
+const char *log_indent;
 enum hp_e global_hint_policy = HINT_POLICY_IGNORE;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long deepest_cache = 2;
@@ -295,9 +295,9 @@ int main(int argc, char** argv)
  	 * note that everything goes to the console before we check this
  	 */
 	if (journal_logging)
-		log_indent = strdup("....");
+		log_indent = "....";
 	else
-		log_indent = strdup("    ");
+		log_indent = "    ";
 
 	if (!debug_mode)
 		log_mask &= ~TO_CONSOLE;
