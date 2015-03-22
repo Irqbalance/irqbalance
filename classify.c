@@ -305,12 +305,20 @@ static int is_banned_irq(int irq)
 	return entry ? 1:0;
 }
 
+gint substr_find(gconstpointer a, gconstpointer b)
+{
+	if (strstr(b, a))
+		return 0;
+	else
+		return 1;
+}
+
 static void add_banned_module(char *modname, GList **modlist)
 {
 	GList *entry;
 	char *newmod;
 	
-	entry = g_list_find(*modlist, modname);
+	entry = g_list_find_custom(*modlist, modname, substr_find);
 	if (entry)
 		return;
 
@@ -544,14 +552,6 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 			parse_user_policy_key(brc, irq, pol);
 	}
 	pclose(output);
-}
-
-gint substr_find(gconstpointer a, gconstpointer b)
-{
-	if (strstr(b, a))
-		return 0;
-	else
-		return 1;
 }
 
 static int check_for_module_ban(char *name)
