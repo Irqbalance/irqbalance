@@ -23,4 +23,13 @@ http://lists.infradead.org/mailman/listinfo/irqbalance
 New Developers are encouraged to use this mailing list to discuss ideas and
 propose patches.
 
+Bug reporting
+When something goes wrong, feel free to send us bugreport by one of the ways
+described above. Your report should include:
 
+Irqbalance version you've been using (or commit hash)
+/proc/interrupts output
+irqbalance --debug output
+content of smp_affinity files - can be obtained by e.g.:
+	$ for i in $(seq 0 300); do grep . /proc/irq/$i/smp_affinity /dev/null 2>/dev/null; done
+your hw hierarchy - e.g. lstopo-no-graphics output
