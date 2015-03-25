@@ -39,6 +39,7 @@ static GList *banned_irqs = NULL;
 static GList *cl_banned_irqs = NULL;
 static GList *cl_banned_modules = NULL;
 
+#define SYSFS_DIR "/sys"
 #define SYSDEV_DIR "/sys/bus/pci/devices"
 
 #define PCI_MAX_CLASS 0x14
@@ -340,7 +341,8 @@ void add_cl_banned_module(char *modname)
 /*
  * Inserts an irq_info struct into the intterupts_db list
  * devpath points to the device directory in sysfs for the 
- * related device
+ * related device. NULL devpath means no sysfs entries for
+ * this irq.
  */
 static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
 {
@@ -380,10 +382,13 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
-	/* Map PCI class code to irq class */
-	irq_class = get_irq_class(devpath);
-	if (irq_class < 0)
-		goto get_numa_node;
+ 	/* Some special irqs have NULL devpath */
+	if (devpath != NULL) {
+		/* Map PCI class code to irq class */
+		irq_class = get_irq_class(devpath);
+		if (irq_class < 0)
+			goto get_numa_node;
+	}
 
 	new->class = irq_class;
 	if (pol->level >= 0)
@@ -534,6 +539,10 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	/* Return defaults if no script was given */
 	if (!polscript)
 		return;
+
+	/* Use SYSFS_DIR for irq has no sysfs entries */
+	if (!path)
+		path = SYSFS_DIR;
 
 	cmd = alloca(strlen(path)+strlen(polscript)+64);
 	if (!cmd)
@@ -730,12 +739,13 @@ static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 	if (new)
 		return;
 
-	get_irq_user_policy("/sys", irq, &pol);
+	/* Set NULL devpath for the irq has no sysfs entries */
+	get_irq_user_policy(NULL, irq, &pol);
 	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq, proc_interrupts)) { /*FIXME*/
 		add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
-		new = add_one_irq_to_db("/sys", irq, &pol);
+		new = add_one_irq_to_db(NULL, irq, &pol);
 
 	if (!new) {
 		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
