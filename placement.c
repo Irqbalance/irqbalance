@@ -137,6 +137,7 @@ static void find_best_object_for_irq(struct irq_info *info, void *data)
 static void place_irq_in_object(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	if (g_list_length(d->interrupts) > 0)
+                sort_irq_list_reverse(&d->interrupts);
 		for_each_irq(d->interrupts, find_best_object_for_irq, d);
 }
 
@@ -204,7 +205,7 @@ static void validate_object_tree_placement(void)
 
 void calculate_placement(void)
 {
-	sort_irq_list(&rebalance_irq_list);
+	sort_irq_list_reverse(&rebalance_irq_list);
 	if (g_list_length(rebalance_irq_list) > 0) {
 		for_each_irq(rebalance_irq_list, place_irq_in_node, NULL);
 		for_each_object(numa_nodes, place_irq_in_object, NULL);

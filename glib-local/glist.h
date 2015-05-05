@@ -34,6 +34,7 @@ GList*   g_list_delete_link             (GList            *list,
 GList*   g_list_first                   (GList            *list);
 GList*   g_list_sort                    (GList            *list,
 					 GCompareFunc      compare_func);
+GList*   g_list_reverse                 (GList            *list);
 guint    g_list_length                  (GList            *list);
 void     g_list_foreach                 (GList            *list,
 					 GFunc             func,

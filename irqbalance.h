@@ -41,6 +41,7 @@ extern GList *rebalance_irq_list;
 void update_migration_status(void);
 void dump_workloads(void);
 void sort_irq_list(GList **list);
+void sort_irq_list_reverse(GList **list);
 void calculate_placement(void);
 void dump_tree(void);
 
