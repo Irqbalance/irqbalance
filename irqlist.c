@@ -130,7 +130,7 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 
 	if ((obj->load > info->min_load) &&
 	    (g_list_length(obj->interrupts) > 1)) {
-		/* order the list from least to greatest workload */
+		/* order the list from greatest to least workload */
 		sort_irq_list(&obj->interrupts);
 		/*
 		 * Each irq carries a weighted average amount of load
