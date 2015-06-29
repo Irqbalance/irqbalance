@@ -214,7 +214,6 @@ static void free_object_tree(void)
 	free_numa_node_list();
 	clear_cpu_tree();
 	free_irq_db();
-	free_cl_opts();
 }
 
 static void dump_object_tree(void)
@@ -418,6 +417,7 @@ int main(int argc, char** argv)
 
 	}
 	free_object_tree();
+	free_cl_opts();
 
 	/* Remove pidfile */
 	if (!foreground_mode && pidfile)
