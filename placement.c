@@ -33,7 +33,6 @@ GList *rebalance_irq_list;
 
 struct obj_placement {
 		struct topo_obj *best;
-		struct topo_obj *least_irqs;
 		uint64_t best_cost;
 		struct irq_info *info;
 };
@@ -78,12 +77,10 @@ static void find_best_object(struct topo_obj *d, void *data)
 	if (newload < best->best_cost) {
 		best->best = d;
 		best->best_cost = newload;
-		best->least_irqs = NULL;
-	}
-
-	if (newload == best->best_cost) {
-		if (g_list_length(d->interrupts) < g_list_length(best->best->interrupts))
-			best->least_irqs = d;
+	} else if (newload == best->best_cost) {
+		if (g_list_length(d->interrupts) < g_list_length(best->best->interrupts)) {
+			best->best = d;
+		}
 	}
 }
 
@@ -120,12 +117,11 @@ static void find_best_object_for_irq(struct irq_info *info, void *data)
 
 	place.info = info;
 	place.best = NULL;
-	place.least_irqs = NULL;
 	place.best_cost = ULLONG_MAX;
 
 	for_each_object(d->children, find_best_object, &place);
 
-	asign = place.least_irqs ? place.least_irqs : place.best;
+	asign = place.best;
 
 	if (asign) {
 		migrate_irq(&d->interrupts, &asign->interrupts, info);
@@ -168,12 +164,11 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 find_placement:
 	place.best_cost = ULLONG_MAX;
 	place.best = NULL;
-	place.least_irqs = NULL;
 	place.info = info;
 
 	for_each_object(numa_nodes, find_best_object, &place);
 
-	asign = place.least_irqs ? place.least_irqs : place.best;
+	asign = place.best;
 
 	if (asign) {
 		migrate_irq(&rebalance_irq_list, &asign->interrupts, info);
