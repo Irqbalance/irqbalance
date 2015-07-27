@@ -58,6 +58,7 @@ char *pidfile = NULL;
 char *banscript = NULL;
 char *polscript = NULL;
 long HZ;
+int sleep_interval = SLEEP_INTERVAL;
 
 static void sleep_approx(int seconds)
 {
@@ -87,6 +88,7 @@ struct option lopts[] = {
 	{"pid", 1, NULL, 's'},
 	{"journal", 0, NULL, 'j'},
 	{"banmod", 1 , NULL, 'm'},
+	{"interval", 1 , NULL, 't'},
 	{0, 0, 0, 0}
 };
 
@@ -94,7 +96,7 @@ static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j] [--hintpolicy= | -h [exact|subset|ignore]]\n");
 	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--banmod= | -m <module>] [--policyscript= | -l <script>]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>] [--interval= | -t <n>]\n");
 }
 
 static void parse_command_line(int argc, char **argv)
@@ -104,7 +106,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfjh:i:p:s:c:b:l:m:",
+		"odfjh:i:p:s:c:b:l:m:t:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -184,6 +186,13 @@ static void parse_command_line(int argc, char **argv)
 			case 'j':
 				journal_logging=1;
 				foreground_mode=1;
+				break;
+			case 't':
+				sleep_interval = strtol(optarg, NULL, 10);
+				if (sleep_interval < 1) {
+					usage();
+					exit(1);
+				}
 				break;
 		}
 	}
@@ -377,7 +386,7 @@ int main(int argc, char** argv)
 	parse_proc_stat();
 
 	while (keep_going) {
-		sleep_approx(SLEEP_INTERVAL);
+		sleep_approx(sleep_interval);
 		log(TO_CONSOLE, LOG_INFO, "\n\n\n-----------------------------------------------------------------------------\n");
 
 
@@ -397,7 +406,7 @@ int main(int argc, char** argv)
 			for_each_irq(NULL, force_rebalance_irq, NULL);
 			parse_proc_interrupts();
 			parse_proc_stat();
-			sleep_approx(SLEEP_INTERVAL);
+			sleep_approx(sleep_interval);
 			clear_work_stats();
 			parse_proc_interrupts();
 			parse_proc_stat();
