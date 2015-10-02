@@ -13,6 +13,11 @@
 
 #include "types.h"
 #include "config.h"
+
+#ifdef __aarch64__
+#define AARCH64
+#endif
+
 #ifdef HAVE_NUMA_H
 #include <numa.h>
 #else
