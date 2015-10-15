@@ -78,13 +78,23 @@ static int check_platform_device(char *name, struct irq_info *info)
 			info->type = IRQ_TYPE_LEGACY;
 			info->class = IRQ_SCSI;
 			rc = 0;
-			log(TO_ALL, LOG_DEBUG, "IRQ %s is an ATA irq\n", name);
+			goto out;
+		} else if (!strncmp(ent->d_name, "net", strlen("net"))) {
+			info->IRQ_TYPE_LEGACY;
+			info->class = IRQ_ETH;
+			rc = 0;
+			goto out;
+		} else if (!strncmp(ent->d_name, "usb", strlen("net"))) {
+			info->type = IRQ_TYPE_LEGACY;
+			info->class = IRQ_OTHER;
+			rc = 0;
 			goto out;
 		}
 	}
 
 out:
 	closedir(dirfd);
+	log(TO_ALL, LOG_DEBUG, "IRQ %s is of type %d and class %d\n", name, info->type, info->class)
 	return rc;
 
 }
@@ -95,7 +105,8 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 	static int compiled = 0;
 	static struct irq_match matches[] = {
 		{ "eth.*" ,{NULL} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
-		{ "APM.*", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ "[A-Z0-9]{4}[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ "PNP[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
 		{NULL},
 	};
 
