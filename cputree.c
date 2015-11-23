@@ -59,17 +59,21 @@ cpumask_t cpu_possible_map;
 cpumask_t unbanned_cpus;
 
 /*
- * By default do not place IRQs on CPUs the kernel keeps isolated,
- * as specified through the isolcpus= boot commandline. Users can
+ * By default do not place IRQs on CPUs the kernel keeps isolated or
+ * nohz_full, as specified through the boot commandline. Users can
  * override this with the IRQBALANCE_BANNED_CPUS environment variable.
  */
 static void setup_banned_cpus(void)
 {
 	FILE *file;
-	char *c, *line = NULL;
+	char *line = NULL;
 	size_t size = 0;
-	const char *isolcpus = "isolcpus=";
 	char buffer[4096];
+	cpumask_t nohz_full;
+	cpumask_t isolated_cpus;
+
+	cpus_clear(isolated_cpus);
+	cpus_clear(nohz_full);
 
 	/* A manually specified cpumask overrides auto-detection. */
 	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
@@ -77,30 +81,35 @@ static void setup_banned_cpus(void)
 		goto out;
 	}
 
-	file = fopen("/proc/cmdline", "r");
-	if (!file)
-		goto out;
-
-	if (getline(&line, &size, file) <= 0)
-		goto out2;
-
-	if ((c = strstr(line, isolcpus))) {
-		char *end;
-		int len;
-
-		c += strlen(isolcpus);
-		for (end = c; *end != ' ' && *end != '\0' && *end != '\n'; end++);
-		len = end - c;
-
-		cpulist_parse(c, len, banned_cpus);
+	file = fopen("/sys/devices/system/cpu/isolated", "r");
+	if (file) {
+		if (getline(&line, &size, file) > 0) {
+			cpulist_parse(line, size, isolated_cpus);
+			free(line);
+			line = NULL;
+			size = 0;
+		}
+		fclose(file);
 	}
 
- out2:
-	fclose(file);
- out:
-	cpumask_scnprintf(buffer, 4096, banned_cpus);
+	file = fopen("/sys/devices/system/cpu/nohz_full", "r");
+	if (file) {
+		if (getline(&line, &size, file) > 0) {
+			cpulist_parse(line, size, nohz_full);
+			free(line);
+			line = NULL;
+			size = 0;
+		}
+		fclose(file);
+	}
+
+	cpus_or(banned_cpus, nohz_full, isolated_cpus);
+
+out:
+	cpumask_scnprintf(buffer, 4096, isolated_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
-	free(line);
+	cpumask_scnprintf(buffer, 4096, nohz_full);
+	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
 }
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
