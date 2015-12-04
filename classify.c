@@ -800,7 +800,7 @@ void rebuild_irq_db(void)
 	closedir(devdir);
 
 
-	for_each_irq(tmp_irqs, add_missing_irq, tmp_irqs);
+	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
 
 free:
 	g_list_free_full(tmp_irqs, free);

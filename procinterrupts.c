@@ -27,14 +27,119 @@
 #include <string.h>
 #include <syslog.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "cpumask.h"
 #include "irqbalance.h"
+
+#ifdef AARCH64
+#include <sys/types.h>
+#include <regex.h>
+#include <dirent.h>
+#endif
 
 #define LINESIZE 4096
 
 static int proc_int_has_msi = 0;
 static int msi_found_in_sysfs = 0;
+
+#ifdef AARCH64
+struct irq_match {
+	char *matchstring;
+	regex_t rcomp;
+	int (*refine_match)(char *name, struct irq_info *info);
+	int type;
+	int class;
+};
+
+static int check_platform_device(char *name, struct irq_info *info)
+{
+	DIR *dirfd;
+	char path[512];
+	struct dirent *ent;
+	int rc = -ENOENT;
+
+	memset(path, 0, 512);
+
+	strcat(path, "/sys/devices/platform/");
+	strcat(path, name);
+	strcat(path, "/");
+	dirfd = opendir(path);
+
+	if (!dirfd) {
+		log(TO_ALL, LOG_DEBUG, "No directory %s: %s\n", path, strerror(errno));
+		return -ENOENT;
+	}
+
+	while ((ent = readdir(dirfd)) != NULL) {
+
+		log(TO_ALL, LOG_DEBUG, "Checking entry %s\n", ent->d_name);
+		if (!strncmp(ent->d_name, "ata", strlen("ata"))) {
+			info->type = IRQ_TYPE_LEGACY;
+			info->class = IRQ_SCSI;
+			rc = 0;
+			goto out;
+		} else if (!strncmp(ent->d_name, "net", strlen("net"))) {
+			info->IRQ_TYPE_LEGACY;
+			info->class = IRQ_ETH;
+			rc = 0;
+			goto out;
+		} else if (!strncmp(ent->d_name, "usb", strlen("net"))) {
+			info->type = IRQ_TYPE_LEGACY;
+			info->class = IRQ_OTHER;
+			rc = 0;
+			goto out;
+		}
+	}
+
+out:
+	closedir(dirfd);
+	log(TO_ALL, LOG_DEBUG, "IRQ %s is of type %d and class %d\n", name, info->type, info->class)
+	return rc;
+
+}
+
+static void guess_arm_irq_hints(char *name, struct irq_info *info)
+{
+	int i, rc;
+	static int compiled = 0;
+	static struct irq_match matches[] = {
+		{ "eth.*" ,{NULL} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
+		{ "[A-Z0-9]{4}[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ "PNP[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{NULL},
+	};
+
+
+	if (!compiled) {
+		for (i=0; matches[i].matchstring != NULL; i++) {
+			rc = regcomp(&matches[i].rcomp, matches[i].matchstring, REG_EXTENDED | REG_NOSUB);
+			if (rc) {
+				char errbuf[256];
+				regerror(rc, &matches[i].rcomp, errbuf, 256);
+				log(TO_ALL, LOG_WARNING, "WARNING: Failed to compile regex %s : %s\n",
+				    matches[i].matchstring, errbuf);
+				return;
+			}
+		}
+
+		compiled = 1;
+	}
+
+	for (i=0; matches[i].matchstring != NULL; i++) {
+		if (!regexec(&matches[i].rcomp, name, 0, NULL, 0)) {
+			info->type = matches[i].type;
+			info->class = matches[i].class;
+			if (matches[i].refine_match)
+			    matches[i].refine_match(name, info);
+
+			log(TO_ALL, LOG_DEBUG, "IRQ %s(%d) is class %d\n", name, info->irq,info->class);
+		}	
+	}
+	
+	
+}
+#endif
 
 GList* collect_full_irq_list()
 {
@@ -43,6 +148,7 @@ GList* collect_full_irq_list()
 	char *line = NULL;
 	size_t size = 0;
 	char *irq_name, *irq_mod, *savedptr, *last_token, *p;
+	char *tmp;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -76,13 +182,20 @@ GList* collect_full_irq_list()
 			continue;
 
 		strncpy(savedline, line, sizeof(savedline));
-
 		irq_name = strtok_r(savedline, " ", &savedptr);
 		last_token = strtok_r(NULL, " ", &savedptr);
 		while ((p = strtok_r(NULL, " ", &savedptr))) {
 			irq_name = last_token;
 			last_token = p;
 		}
+
+#ifdef AARCH64
+		/* Of course the formatting for /proc/interrupts is different on different arches */
+		irq_name = last_token;
+		tmp = strchr(irq_name, '\n');
+		if (tmp)
+			*tmp = 0;
+#endif
 		irq_mod = last_token;
 
 		*c = 0;
@@ -96,8 +209,13 @@ GList* collect_full_irq_list()
 				info->type = IRQ_TYPE_VIRT_EVENT;
 				info->class = IRQ_VIRT_EVENT;
 			} else {
+#ifdef AARCH64
+				log(TO_ALL, LOG_DEBUG, "GUESSING AARCH64 CLASS FOR %s\n", irq_name);
+				guess_arm_irq_hints(irq_name, info);
+#else
 				info->type = IRQ_TYPE_LEGACY;
 				info->class = IRQ_OTHER;
+#endif
 			}
 			info->hint_policy = global_hint_policy;
 			info->name = strdupa(irq_mod);
