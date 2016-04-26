@@ -50,7 +50,6 @@ int journal_logging = 0;
 int need_rescan;
 unsigned int log_mask = TO_ALL;
 const char *log_indent;
-enum hp_e global_hint_policy = HINT_POLICY_IGNORE;
 unsigned long power_thresh = ULONG_MAX;
 unsigned long deepest_cache = 2;
 unsigned long long cycle_count = 0;
@@ -106,7 +105,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfjh:i:p:s:c:b:l:m:t:",
+		"odfji:p:s:c:b:l:m:t:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -139,18 +138,6 @@ static void parse_command_line(int argc, char **argv)
 				break;
 			case 'f':
 				foreground_mode=1;
-				break;
-			case 'h':
-				if (!strncmp(optarg, "exact", strlen(optarg)))
-					global_hint_policy = HINT_POLICY_EXACT;
-				else if (!strncmp(optarg, "subset", strlen(optarg)))
-					global_hint_policy = HINT_POLICY_SUBSET;
-				else if (!strncmp(optarg, "ignore", strlen(optarg)))
-					global_hint_policy = HINT_POLICY_IGNORE;
-				else {
-					usage();
-					exit(1);
-				}
 				break;
 			case 'i':
 				val = strtoull(optarg, NULL, 10);

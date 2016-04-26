@@ -77,13 +77,6 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 {
 	struct load_balance_info *lb_info = data;
 
-	/* never move an irq that has an afinity hint when 
- 	 * hint_policy is HINT_POLICY_EXACT 
- 	 */
-	if (info->hint_policy == HINT_POLICY_EXACT)
-		if (!cpus_empty(info->affinity_hint))
-			return;
-
 	/* Don't rebalance irqs that don't want it */
 	if (info->level == BALANCE_NONE)
 		return;

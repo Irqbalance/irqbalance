@@ -50,21 +50,6 @@ Causes irqbalance to run in the foreground (without --debug).
 Enables log output optimized for systemd-journal.
 
 .TP
-.B -h, --hintpolicy=[exact | subset | ignore]
-Set the policy for how IRQ kernel affinity hinting is treated.  Can be one of:
-.P
-.I exact
-IRQ affinity hint is applied unilaterally and never violated.
-.P
-.I subset
-IRQ is balanced, but the assigned object will be a subset of the affinity hint.
-.P
-.I ignore
-IRQ affinity hint value is completely ignored.
-.P
-The default value for hintpolicy is ignore.
-
-.TP
 .B -p, --powerthresh=<threshold>
 Set the threshold at which we attempt to move a CPU into powersave mode
 If more than <threshold> CPUs are more than 1 standard deviation below the
@@ -121,10 +106,6 @@ This option allows for that hardware provided information to be overridden, so
 that irqbalance can bias IRQ affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
 from a device to be equidistant from all nodes.
-.TP
-.I hintpolicy=[exact | subset | ignore ]
-This allows a user to override the globally set hintpolicy for a given irq.  Use
-is identical to the --hintpolicy setting, but applied per irq
 .TP
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no

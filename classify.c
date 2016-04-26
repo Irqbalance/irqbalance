@@ -31,7 +31,6 @@ struct user_irq_policy {
 	int level;
 	int numa_node_set;
 	int numa_node;
-	enum hp_e hintpolicy;
 };
 
 static GList *interrupts_db = NULL;
@@ -283,7 +282,6 @@ static void add_banned_irq(int irq, GList **list)
 
 	new->irq = irq;
 	new->flags |= IRQ_FLAG_BANNED;
-	new->hint_policy = HINT_POLICY_EXACT;
 
 	*list = g_list_append(*list, new);
 	log(TO_CONSOLE, LOG_INFO, "IRQ %d was BANNED.\n", irq);
@@ -347,7 +345,6 @@ void add_cl_banned_module(char *modname)
 static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
 {
 	int irq_class = IRQ_OTHER;
-	int rc;
 	struct irq_info *new, find;
 	int numa_node;
 	char path[PATH_MAX];
@@ -378,7 +375,6 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 
 	new->irq = irq;
 	new->class = IRQ_OTHER;
-	new->hint_policy = pol->hintpolicy; 
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
@@ -402,7 +398,7 @@ get_numa_node:
 		sprintf(path, "%s/numa_node", devpath);
 		fd = fopen(path, "r");
 		if (fd) {
-			rc = fscanf(fd, "%d", &numa_node);
+			fscanf(fd, "%d", &numa_node);
 			fclose(fd);
 		}
 	}
@@ -416,7 +412,7 @@ get_numa_node:
 	fd = fopen(path, "r");
 	if (!fd) {
 		cpus_setall(new->cpumask);
-		goto assign_affinity_hint;
+		goto out;
 	}
 	lcpu_mask = NULL;
 	ret = getline(&lcpu_mask, &blen, fd);
@@ -428,19 +424,6 @@ get_numa_node:
 	}
 	free(lcpu_mask);
 
-assign_affinity_hint:
-	cpus_clear(new->affinity_hint);
-	sprintf(path, "/proc/irq/%d/affinity_hint", irq);
-	fd = fopen(path, "r");
-	if (!fd)
-		goto out;
-	lcpu_mask = NULL;
-	ret = getline(&lcpu_mask, &blen, fd);
-	fclose(fd);
-	if (ret <= 0)
-		goto out;
-	cpumask_parse_user(lcpu_mask, ret, new->affinity_hint);
-	free(lcpu_mask);
 out:
 	log(TO_CONSOLE, LOG_INFO, "Adding IRQ %d to database\n", irq);
 	return new;
@@ -499,17 +482,6 @@ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *po
 		}
 		pol->numa_node = idx;
 		pol->numa_node_set = 1;
-	} else if (!strcasecmp("hintpolicy", key)) {
-		if (!strcasecmp("exact", value))
-			pol->hintpolicy = HINT_POLICY_EXACT;
-		else if (!strcasecmp("subset", value))
-			pol->hintpolicy = HINT_POLICY_SUBSET;
-		else if (!strcasecmp("ignore", value))
-			pol->hintpolicy = HINT_POLICY_IGNORE;
-		else {
-			key_set = 0;
-			log(TO_ALL, LOG_WARNING, "Unknown value for hitpolicy: %s\n", value);
-		}
 	} else {
 		key_set = 0;
 		log(TO_ALL, LOG_WARNING, "Unknown key returned, ignoring: %s\n", key);
@@ -534,7 +506,6 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 	char *brc;
 
 	memset(pol, -1, sizeof(struct user_irq_policy));
-	pol->hintpolicy = global_hint_policy;
 
 	/* Return defaults if no script was given */
 	if (!polscript)
@@ -575,7 +546,7 @@ static int check_for_module_ban(char *name)
 		return 0;
 }
 
-static int check_for_irq_ban(char *path, int irq, GList *proc_interrupts)
+static int check_for_irq_ban(char *path __attribute__((unused)), int irq, GList *proc_interrupts)
 {
 	struct irq_info find, *res;
 	GList *entry;

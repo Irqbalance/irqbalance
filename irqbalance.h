@@ -63,17 +63,10 @@ extern GList *cache_domains;
 extern GList *cpus;
 extern int numa_avail;
 
-enum hp_e {
-	HINT_POLICY_IGNORE,
-	HINT_POLICY_SUBSET,
-	HINT_POLICY_EXACT
-};
-
 extern int debug_mode;
 extern int journal_logging;
 extern int one_shot_mode;
 extern int need_rescan;
-extern enum hp_e global_hint_policy;
 extern unsigned long long cycle_count;
 extern unsigned long power_thresh;
 extern unsigned long deepest_cache;

@@ -41,7 +41,6 @@ static void find_best_object(struct topo_obj *d, void *data)
 {
 	struct obj_placement *best = (struct obj_placement *)data;
 	uint64_t newload;
-	cpumask_t subset;
 
 	/*
  	 * Don't consider the unspecified numa node here
@@ -56,19 +55,6 @@ static void find_best_object(struct topo_obj *d, void *data)
 	if ((d->obj_type == OBJ_TYPE_NODE) &&
 	    (!cpus_intersects(d->mask, unbanned_cpus)))
 		return;
-
-	/*
- 	 * If the hint policy is subset, then we only want 
- 	 * to consider objects that are within the irqs hint, but
- 	 * only if that irq in fact has published a hint
- 	 */
-	if (best->info->hint_policy == HINT_POLICY_SUBSET) {
-		if (!cpus_empty(best->info->affinity_hint)) {
-			cpus_and(subset, best->info->affinity_hint, d->mask);
-			if (cpus_empty(subset))
-				return;
-		}
-	}
 
 	if (d->powersave_mode)
 		return;

@@ -148,7 +148,6 @@ GList* collect_full_irq_list()
 	char *line = NULL;
 	size_t size = 0;
 	char *irq_name, *irq_mod, *savedptr, *last_token, *p;
-	char *tmp;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -217,7 +216,6 @@ GList* collect_full_irq_list()
 				info->class = IRQ_OTHER;
 #endif
 			}
-			info->hint_policy = global_hint_policy;
 			info->name = strdupa(irq_mod);
 			tmp_list = g_list_append(tmp_list, info);
 		}
