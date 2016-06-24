@@ -460,7 +460,7 @@ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *po
 			pol->ban = 1;
 		else {
 			key_set = 0;
-			log(TO_ALL, LOG_WARNING, "Unknown value for ban poilcy: %s\n", value);
+			log(TO_ALL, LOG_WARNING, "Unknown value for ban policy: %s\n", value);
 		}
 	} else if (!strcasecmp("balance_level", key)) {
 		for (idx=0; idx<4; idx++) {
@@ -494,7 +494,7 @@ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *po
 }
 
 /*
- * Calls out to a possibly user defined script to get user assigned poilcy
+ * Calls out to a possibly user defined script to get user assigned policy
  * aspects for a given irq.  A value of -1 in a given field indicates no
  * policy was given and that system defaults should be used
  */
