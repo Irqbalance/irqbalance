@@ -84,7 +84,8 @@ static void setup_banned_cpus(void)
 	file = fopen("/sys/devices/system/cpu/isolated", "r");
 	if (file) {
 		if (getline(&line, &size, file) > 0) {
-			cpulist_parse(line, size, isolated_cpus);
+			if (strlen(line) && line[0] != '\n')
+				cpulist_parse(line, strlen(line), isolated_cpus);
 			free(line);
 			line = NULL;
 			size = 0;
@@ -95,7 +96,8 @@ static void setup_banned_cpus(void)
 	file = fopen("/sys/devices/system/cpu/nohz_full", "r");
 	if (file) {
 		if (getline(&line, &size, file) > 0) {
-			cpulist_parse(line, size, nohz_full);
+			if (strlen(line) && line[0] != '\n')
+				cpulist_parse(line, strlen(line), nohz_full);
 			free(line);
 			line = NULL;
 			size = 0;
