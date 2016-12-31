@@ -3,7 +3,7 @@ AC_PREREQ(2.12)dnl
 AM_CONFIG_HEADER(config.h)
 
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign] [subdir-objects])
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
@@ -25,6 +25,8 @@ AC_CHECK_FUNCS(getopt_long)
 
 AC_CHECK_LIB(numa, numa_available)
 AC_CHECK_LIB(m, floor)
+
+AC_CHECK_LIB(curses, mvprintw)
 
 AC_C_CONST
 AC_C_INLINE
