@@ -38,6 +38,7 @@
 
 #include "irqbalance.h"
 
+extern char *banned_cpumask_from_ui;
 
 GList *cpus;
 GList *cache_domains;
@@ -76,11 +77,15 @@ static void setup_banned_cpus(void)
 	cpus_clear(nohz_full);
 
 	/* A manually specified cpumask overrides auto-detection. */
+	if (banned_cpumask_from_ui != NULL) {
+		cpulist_parse(banned_cpumask_from_ui,
+			strlen(banned_cpumask_from_ui), banned_cpus);
+		goto out;
+	}
 	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
 		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
 		goto out;
 	}
-
 	file = fopen("/sys/devices/system/cpu/isolated", "r");
 	if (file) {
 		if (getline(&line, &size, file) > 0) {
@@ -112,6 +117,8 @@ out:
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
 	cpumask_scnprintf(buffer, 4096, nohz_full);
 	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
+	cpumask_scnprintf(buffer, 4096, banned_cpus);
+	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
 }
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 

@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <glib.h>
+#include <glib-unix.h>
 #include <syslog.h>
 #include <limits.h>
 
@@ -62,6 +63,7 @@ extern GList *packages;
 extern GList *cache_domains;
 extern GList *cpus;
 extern int numa_avail;
+extern GList *cl_banned_irqs;
 
 extern int debug_mode;
 extern int journal_logging;
@@ -168,6 +170,8 @@ extern unsigned int log_mask;
 	} 									\
 }while(0)
 #endif /* HAVE_LIBSYSTEMD */
+
+#define SOCKET_PATH "irqbalance"
 
 #endif /* __INCLUDE_GUARD_IRQBALANCE_H_ */
 
