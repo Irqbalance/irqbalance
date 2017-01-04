@@ -21,7 +21,7 @@ void show_frame()
 	attrset(COLOR_PAIR(4));
 	char top[COLS];
 	top[0] = '\0';
-	while(strlen(top) != COLS - 1) {
+	while(strlen(top) != (size_t)COLS - 1) {
 		snprintf(top + strlen(top), COLS - strlen(top), " ");
 	}
 	mvprintw(0, 0, top);
@@ -36,7 +36,7 @@ void show_footer()
 	char footer[COLS];
 	snprintf(footer, COLS - 1,
 		" q (QUIT)   F3 (TREE)   F4 (SETTINGS)   F5 (SETUP IRQS)");
-	while(strlen(footer) != COLS - 1) {
+	while(strlen(footer) != (size_t)COLS - 1) {
 		snprintf(footer + strlen(footer), COLS - strlen(footer), " ");
 	}
 	attrset(COLOR_PAIR(4));
@@ -227,7 +227,7 @@ void handle_cpu_banning()
 	move(6, 19);
 	curs_set(1);
 	refresh();
-	int position = 5;
+	size_t position = 5;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -429,7 +429,7 @@ void handle_irq_banning()
 	move(4, 19);
 	curs_set(1);
 	refresh();
-	int position = 3;
+	size_t position = 3;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();

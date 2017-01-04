@@ -35,7 +35,7 @@ struct user_irq_policy {
 
 static GList *interrupts_db = NULL;
 static GList *banned_irqs = NULL;
-static GList *cl_banned_irqs = NULL;
+GList *cl_banned_irqs = NULL;
 static GList *cl_banned_modules = NULL;
 
 #define SYSFS_DIR "/sys"
