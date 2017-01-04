@@ -37,7 +37,10 @@ AC_ARG_WITH([systemd],
 )
 AS_IF(
   [test "x$with_systemd" = xyes], [
-    PKG_CHECK_MODULES([SYSTEMD], [libsystemd-journal], [journal_lib=yes])
+    PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [journal_lib=yes], [journal_lib=no])
+    AS_IF([test "x$journal_lib" != "xyes"], [
+      PKG_CHECK_MODULES([SYSTEMD], [libsystemd-journal], [journal_lib=yes])
+    ])
     AC_DEFINE(HAVE_LIBSYSTEMD, 1, [systemd support])
     AC_CHECK_LIB([systemd], [sd_journal_print_with_location])
     AC_CHECK_LIB([systemd], [sd_journal_print])
