@@ -148,6 +148,9 @@ GList* collect_full_irq_list()
 	char *line = NULL;
 	size_t size = 0;
 	char *irq_name, *irq_mod, *savedptr, *last_token, *p;
+#ifdef AARCH64
+	char *tmp;
+#endif
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
