@@ -330,7 +330,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 	int valid_user = 0;
 
 	struct iovec iov = { buff, 500 };
-	struct msghdr msg = { NULL, 0, &iov, 1, NULL, 0, 0 };
+	struct msghdr msg = { 0 };
+	msg.msg_iov = &iov;
+	msg.msg_iovlen = 1;
 	msg.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred)));
 	msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
 
