@@ -25,7 +25,8 @@ void show_frame()
 		snprintf(top + strlen(top), COLS - strlen(top), " ");
 	}
 	mvprintw(0, 0, top);
-	for(int i = 0; i < LINES; i++) {
+    int i = 0;
+	for(i = 0; i < LINES; i++) {
 		mvprintw(i, 0, " ");
 		mvprintw(i, COLS - 1, " ");
 	}
@@ -674,7 +675,8 @@ void display_tree_node(cpu_node_t *node, void *data)
 	char *spaces = "    \0";
 	char indent[32] = "\0";
 	char *asciitree = " `--\0";
-	for(int i = node->type; i <= OBJ_TYPE_NODE; i++) {
+    int i = 0;
+	for(i = node->type; i <= OBJ_TYPE_NODE; i++) {
 		snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", spaces);
 		if(i != OBJ_TYPE_NODE) {
 			snprintf(indent + strlen(indent), 32 - strlen(indent), "   ");
