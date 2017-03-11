@@ -75,7 +75,7 @@ char * hex_to_bitmap(char hex_digit) {
 
 	char *bitmap = malloc(5 * sizeof(char));
 	bitmap[4] = '\0';
-    int i = 3;
+	int i = 0;
 	for(i = 3; i >= 0; i--) {
 		bitmap[i] = digit % 2 ? '1' : '0';
 		digit /= 2;
