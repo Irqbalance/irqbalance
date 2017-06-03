@@ -655,8 +655,13 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 
 	/*
 	 * no pci device has irq 0
+	 * irq 255 is invalid on x86/x64 architectures
 	 */
+#if defined(__i386__) || defined(__x86_64__)
+	if (irqnum && irqnum != 255) {
+#else
 	if (irqnum) {
+#endif
 		new = get_irq_info(irqnum);
 		if (new)
 			goto done;
