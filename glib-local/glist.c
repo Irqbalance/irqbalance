@@ -152,6 +152,32 @@ g_list_delete_link (GList *list,
 }
 
 /**
+ * g_list_reverse:
+ * @list: a #GList, this must point to the top of the list
+ *
+ * Reverses a #GList.
+ * It simply switches the next and prev pointers of each element.
+ *
+ * Returns: the start of the reversed #GList
+ */
+GList *
+g_list_reverse (GList *list)
+{
+  GList *last;
+
+  last = NULL;
+  while (list)
+    {
+      last = list;
+      list = last->next;
+      last->next = last->prev;
+      last->prev = list;
+    }
+
+  return last;
+}
+
+/**
  * g_list_first:
  * @list: a #GList
  *

@@ -852,3 +852,9 @@ void sort_irq_list(GList **list)
 {
 	*list = g_list_sort(*list, sort_irqs);
 }
+
+void sort_irq_list_reverse(GList **list)
+{
+	*list = g_list_sort(*list, sort_irqs);
+	*list = g_list_reverse(*list);
+}
