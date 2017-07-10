@@ -294,10 +294,12 @@ gboolean scan(gpointer data)
 		return FALSE;
 	}
 
-	if (keep_going)
+	if (keep_going) {
 		return TRUE;
-	else
+	} else {
+		g_main_loop_quit(main_loop);
 		return FALSE;
+	}
 }
 
 void get_irq_data(struct irq_info *irq, void *data)
@@ -585,7 +587,7 @@ int main(int argc, char** argv)
 	g_main_loop_run(main_loop);
 
 	g_main_loop_quit(main_loop);
-	
+
 	free_object_tree();
 	free_cl_opts();
 
