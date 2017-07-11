@@ -54,6 +54,7 @@ struct topo_obj {
 	GList *interrupts;
 	struct topo_obj *parent;
 	GList *children;
+	GList *numa_nodes;
 	GList **obj_type_list;
 };
 
