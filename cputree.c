@@ -324,6 +324,8 @@ static void do_one_cpu(char *path)
 
 	nodeid=-1;
 	if (numa_avail) {
+		struct topo_obj *node;
+
 		dir = opendir(path);
 		do {
 			entry = readdir(dir);
@@ -335,6 +337,14 @@ static void do_one_cpu(char *path)
 			}
 		} while (entry);
 		closedir(dir);
+
+		/*
+		 * In case of multiple NUMA nodes within a CPU package,
+		 * we override package_mask with node mask.
+		 */
+		node = get_numa_node(nodeid);
+		if (node && (cpus_weight(package_mask) > cpus_weight(node->mask)))
+			cpus_and(package_mask, package_mask, node->mask);
 	}
 
 	/*
