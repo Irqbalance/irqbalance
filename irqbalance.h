@@ -84,26 +84,13 @@ extern long HZ;
 extern void build_numa_node_list(void);
 extern void free_numa_node_list(void);
 extern void dump_numa_node_info(struct topo_obj *node, void *data);
-extern void add_package_to_node(struct topo_obj *p, int nodeid);
+extern void connect_cpu_mem_topo(struct topo_obj *p, void *data);
 extern struct topo_obj *get_numa_node(int nodeid);
-
-/*
- * Package functions
- */
-#define package_numa_node(p) ((p)->parent)
-
-/*
- * cache_domain functions
- */
-#define cache_domain_package(c) ((c)->parent)
-#define cache_domain_numa_node(c) (package_numa_node(cache_domain_package((c))))
 
 /*
  * cpu core functions
  */
-#define cpu_cache_domain(cpu) ((cpu)->parent)
-#define cpu_package(cpu) (cache_domain_package(cpu_cache_domain((cpu))))
-#define cpu_numa_node(cpu) (package_numa_node(cache_domain_package(cpu_cache_domain((cpu)))))
+#define cpu_numa_node(cpu) ((cpu)->parent->numa_nodes)
 extern struct topo_obj *find_cpu_core(int cpunr);
 extern int get_cpu_count(void);
 

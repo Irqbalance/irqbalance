@@ -121,8 +121,32 @@ out:
 	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
 }
 
-static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache, 
-						    int packageid, cpumask_t package_mask)
+static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)
+{
+	GList *entry;
+	struct topo_obj *node;
+	struct topo_obj *cand_node;
+
+	node = get_numa_node(nodeid);
+	if (!node || node->number == -1)
+		return;
+
+	entry = g_list_first(obj->numa_nodes);
+	while (entry) {
+		cand_node = entry->data;
+		if (cand_node == node)
+			break;
+		entry = g_list_next(entry);
+	}
+
+	if (!entry)
+		obj->numa_nodes = g_list_append(obj->numa_nodes, node);
+}
+
+static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
+						    int packageid,
+						    cpumask_t package_mask,
+						    int nodeid)
 {
 	GList *entry;
 	struct topo_obj *package;
@@ -165,10 +189,14 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		cache->parent = package;
 	}
 
+	if (nodeid > -1)
+		add_numa_node_to_topo_obj(package, nodeid);
+
 	return package;
 }
 static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
-						    cpumask_t cache_mask)
+						    cpumask_t cache_mask,
+						    int nodeid)
 {
 	GList *entry;
 	struct topo_obj *cache;
@@ -207,6 +235,9 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cache->children = g_list_append(cache->children, cpu);
 		cpu->parent = (struct topo_obj *)cache;
 	}
+
+	if (nodeid > -1)
+		add_numa_node_to_topo_obj(cache, nodeid);
 
 	return cache;
 }
@@ -344,9 +375,9 @@ static void do_one_cpu(char *path)
 	cpus_and(cache_mask, cache_mask, unbanned_cpus);
 	cpus_and(package_mask, package_mask, unbanned_cpus);
 
-	cache = add_cpu_to_cache_domain(cpu, cache_mask);
-	package = add_cache_domain_to_package(cache, packageid, package_mask);
-	add_package_to_node(package, nodeid);
+	cache = add_cpu_to_cache_domain(cpu, cache_mask, nodeid);
+	package = add_cache_domain_to_package(cache, packageid, package_mask,
+	    nodeid);
 
 	cpu->obj_type_list = &cpus;
 	cpus = g_list_append(cpus, cpu);
@@ -368,12 +399,18 @@ static void dump_irq(struct irq_info *info, void *data)
 	free(indent);
 }
 
+static void dump_numa_node_num(struct topo_obj *p, void *data __attribute__((unused)))
+{
+	log(TO_CONSOLE, LOG_INFO, "%d ", p->number);
+}
+
 static void dump_balance_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
 	struct topo_obj *c = (struct topo_obj *)d;
-	log(TO_CONSOLE, LOG_INFO, "%s%s%s%sCPU number %i  numa_node is %d (load %lu)\n",
-	    log_indent, log_indent, log_indent, log_indent,
-	    c->number, cpu_numa_node(c)->number , (unsigned long)c->load);
+	log(TO_CONSOLE, LOG_INFO, "%s%s%s%sCPU number %i  numa_node is ",
+	    log_indent, log_indent, log_indent, log_indent, c->number);
+	for_each_object(cpu_numa_node(c), dump_numa_node_num, NULL);
+	log(TO_CONSOLE, LOG_INFO, "(load %lu)\n", (unsigned long)c->load);
 	if (c->interrupts)
 		for_each_irq(c->interrupts, dump_irq, (void *)18);
 }
@@ -382,9 +419,11 @@ static void dump_cache_domain(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4095, d->mask);
-	log(TO_CONSOLE, LOG_INFO, "%s%sCache domain %i:  numa_node is %d cpu mask is %s  (load %lu) \n",
-	    log_indent, log_indent,
-	    d->number, cache_domain_numa_node(d)->number, buffer, (unsigned long)d->load);
+	log(TO_CONSOLE, LOG_INFO, "%s%sCache domain %i:  numa_node is ",
+	    log_indent, log_indent, d->number);
+	for_each_object(d->numa_nodes, dump_numa_node_num, NULL);
+	log(TO_CONSOLE, LOG_INFO, "cpu mask is %s  (load %lu) \n", buffer,
+	    (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_balance_obj, NULL);
 	if (g_list_length(d->interrupts) > 0)
@@ -395,8 +434,10 @@ static void dump_package(struct topo_obj *d, void *data)
 {
 	char *buffer = data;
 	cpumask_scnprintf(buffer, 4096, d->mask);
-	log(TO_CONSOLE, LOG_INFO, "Package %i:  numa_node is %d cpu mask is %s (load %lu)\n",
-	    d->number, package_numa_node(d)->number, buffer, (unsigned long)d->load);
+	log(TO_CONSOLE, LOG_INFO, "Package %i:  numa_node ", d->number);
+	for_each_object(d->numa_nodes, dump_numa_node_num, NULL);
+	log(TO_CONSOLE, LOG_INFO, "cpu mask is %s (load %lu)\n",
+	    buffer, (unsigned long)d->load);
 	if (d->children)
 		for_each_object(d->children, dump_cache_domain, buffer);
 	if (g_list_length(d->interrupts) > 0)
@@ -448,9 +489,9 @@ void parse_cpu_tree(void)
 		char pad;
 		entry = readdir(dir);
 		/*
- 		 * We only want to count real cpus, not cpufreq and
- 		 * cpuidle
- 		 */
+		 * We only want to count real cpus, not cpufreq and
+		 * cpuidle
+		 */
 		if (entry &&
 		    sscanf(entry->d_name, "cpu%d%c", &num, &pad) == 1 &&
 		    !strchr(entry->d_name, ' ')) {
@@ -459,7 +500,8 @@ void parse_cpu_tree(void)
 			do_one_cpu(new_path);
 		}
 	} while (entry);
-	closedir(dir);  
+	closedir(dir);
+	for_each_object(packages, connect_cpu_mem_topo, NULL);
 
 	if (debug_mode)
 		dump_tree();
@@ -483,6 +525,7 @@ void clear_cpu_tree(void)
 		package = item->data;
 		g_list_free(package->children);
 		g_list_free(package->interrupts);
+		g_list_free(package->numa_nodes);
 		free(package);
 		packages = g_list_delete_link(packages, item);
 	}
@@ -493,6 +536,7 @@ void clear_cpu_tree(void)
 		cache_domain = item->data;
 		g_list_free(cache_domain->children);
 		g_list_free(cache_domain->interrupts);
+		g_list_free(cache_domain->numa_nodes);
 		free(cache_domain);
 		cache_domains = g_list_delete_link(cache_domains, item);
 	}

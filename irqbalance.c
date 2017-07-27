@@ -203,9 +203,14 @@ static void parse_command_line(int argc, char **argv)
 #endif
 
 /*
- * This builds our object tree.  The Heirarchy is pretty straightforward
+ * This builds our object tree.  The Heirarchy is typically pretty
+ * straightforward.
  * At the top are numa_nodes
- * All CPU packages belong to a single numa_node
+ * CPU packages belong to a single numa_node, unless the cache domains are in
+ * separate nodes.  In that case, the cache domain's parent is the package, but
+ * the numa nodes point to the cache domains instead of the package as their
+ * children.  This allows us to maintain the CPU hierarchy while adjusting for
+ * alternate memory topologies that are present on recent processor.
  * All Cache domains belong to a CPU package
  * All CPU cores belong to a cache domain
  *
@@ -304,10 +309,12 @@ gboolean scan(gpointer data)
 		return FALSE;
 	}
 
-	if (keep_going)
+	if (keep_going) {
 		return TRUE;
-	else
+	} else {
+		g_main_loop_quit(main_loop);
 		return FALSE;
+	}
 }
 
 void get_irq_data(struct irq_info *irq, void *data)
@@ -595,7 +602,7 @@ int main(int argc, char** argv)
 	g_main_loop_run(main_loop);
 
 	g_main_loop_quit(main_loop);
-	
+
 	free_object_tree();
 	free_cl_opts();
 

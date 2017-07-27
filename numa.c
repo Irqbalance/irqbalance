@@ -146,22 +146,38 @@ static gint compare_node(gconstpointer a, gconstpointer b)
 	return (ai->number == bi->number) ? 0 : 1;
 }
 
-void add_package_to_node(struct topo_obj *p, int nodeid)
+void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused)))
 {
+	GList *entry;
 	struct topo_obj *node;
+	struct topo_obj *lchild;
+	int len;
 
-	node = get_numa_node(nodeid);
+	len = g_list_length(p->numa_nodes);
 
-	if (!node) {
-		log(TO_CONSOLE, LOG_INFO, "Could not find numa node for node id %d\n", nodeid);
+	if (len == 0) {
+		return;
+	} else if (len > 1) {
+		for_each_object(p->children, connect_cpu_mem_topo, NULL);
 		return;
 	}
 
+	entry = g_list_first(p->numa_nodes);
+	node = entry->data;
 
-	if (!p->parent) {
-		node->children = g_list_append(node->children, p);
+	if (p->obj_type == OBJ_TYPE_PACKAGE && !p->parent)
 		p->parent = node;
+
+	entry = g_list_first(node->children);
+	while (entry) {
+		lchild = entry->data;
+		if (lchild == p)
+			break;
+		entry = g_list_next(entry);
 	}
+
+	if (!entry)
+		node->children = g_list_append(node->children, p);
 }
 
 void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)))
