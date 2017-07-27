@@ -146,9 +146,11 @@ void parse_setup(char *setup_data)
 
 	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
 	token = strtok_r(ptr, " ", &ptr);
-	for(int i = strlen(token) - 1; i >= 0; i--) {
+	int i = 0;
+	for(i = strlen(token) - 1; i >= 0; i--) {
 		char *map = hex_to_bitmap(token[i]);
-		for(int j = 3; j >= 0; j--) {
+		int j = 0;
+		for(j = 3; j >= 0; j--) {
 			if(map[j] == '1') {
 				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
 				*banned_cpu = (4 * (strlen(token) - (i + 1)) + (4 - (j + 1)));
