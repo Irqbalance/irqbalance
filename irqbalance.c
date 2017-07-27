@@ -94,6 +94,7 @@ struct option lopts[] = {
 	{"journal", 0, NULL, 'j'},
 	{"banmod", 1 , NULL, 'm'},
 	{"interval", 1 , NULL, 't'},
+	{"version", 0, NULL, 'V'},
 	{0, 0, 0, 0}
 };
 
@@ -104,6 +105,11 @@ static void usage(void)
 	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>] [--interval= | -t <n>]\n");
 }
 
+static void version(void)
+{
+	log(TO_CONSOLE, LOG_INFO, "irqbalance version " VERSION "\n");
+}
+
 static void parse_command_line(int argc, char **argv)
 {
 	int opt;
@@ -111,12 +117,16 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfji:p:s:c:b:l:m:t:",
+		"odfji:p:s:c:b:l:m:t:V",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
 			case '?':
 				usage();
+				exit(1);
+				break;
+			case 'V':
+				version();
 				exit(1);
 				break;
 			case 'b':
