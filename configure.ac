@@ -26,7 +26,13 @@ AC_CHECK_FUNCS(getopt_long)
 AC_CHECK_LIB(numa, numa_available)
 AC_CHECK_LIB(m, floor)
 
-AC_CHECK_LIB(curses, mvprintw)
+PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
+AS_IF([test "x$has_ncursesw" = "xyes"], [
+  AC_SUBST([NCURSESW_CFLAGS])
+  AC_SUBST([NCURSESW_LIBS])
+  LIBS="$LIBS $NCURSESW_LIBS"
+  AC_SUBST([LIBS])
+])
 
 AC_C_CONST
 AC_C_INLINE
