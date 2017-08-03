@@ -26,6 +26,8 @@ AC_CHECK_FUNCS(getopt_long)
 AC_CHECK_LIB(numa, numa_available)
 AC_CHECK_LIB(m, floor)
 
+PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
+
 PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
 AS_IF([test "x$has_ncursesw" = "xyes"], [
   AC_SUBST([NCURSESW_CFLAGS])
@@ -52,36 +54,6 @@ AS_IF(
     AC_CHECK_LIB([systemd], [sd_journal_print])
 ])
 
-AC_ARG_WITH([glib2],
-  [AS_HELP_STRING([--without-glib2],
-    [Don't use system glib2 library. Use local implementation instead.])],
-  [],
-  [with_glib2=check])
-
-local_glib2=
-AS_IF(
-  [test "x$with_glib2" = xyes],
-  [PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28])],
-  
-  [test "x$with_glib2" = xno],
-  [local_glib2="yes"],
-
-  [PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.28], [], [local_glib2="yes"])]
-)
-
-AS_IF(
-  [test "x$local_glib2" = xyes],
-  [
-  GLIB_CFLAGS=-I./glib-local
-  GLIB_LIBS=glib-local/libglib.a
-  AC_SUBST(GLIB_CFLAGS)
-  AC_SUBST(GLIB_LIBS)
-  AC_MSG_WARN(Using locale implementation of GList functions)
-  ]
-)
-
-AM_CONDITIONAL([LOCAL_GLIB], [test "x$local_glib2" = "xyes"])
-
 AC_ARG_WITH([libcap-ng],
   AS_HELP_STRING([libcap-ng], [Add libcap-ng-support @<:@default=auto@:>@]))
 
@@ -102,7 +74,7 @@ AS_IF(
   ]
 )
 
-AC_OUTPUT(Makefile glib-local/Makefile)
+AC_OUTPUT(Makefile)
 
 AC_MSG_NOTICE()
 AC_MSG_NOTICE([irqbalance Version:     $VERSION])
