@@ -1,6 +1,7 @@
 [Unit]
 Description=irqbalance daemon
 After=syslog.target
+ConditionVirtualization=!container
 
 [Service]
 EnvironmentFile=/path/to/irqbalance.env
