@@ -170,7 +170,7 @@ void parse_setup(char *setup_data)
 
 out: {
 	/* Invalid data presented */
-	printf("Invalid data sent.  Unexpected token: ", token);
+	printf("Invalid data sent.  Unexpected token: %s", token);
 	free(copy);
 	g_list_free(tree);
 	exit(1);

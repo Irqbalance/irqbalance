@@ -18,6 +18,7 @@ char *IRQ_CLASS_TO_STR[] = {
 
 void show_frame()
 {
+	int i;
 	attrset(COLOR_PAIR(4));
 	char top[COLS];
 	top[0] = '\0';
@@ -25,7 +26,7 @@ void show_frame()
 		snprintf(top + strlen(top), COLS - strlen(top), " ");
 	}
 	mvprintw(0, 0, top);
-	for(int i = 0; i < LINES; i++) {
+	for(i = 0; i < LINES; i++) {
 		mvprintw(i, 0, " ");
 		mvprintw(i, COLS - 1, " ");
 	}
@@ -666,6 +667,7 @@ void display_tree_node_irqs(irq_t *irq, void *data)
 
 void display_tree_node(cpu_node_t *node, void *data)
 {
+	int i;
 	const char *node_type_to_str[] = {
 			"CPU\0",
 			"CACHE DOMAIN\0",
@@ -675,7 +677,7 @@ void display_tree_node(cpu_node_t *node, void *data)
 	char *spaces = "    \0";
 	char indent[32] = "\0";
 	char *asciitree = " `--\0";
-	for(int i = node->type; i <= OBJ_TYPE_NODE; i++) {
+	for(i = node->type; i <= OBJ_TYPE_NODE; i++) {
 		snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", spaces);
 		if(i != OBJ_TYPE_NODE) {
 			snprintf(indent + strlen(indent), 32 - strlen(indent), "   ");
