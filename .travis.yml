@@ -1,0 +1,8 @@
+language: c
+dist: trusty
+
+compiler:
+  - clang
+  - gcc
+
+script: ./autogen.sh && ./configure && make
