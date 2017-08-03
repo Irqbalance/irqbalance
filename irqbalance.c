@@ -319,21 +319,45 @@ gboolean scan(gpointer data)
 
 void get_irq_data(struct irq_info *irq, void *data)
 {
-	sprintf(data + strlen(data),
+	char **irqdata = (char **)data;
+	if (!irqdata)
+		*irqdata = malloc(24 + 1 + 11 + 20 + 20 + 11);
+	else
+		*irqdata = realloc(*irqdata, strlen(*irqdata) + 24 + 1 + 11 + 20 + 20 + 11);
+
+	sprintf(*irqdata + strlen(*irqdata),
 			"IRQ %d LOAD %lu DIFF %lu CLASS %d ", irq->irq, irq->load,
 			(irq->irq_count - irq->last_irq_count), irq->class);
 }
 
 void get_object_stat(struct topo_obj *object, void *data)
 {
-	char irq_data[1024] = "\0";
+	char **stats = (char **)data;	
+	char *irq_data = NULL;
 
 	if (g_list_length(object->interrupts) > 0) {
-		for_each_irq(object->interrupts, get_irq_data, irq_data);
+		for_each_irq(object->interrupts, get_irq_data, &irq_data);
 	}
-	sprintf(data + strlen(data), "TYPE %d NUMBER %d LOAD %lu SAVE_MODE %d %s",
+
+	/*
+	 * Note, the size in both conditional branches below is made up as follows:
+	 * strlen(irq_data) - self explanitory
+	 * 31 - The size of "TYPE  NUMBER  LOAD  SAVE_MODE  "
+	 * 11 - The maximal size of a %d printout
+	 * 20 - The maximal size of a %lu printout
+	 * 1 - The trailing string terminator
+	 * This should be adjusted if the string in the sprintf is changed
+	 */
+	if (!*stats) {
+		*stats = malloc(strlen(irq_data) + 31 + 11 + 20 + 11 + 1);
+	} else {
+		*stats = realloc(stats, strlen(*stats) + strlen(irq_data) + 31 + 11 + 20 + 11 + 1);
+	}
+
+	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %lu SAVE_MODE %d %s",
 			object->obj_type, object->number, object->load,
 			object->powersave_mode, irq_data);
+	free(irq_data);
 	if (object->obj_type != OBJ_TYPE_CPU) {
 		for_each_object(object->children, get_object_stat, data);
 	}
@@ -379,9 +403,10 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		}
 
 		if (!strncmp(buff, "stats", strlen("stats"))) {
-			char stats[2048] = "\0";
-			for_each_object(numa_nodes, get_object_stat, stats);
+			char *stats = NULL;
+			for_each_object(numa_nodes, get_object_stat, &stats);
 			send(sock, stats, strlen(stats), 0);
+			free(stats);
 		}
 		if (!strncmp(buff, "settings ", strlen("settings "))) {
 			if (!(strncmp(buff + strlen("settings "), "sleep ",
@@ -425,14 +450,16 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			}
 		}
 		if (!strncmp(buff, "setup", strlen("setup"))) {
-			char setup[2048] = "\0";
+			char banned[512];
+			char *setup = malloc(strlen("SLEEP  ") + 11 +1);
 			snprintf(setup, 2048, "SLEEP %d ", sleep_interval);
 			if(g_list_length(cl_banned_irqs) > 0) {
 				for_each_irq(cl_banned_irqs, get_irq_data, setup);
 			}
-			char banned[512];
+
 			cpumask_scnprintf(banned, 512, banned_cpus);
-			snprintf(setup + strlen(setup), 2048 - strlen(setup),
+			setup = realloc(setup, strlen(setup) + strlen(banned) + 1);
+			snprintf(setup + strlen(setup), strlen(banned),
 					"BANNED %s", banned);
 			send(sock, setup, strlen(setup), 0);
 		}
