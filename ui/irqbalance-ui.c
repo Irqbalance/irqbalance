@@ -121,9 +121,11 @@ char * get_data(char *string)
 void parse_setup(char *setup_data)
 {
 	char *token, *ptr;
+	int i,j;
+	char *copy;
 	if((setup_data == NULL) || (strlen(setup_data) == 0)) return;
-	char copy[strlen(setup_data) + 1];
-	strncpy(copy, setup_data, strlen(setup_data) + 1);
+	copy = strdup(setup_data);
+
 	setup.banned_irqs = NULL;
 	setup.banned_cpus = NULL;
 	token = strtok_r(copy, " ", &ptr);
@@ -151,9 +153,9 @@ void parse_setup(char *setup_data)
 
 	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
 	token = strtok_r(NULL, " ", &ptr);
-	for(int i = strlen(token) - 1; i >= 0; i--) {
+	for(i = strlen(token) - 1; i >= 0; i--) {
 		char *map = hex_to_bitmap(token[i]);
-		for(int j = 3; j >= 0; j--) {
+		for(j = 3; j >= 0; j--) {
 			if(map[j] == '1') {
 				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
 				*banned_cpu = (4 * (strlen(token) - (i + 1)) + (4 - (j + 1)));
@@ -161,15 +163,15 @@ void parse_setup(char *setup_data)
 								banned_cpu);
 			}
 		}
+	
 	}
+	free(copy);
 	return;
 
 out: {
 	/* Invalid data presented */
-	char invalid_data[128];
-	snprintf(invalid_data, 128, "Invalid data sent. Unexpected token: %s\n",
-				token);
-	printf("%s\n", invalid_data);
+	printf("Invalid data sent.  Unexpected token: ", token);
+	free(copy);
 	g_list_free(tree);
 	exit(1);
 }
@@ -405,4 +407,5 @@ int main(int argc, char **argv)
 
 	g_main_loop_quit(main_loop);
 	close_window(0);
+	return 0;
 }
