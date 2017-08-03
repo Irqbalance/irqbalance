@@ -613,6 +613,7 @@ void settings()
 			break;
 		}
 	}
+	free(setup_data);
 }
 
 void setup_irqs()
@@ -726,4 +727,6 @@ void display_tree()
 	show_frame();
 	show_footer();
 	refresh();
+	free(setup_data);
+	free(irqbalance_data);
 }
