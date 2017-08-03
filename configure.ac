@@ -40,6 +40,13 @@ AC_C_CONST
 AC_C_INLINE
 AM_PROG_CC_C_O
 
+AC_ARG_WITH([irqbalance-ui],
+	[AC_HELP_STRING([--without-irqbalance-ui],
+			[Dont build the irqbalance ui component])],
+			[with_irqbalanceui=false], [with_irqbalanceui=true])
+
+AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xtrue])
+
 AC_ARG_WITH([systemd],
   [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
 )
