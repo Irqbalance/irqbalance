@@ -7,7 +7,7 @@ interrupt sources, and isolates them to a single unique cpu, so that load is
 spread as much as possible over an entire processor set, while minimizing cache
 miss rates for irq handlers.
 
-## Building and Installing
+## Building and Installing [![Build Status](https://travis-ci.org/Irqbalance/irqbalance.svg?branch=master)](https://travis-ci.org/Irqbalance/irqbalance)
 
 ```bash
 ./autogen.sh
