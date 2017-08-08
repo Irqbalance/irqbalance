@@ -249,7 +249,6 @@ static void do_one_cpu(char *path)
 	char new_path[PATH_MAX];
 	cpumask_t cache_mask, package_mask;
 	struct topo_obj *cache;
-	struct topo_obj *package;
 	DIR *dir;
 	struct dirent *entry;
 	int nodeid;
@@ -386,7 +385,7 @@ static void do_one_cpu(char *path)
 	cpus_and(package_mask, package_mask, unbanned_cpus);
 
 	cache = add_cpu_to_cache_domain(cpu, cache_mask, nodeid);
-	package = add_cache_domain_to_package(cache, packageid, package_mask,
+	add_cache_domain_to_package(cache, packageid, package_mask,
 	    nodeid);
 
 	cpu->obj_type_list = &cpus;
