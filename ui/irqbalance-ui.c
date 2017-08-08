@@ -371,13 +371,13 @@ int main(int argc, char **argv)
 		DIR *dir = opendir("/proc");
 		if(dir) {
 			struct dirent *entry;
-			char cmdfile[64];
+			char cmdfile[512];
 			char cmdstring[256];
 			cmdstring[255] = '\0';
 			do {
 				entry = readdir(dir);
 				if(entry) {
-					snprintf(cmdfile, 64, "/proc/%s/cmdline", entry->d_name);
+					snprintf(cmdfile, 512, "/proc/%s/cmdline", entry->d_name);
 					FILE *f = fopen(cmdfile, "r");
 					if(f == NULL) {
 						continue;
