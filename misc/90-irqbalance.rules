@@ -1,0 +1,5 @@
+# Udev rules for irqbalance.  On every device add or remove, we want to rescan
+# our irq list to make sure it hasn't changed
+#
+
+ACTION=="add|remove", RUN+="/usr/bin/killall -SIGHUP irqbalance"
