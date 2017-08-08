@@ -66,14 +66,11 @@ struct irq_info {
 	int flags;
 	struct topo_obj *numa_node;
 	cpumask_t cpumask;
-	cpumask_t affinity_hint;
-	int hint_policy;
 	uint64_t irq_count;
 	uint64_t last_irq_count;
 	uint64_t load;
 	int moved;
 	struct topo_obj *assigned_obj;
-	unsigned int warned;
 	char *name;
 };
 
