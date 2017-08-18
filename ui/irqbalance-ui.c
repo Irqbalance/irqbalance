@@ -125,6 +125,8 @@ void parse_setup(char *setup_data)
 	char *copy;
 	if((setup_data == NULL) || (strlen(setup_data) == 0)) return;
 	copy = strdup(setup_data);
+	if (!copy)
+		return;
 
 	setup.banned_irqs = NULL;
 	setup.banned_cpus = NULL;
@@ -243,6 +245,9 @@ void parse_into_tree(char *data)
 		return;
 
 	copy = strdup(data);
+	if (!copy)
+		return;
+
 	token = strtok_r(copy, " ", &ptr);
 	while(token != NULL) {
 		/* Parse node data */
