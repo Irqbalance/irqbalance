@@ -57,7 +57,17 @@ static int check_platform_device(char *name, struct irq_info *info)
 	DIR *dirfd;
 	char path[512];
 	struct dirent *ent;
-	int rc = -ENOENT;
+	int rc = -ENOENT, i;
+	static struct pdev_irq_info {
+		char *d_name;
+		int type;
+		int class;
+	} pdev_irq_info[] = {
+		{"ata", IRQ_TYPE_LEGACY, IRQ_SCSI},
+		{"net", IRQ_TYPE_LEGACY, IRQ_ETH},
+		{"usb", IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{NULL},
+	};
 
 	memset(path, 0, 512);
 
@@ -74,21 +84,13 @@ static int check_platform_device(char *name, struct irq_info *info)
 	while ((ent = readdir(dirfd)) != NULL) {
 
 		log(TO_ALL, LOG_DEBUG, "Checking entry %s\n", ent->d_name);
-		if (!strncmp(ent->d_name, "ata", strlen("ata"))) {
-			info->type = IRQ_TYPE_LEGACY;
-			info->class = IRQ_SCSI;
-			rc = 0;
-			goto out;
-		} else if (!strncmp(ent->d_name, "net", strlen("net"))) {
-			info->type = IRQ_TYPE_LEGACY;
-			info->class = IRQ_ETH;
-			rc = 0;
-			goto out;
-		} else if (!strncmp(ent->d_name, "usb", strlen("net"))) {
-			info->type = IRQ_TYPE_LEGACY;
-			info->class = IRQ_OTHER;
-			rc = 0;
-			goto out;
+		for (i = 0; pdev_irq_info[i].d_name != NULL; i++) {
+			if (!strncmp(ent->d_name, pdev_irq_info[i].d_name, strlen(pdev_irq_info[i].d_name))) {
+				info->type = pdev_irq_info[i].type;
+				info->class = pdev_irq_info[i].class;
+				rc = 0;
+				goto out;
+			}
 		}
 	}
 
