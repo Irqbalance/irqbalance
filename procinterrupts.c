@@ -58,7 +58,7 @@ static int check_platform_device(char *name, struct irq_info *info)
 	char path[512];
 	struct dirent *ent;
 	int rc = -ENOENT, i;
-	static struct pdev_irq_info{
+	static struct pdev_irq_info {
 		char *d_name;
 		int type;
 		int class;
