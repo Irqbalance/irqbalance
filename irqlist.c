@@ -55,7 +55,7 @@ static void gather_load_stats(struct topo_obj *obj, void *data)
 {
 	struct load_balance_info *info = data;
 
-	if (info->min_load == 0 || obj->load < info->min_load)
+	if (info->load_sources == 0 || obj->load < info->min_load)
 		info->min_load = obj->load;
 	info->total_load += obj->load;
 	info->load_sources += 1;
