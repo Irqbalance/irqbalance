@@ -5,4 +5,7 @@ compiler:
   - clang
   - gcc
 
-script: ./autogen.sh && ./configure && make
+script: ./autogen.sh && ./configure && make && make check
+
+after_script: cat ./tests/runoneshot.sh.log
+
