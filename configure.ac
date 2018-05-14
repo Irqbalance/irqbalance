@@ -81,7 +81,7 @@ AS_IF(
   ]
 )
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile tests/Makefile)
 
 AC_MSG_NOTICE()
 AC_MSG_NOTICE([irqbalance Version:     $VERSION])

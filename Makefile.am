@@ -24,6 +24,8 @@ AUTOMAKE_OPTIONS = no-dependencies
 ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = COPYING autogen.sh misc/irqbalance.service misc/irqbalance.env
 
+SUBDIRS = tests
+
 UI_DIR = ui
 AM_CFLAGS = $(LIBCAP_NG_CFLAGS) $(GLIB2_CFLAGS)
 AM_CPPFLAGS = -I${top_srcdir} -W -Wall -Wshadow -Wformat -Wundef -D_GNU_SOURCE
