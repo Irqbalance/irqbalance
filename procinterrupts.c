@@ -281,6 +281,7 @@ void parse_proc_interrupts(void)
 
 		info = get_irq_info(number);
 		if (!info) {
+			printf("CANT FIND INFO FOR irq %d, RESCANNING\n", number);
 			need_rescan = 1;
 			break;
 		}
@@ -299,6 +300,7 @@ void parse_proc_interrupts(void)
 			cpunr++;
 		}
 		if (cpunr != core_count) {
+			printf("CPU COUNT CHANGED FROM %d to %d, RESCANNING\n", core_count, cpunr);
 			need_rescan = 1;
 			break;
 		}
@@ -307,6 +309,7 @@ void parse_proc_interrupts(void)
 		 * cause an overflow and IRQ won't be rebalanced again
 		 */
 		if (count < info->irq_count) {
+			printf("IRQ %d count regressed from %d to %d, RESCANNING\n", info->irq, info->irq_count, count);
 			need_rescan = 1;
 			break;
 		}

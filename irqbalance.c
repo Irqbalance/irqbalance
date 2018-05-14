@@ -262,6 +262,7 @@ gboolean force_rescan(gpointer data __attribute__((unused)))
 {
 	if (cycle_count)
 		need_rescan = 1;
+	printf("FORCING RESCAN VIA SIGHUP!\n");
 	return TRUE;
 }
 
@@ -431,6 +432,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				g_list_free_full(cl_banned_irqs, free);
 				cl_banned_irqs = NULL;
 				need_rescan = 1;
+				printf("RESCANNING FROM SOCKET 1\n");
 				if (!strncmp(irq_string, "NONE", strlen("NONE"))) {
 					return TRUE;
 				}
@@ -448,6 +450,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
 				}
+				printf("RESCANNING FROM SOCKET 2\n");
 				need_rescan = 1;
 			}
 		}
