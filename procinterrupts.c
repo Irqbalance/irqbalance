@@ -263,7 +263,6 @@ void parse_proc_interrupts(void)
 				proc_int_has_msi = 1;
 
 		/* lines with letters in front are special, like NMI count. Ignore */
-		printf("parsing proc interrupts line: %s\n", line);
 		c = line;
 		while (isblank(*(c)))
 			c++;
