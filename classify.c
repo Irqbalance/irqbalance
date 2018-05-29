@@ -711,18 +711,13 @@ static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 	struct irq_info *new;
 	struct user_irq_policy pol;
 
-	printf("Adding missing irq %d\n", irq);
-
 	new = get_irq_info(irq);
-	if (new) {
-		printf("irq %d already has an entry\n", irq);
+	if (new)
 		return;
-	}
 
 	/* Set NULL devpath for the irq has no sysfs entries */
 	get_irq_user_policy(NULL, irq, &pol);
 	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq, proc_interrupts)) { /*FIXME*/
-		printf("Adding irq %d as banned policy = %d\n", irq, pol.ban);
 		add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
@@ -748,7 +743,7 @@ static void add_missing_irq(struct irq_info *info, void *attr)
 {
 	struct irq_info *lookup = get_irq_info(info->irq);
 	GList *proc_interrupts = (GList *) attr;
-	printf("Trying to add missing irq %d with lookup %p\n", info->irq, lookup);
+
 	if (!lookup)
 		add_new_irq(info->irq, info, proc_interrupts);
 }
