@@ -105,10 +105,12 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 {
 	int i, rc;
 	static int compiled = 0;
+	/* Note: Last entry is a catchall */
 	static struct irq_match matches[] = {
 		{ "eth.*" ,{NULL} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
 		{ "[A-Z0-9]{4}[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
 		{ "PNP[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+		{ ".*", {NULL}, NULL, IRQ_TYPE_LEGACY, IRQ_OTHER},
 		{NULL},
 	};
 
@@ -134,8 +136,7 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 			info->class = matches[i].class;
 			if (matches[i].refine_match)
 			    matches[i].refine_match(name, info);
-
-			log(TO_ALL, LOG_DEBUG, "IRQ %s(%d) is class %d\n", name, info->irq,info->class);
+			log(TO_ALL, LOG_DEBUG, "IRQ %s(%d) guessed as class %d\n", name, info->irq,info->class);
 		}	
 	}
 	
@@ -214,7 +215,6 @@ GList* collect_full_irq_list()
 				info->class = IRQ_VIRT_EVENT;
 			} else {
 #ifdef AARCH64
-				log(TO_ALL, LOG_DEBUG, "GUESSING AARCH64 CLASS FOR %s\n", irq_name);
 				guess_arm_irq_hints(irq_name, info);
 #else
 				info->type = IRQ_TYPE_LEGACY;

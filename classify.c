@@ -39,7 +39,7 @@ GList *cl_banned_irqs = NULL;
 static GList *cl_banned_modules = NULL;
 
 #define SYSFS_DIR "/sys"
-#define SYSDEV_DIR "/sys/bus/pci/devices"
+#define SYSPCI_DIR "/sys/bus/pci/devices"
 
 #define PCI_MAX_CLASS 0x14
 #define PCI_MAX_SERIAL_SUBCLASS 0x81
@@ -616,8 +616,8 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 	char devpath[PATH_MAX];
 	struct user_irq_policy pol;
 
-	sprintf(path, "%s/%s/msi_irqs", SYSDEV_DIR, dirname);
-	sprintf(devpath, "%s/%s", SYSDEV_DIR, dirname);
+	sprintf(path, "%s/%s/msi_irqs", SYSPCI_DIR, dirname);
+	sprintf(devpath, "%s/%s", SYSPCI_DIR, dirname);
 	
 	msidir = opendir(path);
 
@@ -646,7 +646,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 		return;
 	}
 
-	sprintf(path, "%s/%s/irq", SYSDEV_DIR, dirname);
+	sprintf(path, "%s/%s/irq", SYSPCI_DIR, dirname);
 	fd = fopen(path, "r");
 	if (!fd)
 		return;
@@ -759,22 +759,21 @@ void rebuild_irq_db(void)
 
 	tmp_irqs = collect_full_irq_list();
 
-	devdir = opendir(SYSDEV_DIR);
-	if (!devdir)
-		goto free;
+	devdir = opendir(SYSPCI_DIR);
 
-	do {
-		entry = readdir(devdir);
+	if (devdir) {
+		do {
+			entry = readdir(devdir);
 
-		if (!entry)
-			break;
+			if (!entry)
+				break;
 
-		build_one_dev_entry(entry->d_name, tmp_irqs);
+			build_one_dev_entry(entry->d_name, tmp_irqs);
 
-	} while (entry != NULL);
+		} while (entry != NULL);
 
-	closedir(devdir);
-
+		closedir(devdir);
+	}
 
 	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
 
