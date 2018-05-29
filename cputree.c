@@ -241,7 +241,8 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 
 	return cache;
 }
- 
+
+#define ADJ_SIZE(r,s) PATH_MAX-strlen(r)-strlen(#s) 
 static void do_one_cpu(char *path)
 {
 	struct topo_obj *cpu;
@@ -256,7 +257,7 @@ static void do_one_cpu(char *path)
 	unsigned int max_cache_index, cache_index, cache_stat;
 
 	/* skip offline cpus */
-	snprintf(new_path, PATH_MAX, "%s/online", path);
+	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
 	file = fopen(new_path, "r");
 	if (file) {
 		char *line = NULL;
@@ -299,7 +300,8 @@ static void do_one_cpu(char *path)
 
 
 	/* try to read the package mask; if it doesn't exist assume solitary */
-	snprintf(new_path, PATH_MAX, "%s/topology/core_siblings", path);
+	snprintf(new_path, ADJ_SIZE(path, "/topology/core_siblings"),
+		 "%s/topology/core_siblings", path);
 	file = fopen(new_path, "r");
 	cpu_set(cpu->number, package_mask);
 	if (file) {
@@ -311,7 +313,8 @@ static void do_one_cpu(char *path)
 		free(line);
 	}
 	/* try to read the package id */
-	snprintf(new_path, PATH_MAX, "%s/topology/physical_package_id", path);
+	snprintf(new_path, ADJ_SIZE(path, "/topology/physical_package_id"),
+		 "%s/topology/physical_package_id", path);
 	file = fopen(new_path, "r");
 	if (file) {
 		char *line = NULL;
@@ -329,7 +332,9 @@ static void do_one_cpu(char *path)
 	cache_index = 1;
 	do {
 		struct stat sb;
-		snprintf(new_path, PATH_MAX, "%s/cache/index%d/shared_cpu_map", path, cache_index);
+		/* Extra 10 subtraction is for the max character length of %d */
+		snprintf(new_path, ADJ_SIZE(path, "/cache/index%d/shared_cpu_map") - 10,
+			 "%s/cache/index%d/shared_cpu_map", path, cache_index);
 		cache_stat = stat(new_path, &sb);
 		if (!cache_stat) {
 			max_cache_index = cache_index;
@@ -340,7 +345,9 @@ static void do_one_cpu(char *path)
 	} while(!cache_stat);
 
 	if (max_cache_index > 0) {
-		snprintf(new_path, PATH_MAX, "%s/cache/index%d/shared_cpu_map", path, max_cache_index);
+		/* Extra 10 subtraction is for the max character length of %d */
+		snprintf(new_path, ADJ_SIZE(path, "/cache/index%d/shared_cpu_map") - 10,
+			 "%s/cache/index%d/shared_cpu_map", path, max_cache_index);
 		file = fopen(new_path, "r");
 		if (file) {
 			char *line = NULL;
@@ -505,7 +512,7 @@ void parse_cpu_tree(void)
 		    sscanf(entry->d_name, "cpu%d%c", &num, &pad) == 1 &&
 		    !strchr(entry->d_name, ' ')) {
 			char new_path[PATH_MAX];
-			sprintf(new_path, "/sys/devices/system/cpu/%s", entry->d_name);
+			snprintf(new_path, PATH_MAX, "/sys/devices/system/cpu/%s", entry->d_name);
 			do_one_cpu(new_path);
 		}
 	} while (entry);
