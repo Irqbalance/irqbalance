@@ -170,7 +170,7 @@ GList* collect_full_irq_list()
 		int	 number;
 		struct irq_info *info;
 		char *c;
-		char savedline[1024];
+		char *savedline = NULL;
 
 		if (getline(&line, &size, file)==0)
 			break;
@@ -186,7 +186,7 @@ GList* collect_full_irq_list()
 		if (!c)
 			continue;
 
-		strncpy(savedline, line, sizeof(savedline));
+		savedline = strdup(line);
 		irq_name = strtok_r(savedline, " ", &savedptr);
 		last_token = strtok_r(NULL, " ", &savedptr);
 		while ((p = strtok_r(NULL, " ", &savedptr))) {
@@ -224,6 +224,7 @@ GList* collect_full_irq_list()
 			info->name = strdupa(irq_mod);
 			tmp_list = g_list_append(tmp_list, info);
 		}
+		free(savedline);
 	}
 	fclose(file);
 	free(line);
