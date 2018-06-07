@@ -1,5 +1,7 @@
 [Unit]
 Description=irqbalance daemon
+Documentation=man:irqbalance(1)
+Documentation=https://github.com/Irqbalance/irqbalance
 ConditionVirtualization=!container
 
 [Service]
