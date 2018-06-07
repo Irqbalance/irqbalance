@@ -7,6 +7,12 @@ ConditionVirtualization=!container
 [Service]
 EnvironmentFile=/path/to/irqbalance.env
 ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
+CapabilityBoundingSet=
+NoNewPrivileges=yes
+ReadOnlyPaths=/
+ReadWritePaths=/proc/irq
+RestrictAddressFamilies=AF_UNIX
+TemporaryFileSystem=/run:ro
 
 [Install]
 WantedBy=multi-user.target
