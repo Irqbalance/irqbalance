@@ -80,7 +80,7 @@ The default value for deepestcache is 2.
 
 .TP
 .B -l, --policyscript=<script>
-When specified, the referenced script will execute once for each discovered IRQ,
+When specified, the referenced script or directory will execute once for each discovered IRQ,
 with the sysfs device path and IRQ number passed as arguments.  Note that the
 device path argument will point to the parent directory from which the IRQ
 attributes directory may be directly opened.
@@ -90,7 +90,6 @@ and will be captured and interpreted by irqbalance.  Irqbalance expects a zero
 exit code from the provided utility.  Recognized key=value pairs are:
 .TP
 .I ban=[true | false]
-.TP
 Directs irqbalance to exclude the passed in IRQ from balancing.
 .TP
 .I balance_level=[none | package | cache | core]
@@ -106,6 +105,24 @@ This option allows for that hardware provided information to be overridden, so
 that irqbalance can bias IRQ affinity for these devices toward its most local
 node.  Note that specifying a -1 here forces irqbalance to consider an interrupt
 from a device to be equidistant from all nodes.
+.TP
+Note that, if a directory is specified rather than a regular file, all files in
+the directory will be considered policy scripts, and executed on adding of an
+irq to a database.  If such a directory is specified, scripts in the directory
+must additionally exit with one of the following exit codes:
+.TP
+.I 0
+This indicates the script has a policy for the referenced irq, and that further
+script processing should stop
+.TP
+.I 1
+This indicates that the script has no policy for the referenced irq, and that
+script processing should continue
+.TP
+.I 2
+This indicates that an error has occured in the script, and it should be skipped
+(further processing to continue)
+
 .TP
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
