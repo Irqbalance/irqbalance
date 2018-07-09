@@ -72,7 +72,6 @@ extern int need_rescan;
 extern unsigned long long cycle_count;
 extern unsigned long power_thresh;
 extern unsigned long deepest_cache;
-extern char *banscript;
 extern char *polscript;
 extern cpumask_t banned_cpus;
 extern cpumask_t unbanned_cpus;

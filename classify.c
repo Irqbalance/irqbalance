@@ -569,36 +569,6 @@ static int check_for_irq_ban(char *path __attribute__((unused)), int irq, GList 
 			return 1;
 	}
 
-#ifdef INCLUDE_BANSCRIPT
-	char *cmd;
-	int rc;
-
-	if (!banscript)
-		return 0;
-
-	if (!path)
-		return 0;
-
-	cmd = alloca(strlen(path)+strlen(banscript)+32);
-	if (!cmd)
-		return 0;
-	
-	sprintf(cmd, "%s %s %d > /dev/null",banscript, path, irq);
-	rc = system(cmd);
-
-	/*
- 	 * The system command itself failed
- 	 */
-	if (rc == -1) {
-		log(TO_ALL, LOG_WARNING, "%s failed, please check the --banscript option\n", cmd);
-		return 0;
-	}
-
-	if (WEXITSTATUS(rc)) {
-		log(TO_ALL, LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
-		return 1;
-	}
-#endif
 	return 0;
 }
 
