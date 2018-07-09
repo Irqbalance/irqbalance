@@ -468,8 +468,7 @@ int init_socket(char *socket_name)
 	}
 
 	addr.sun_family = AF_UNIX;
-	addr.sun_path[0] = '\0';
-	strncpy(addr.sun_path + 1, socket_name, strlen(socket_name));
+	strncpy(addr.sun_path, socket_name, strlen(addr.sun_path));
 	if (bind(socket_fd, (struct sockaddr *)&addr,
 				sizeof(sa_family_t) + strlen(socket_name) + 1) < 0) {
 		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the socket.\n");

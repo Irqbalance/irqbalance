@@ -274,7 +274,7 @@ void parse_proc_interrupts(void)
 		if (!c)
 			continue;
 
-		strncpy(savedline, line, sizeof(savedline));
+		strncpy(savedline, line, sizeof(savedline)-1);
 
 		*c = 0;
 		c++;
