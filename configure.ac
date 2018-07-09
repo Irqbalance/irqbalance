@@ -65,7 +65,7 @@ AC_ARG_WITH([libcap-ng],
   AS_HELP_STRING([libcap-ng], [Add libcap-ng-support @<:@default=auto@:>@]))
 
 AS_IF(
-  [test "x$libcap_ng" != "xno"],
+  [test "x$with_libcap_ng" != "xno"],
   [
   PKG_CHECK_MODULES([LIBCAP_NG], [libcap-ng],
     [AC_DEFINE(HAVE_LIBCAP_NG,1,[libcap-ng support])],
