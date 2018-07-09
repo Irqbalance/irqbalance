@@ -43,9 +43,9 @@ AM_PROG_CC_C_O
 AC_ARG_WITH([irqbalance-ui],
 	[AC_HELP_STRING([--without-irqbalance-ui],
 			[Dont build the irqbalance ui component])],
-			[with_irqbalanceui=false], [with_irqbalanceui=true])
+			[with_irqbalanceui=$withval], [with_irqbalanceui=yes])
 
-AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xtrue])
+AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],
   [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
@@ -65,7 +65,7 @@ AC_ARG_WITH([libcap-ng],
   AS_HELP_STRING([libcap-ng], [Add libcap-ng-support @<:@default=auto@:>@]))
 
 AS_IF(
-  [test "x$libcap_ng" != "xno"],
+  [test "x$with_libcap_ng" != "xno"],
   [
   PKG_CHECK_MODULES([LIBCAP_NG], [libcap-ng],
     [AC_DEFINE(HAVE_LIBCAP_NG,1,[libcap-ng support])],
