@@ -57,7 +57,6 @@ unsigned long power_thresh = ULONG_MAX;
 unsigned long deepest_cache = 2;
 unsigned long long cycle_count = 0;
 char *pidfile = NULL;
-char *banscript = NULL;
 char *polscript = NULL;
 long HZ;
 int sleep_interval = SLEEP_INTERVAL;
@@ -87,7 +86,6 @@ struct option lopts[] = {
 	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
-	{"banscript", 1, NULL, 'b'},
 	{"deepestcache", 1, NULL, 'c'},
 	{"policyscript", 1, NULL, 'l'},
 	{"pid", 1, NULL, 's'},
@@ -117,7 +115,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfji:p:s:c:b:l:m:t:V",
+		"odfji:p:s:c:l:m:t:V",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -128,18 +126,6 @@ static void parse_command_line(int argc, char **argv)
 			case 'V':
 				version();
 				exit(1);
-				break;
-			case 'b':
-#ifndef INCLUDE_BANSCRIPT
-				/*
-				 * Banscript is no longer supported unless
-				 * explicitly enabled
-				 */
-				log(TO_CONSOLE, LOG_INFO, "--banscript is not supported on this version of irqbalance, please use --policyscript\n");
-				usage();
-				exit(1);
-#endif
-				banscript = strdup(optarg);
 				break;
 			case 'c':
 				deepest_cache = strtoul(optarg, NULL, 10);
@@ -482,8 +468,7 @@ int init_socket(char *socket_name)
 	}
 
 	addr.sun_family = AF_UNIX;
-	addr.sun_path[0] = '\0';
-	strncpy(addr.sun_path + 1, socket_name, strlen(socket_name));
+	strncpy(addr.sun_path, socket_name, strlen(addr.sun_path));
 	if (bind(socket_fd, (struct sockaddr *)&addr,
 				sizeof(sa_family_t) + strlen(socket_name) + 1) < 0) {
 		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the socket.\n");
@@ -559,11 +544,6 @@ int main(int argc, char** argv)
 
 	if (geteuid() != 0)
 		log(TO_ALL, LOG_WARNING, "Irqbalance hasn't been executed under root privileges, thus it won't in fact balance interrupts.\n");
-
-	if (banscript) {
-		char *note = "Please note that --banscript is deprecated, please use --policyscript instead";
-		log(TO_ALL, LOG_WARNING, "%s\n", note);
-	}
 
 	HZ = sysconf(_SC_CLK_TCK);
 	if (HZ == -1) {

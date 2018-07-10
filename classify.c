@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <assert.h>
 #include <errno.h>
@@ -493,37 +494,22 @@ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *po
 	
 }
 
-/*
- * Calls out to a possibly user defined script to get user assigned policy
- * aspects for a given irq.  A value of -1 in a given field indicates no
- * policy was given and that system defaults should be used
- */
-static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol)
+static int run_script_for_policy(char *script, char *path, int irq, struct user_irq_policy *pol)
 {
 	char *cmd;
+	char *brc;
 	FILE *output;
 	char buffer[128];
-	char *brc;
 
-	memset(pol, -1, sizeof(struct user_irq_policy));
-
-	/* Return defaults if no script was given */
-	if (!polscript)
-		return;
-
-	/* Use SYSFS_DIR for irq has no sysfs entries */
-	if (!path)
-		path = SYSFS_DIR;
-
-	cmd = alloca(strlen(path)+strlen(polscript)+64);
+	cmd = alloca(strlen(path)+strlen(script)+64);
 	if (!cmd)
-		return;
+		return -1;
 
-	sprintf(cmd, "exec %s %s %d", polscript, path, irq);
+	sprintf(cmd, "exec %s %s %d", script, path, irq);
 	output = popen(cmd, "r");
 	if (!output) {
-		log(TO_ALL, LOG_WARNING, "Unable to execute user policy script %s\n", polscript);
-		return;
+		log(TO_ALL, LOG_WARNING, "Unable to execute user policy script %s\n", script);
+		return 1; /* tell caller to ignore this script */
 	}
 
 	while(!feof(output)) {
@@ -531,7 +517,69 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 		if (brc)
 			parse_user_policy_key(brc, irq, pol);
 	}
-	pclose(output);
+	return WEXITSTATUS(pclose(output));
+}
+
+/*
+ * Calls out to a possibly user defined script to get user assigned policy
+ * aspects for a given irq.  A value of -1 in a given field indicates no
+ * policy was given and that system defaults should be used
+ */
+static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol)
+{
+	struct stat sbuf;
+	DIR *poldir;
+	struct dirent *entry;
+	int ret;
+	char script[1024];
+
+	memset(pol, -1, sizeof(struct user_irq_policy));
+
+	/* Return defaults if no script was given */
+	if (!polscript)
+		return;
+
+	if (stat(polscript, &sbuf))
+		return;
+
+	/* Use SYSFS_DIR for irq has no sysfs entries */
+	if (!path)
+		path = SYSFS_DIR;
+
+	if (!S_ISDIR(sbuf.st_mode)) {
+		if (run_script_for_policy(polscript, path, irq, pol) != 0) {
+			log(TO_CONSOLE, LOG_ERR, "policy script returned non-zero code!  skipping user policy\n");
+			memset(pol, -1, sizeof(struct user_irq_policy));
+		}
+	} else {
+		/* polscript is a directory, user multiple script semantics */
+		poldir = opendir(polscript);
+
+		if (poldir) {
+			while ((entry = readdir(poldir)) != NULL) {
+				snprintf(script, sizeof(script), "%s/%s", polscript, entry->d_name);
+				if (stat(script, &sbuf))
+					continue;
+				if (S_ISREG(sbuf.st_mode)) {
+					memset(pol, -1, sizeof(struct user_irq_policy));
+					ret = run_script_for_policy(script, path, irq, pol);
+					if ((ret < 0) || (ret >= 2)) {
+						log(TO_CONSOLE, LOG_ERR, "Error executing policy script %s : %d\n", script, ret);
+						continue;
+					}
+
+					/* a ret of 1 means this script isn't
+ 					 * for this irq
+ 					 */
+					if (ret == 1)
+						continue;
+
+					log(TO_CONSOLE, LOG_DEBUG, "Accepting script %s to define policy for irq %d\n", script, irq);
+					break;
+				}
+			}
+		}
+	}
 }
 
 static int check_for_module_ban(char *name)
@@ -569,36 +617,6 @@ static int check_for_irq_ban(char *path __attribute__((unused)), int irq, GList 
 			return 1;
 	}
 
-#ifdef INCLUDE_BANSCRIPT
-	char *cmd;
-	int rc;
-
-	if (!banscript)
-		return 0;
-
-	if (!path)
-		return 0;
-
-	cmd = alloca(strlen(path)+strlen(banscript)+32);
-	if (!cmd)
-		return 0;
-	
-	sprintf(cmd, "%s %s %d > /dev/null",banscript, path, irq);
-	rc = system(cmd);
-
-	/*
- 	 * The system command itself failed
- 	 */
-	if (rc == -1) {
-		log(TO_ALL, LOG_WARNING, "%s failed, please check the --banscript option\n", cmd);
-		return 0;
-	}
-
-	if (WEXITSTATUS(rc)) {
-		log(TO_ALL, LOG_INFO, "irq %d is baned by %s\n", irq, banscript);
-		return 1;
-	}
-#endif
 	return 0;
 }
 
