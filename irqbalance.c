@@ -45,6 +45,7 @@
 
 volatile int keep_going = 1;
 int socket_fd;
+char socket_name[64];
 int one_shot_mode;
 int debug_mode;
 int foreground_mode;
@@ -456,7 +457,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 	return TRUE;
 }
 
-int init_socket(char *socket_name)
+int init_socket()
 {
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -467,13 +468,25 @@ int init_socket(char *socket_name)
 		return 1;
 	}
 
+	/*
+	 * First try to create a file-based socket in tmpfs.  If that doesn't
+	 * succeed, fall back to an abstract socket (non file-based).
+	 */
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, socket_name, strlen(addr.sun_path));
-	if (bind(socket_fd, (struct sockaddr *)&addr,
-				sizeof(sa_family_t) + strlen(socket_name) + 1) < 0) {
-		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the socket.\n");
-		return 1;
+	snprintf(socket_name, 64, "%s/%s%d.sock", SOCKET_TMPFS, SOCKET_PATH, getpid());
+	strncpy(addr.sun_path, socket_name, strlen(socket_name));
+	if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the file-based socket.\n");
+
+		/* Try binding to abstract */
+		memset(&addr, 0, sizeof(struct sockaddr_un));
+		addr.sun_family = AF_UNIX;
+		if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the abstract socket, bailing out.\n");
+			return 1;
+		}
 	}
+
 	int optval = 1;
 	if (setsockopt(socket_fd, SOL_SOCKET, SO_PASSCRED, &optval, sizeof(optval)) < 0) {
 		log(TO_ALL, LOG_WARNING, "Unable to set socket options.\n");
@@ -598,10 +611,7 @@ int main(int argc, char** argv)
 	parse_proc_interrupts();
 	parse_proc_stat();
 
-	char socket_name[64];
-	snprintf(socket_name, 64, "%s%d.sock", SOCKET_PATH, getpid());
-
-	if (init_socket(socket_name)) {
+	if (init_socket()) {
 		return EXIT_FAILURE;
 	}
 	main_loop = g_main_loop_new(NULL, FALSE);
@@ -619,6 +629,8 @@ int main(int argc, char** argv)
 		unlink(pidfile);
 	/* Remove socket */
 	close(socket_fd);
+	if (socket_name[0])
+		unlink(socket_name);
 
 	return EXIT_SUCCESS;
 }
