@@ -71,6 +71,7 @@ char * check_control_in_sleep_input(int max_len, int column_offest, int line_off
 			attrset(COLOR_PAIR(6));
 			break;
 		case 27:
+			free(input_to);
 			return NULL;
 		default:
 			input_to[iteration] = new;
@@ -115,6 +116,7 @@ int get_valid_sleep_input(int column_offest)
 				input);
 			refresh();
 		}
+		free(input);
 	}
 
 	attrset(COLOR_PAIR(1));

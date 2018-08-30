@@ -41,6 +41,7 @@ struct msghdr * create_credentials_msg()
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
 	memcpy(CMSG_DATA(cmsg), credentials, sizeof(struct ucred));
 
+	free(credentials);
 	return msg;
 }
 
@@ -87,6 +88,8 @@ void send_settings(char *data)
 	sendmsg(socket_fd, msg, 0);
 
 	close(socket_fd);
+	free(msg->msg_control);
+	free(msg);
 }
 
 char * get_data(char *string)
@@ -115,6 +118,8 @@ char * get_data(char *string)
 	int len = recv(socket_fd, data, 8192, 0);
 	close(socket_fd);
 	data[len] = '\0';
+	free(msg->msg_control);
+	free(msg);
 	return data;
 }
 
@@ -123,6 +128,7 @@ void parse_setup(char *setup_data)
 	char *token, *ptr;
 	int i,j;
 	char *copy;
+	irq_t *new_irq = NULL;
 	if((setup_data == NULL) || (strlen(setup_data) == 0)) return;
 	copy = strdup(setup_data);
 	if (!copy)
@@ -136,7 +142,7 @@ void parse_setup(char *setup_data)
 	token = strtok_r(NULL, " ", &ptr);
 	/* Parse banned IRQ data */
 	while(!strncmp(token, "IRQ", strlen("IRQ"))) {
-		irq_t *new_irq = malloc(sizeof(irq_t));
+		new_irq = malloc(sizeof(irq_t));
 		new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
 		if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
@@ -151,6 +157,7 @@ void parse_setup(char *setup_data)
 		new_irq->assigned_to = NULL;
 		setup.banned_irqs = g_list_append(setup.banned_irqs, new_irq);
 		token = strtok_r(NULL, " ", &ptr);
+		new_irq = NULL;
 	}
 
 	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
@@ -165,6 +172,7 @@ void parse_setup(char *setup_data)
 								banned_cpu);
 			}
 		}
+		free(map);
 	
 	}
 	free(copy);
@@ -173,6 +181,9 @@ void parse_setup(char *setup_data)
 out: {
 	/* Invalid data presented */
 	printf("Invalid data sent.  Unexpected token: %s", token);
+	if (new_irq) {
+		free(new_irq);
+	}
 	free(copy);
 	g_list_free(tree);
 	exit(1);
@@ -240,7 +251,9 @@ void parse_into_tree(char *data)
 	cpu_node_t *parent = NULL;
 	char *copy;
 	tree = NULL;
-	
+	irq_t *new_irq = NULL;
+	cpu_node_t *new = NULL;
+
 	if (!data || strlen(data) == 0)
 		return;
 
@@ -255,7 +268,7 @@ void parse_into_tree(char *data)
 			free(copy);
 			 goto out;
 		}
-		cpu_node_t *new = malloc(sizeof(cpu_node_t));
+		new = malloc(sizeof(cpu_node_t));
 		new->irqs = NULL;
 		new->children = NULL;
 		new->cpu_list = NULL;
@@ -279,7 +292,7 @@ void parse_into_tree(char *data)
 
 		/* Parse assigned IRQ data */
 		while((token != NULL) && (!strncmp(token, "IRQ", strlen("IRQ")))) {
-			irq_t *new_irq = malloc(sizeof(irq_t));
+			new_irq = malloc(sizeof(irq_t));
 			new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
 			if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
@@ -293,6 +306,7 @@ void parse_into_tree(char *data)
 			new_irq->is_banned = 0;
 			new->irqs = g_list_append(new->irqs, new_irq);
 			token = strtok_r(NULL, " ", &ptr);
+			new_irq = NULL;
 		}
 
 		if((token == NULL) || (strncmp(token, "IRQ", strlen("IRQ")))) {
@@ -306,6 +320,8 @@ void parse_into_tree(char *data)
 				parent = new;
 			}
 		}
+
+		new = NULL;
 	}
 	free(copy);
 	for_each_node(tree, assign_cpu_lists, NULL);
@@ -315,6 +331,12 @@ void parse_into_tree(char *data)
 out: {
 	/* Invalid data presented */
 	printf("Invalid data sent.  Unexpected token: %s\n", token);
+	if (new_irq) {
+		free(new_irq);
+	}
+	if (new) {
+		free(new);
+	}
 	g_list_free(tree);
 	exit(1);
 }
@@ -330,6 +352,7 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 		display_tree();
 	}
 	free(setup_data);
+	free(irqbalance_data);
 	return TRUE;
 }
 
