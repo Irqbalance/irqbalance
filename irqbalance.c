@@ -372,11 +372,11 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		sock = accept(fd, NULL, NULL);
 		if (sock < 0) {
 			log(TO_ALL, LOG_WARNING, "Connection couldn't be accepted.\n");
-			return TRUE;
+			goto out;
 		}
 		if ((recv_size = recvmsg(sock, &msg, 0)) < 0) {
 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
-			return TRUE;
+			goto out;
 		}
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if ((cmsg->cmsg_level == SOL_SOCKET) &&
@@ -388,7 +388,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		}
 		if (!valid_user) {
 			log(TO_ALL, LOG_INFO, "Permission denied for user to connect to socket.\n");
-			return TRUE;
+			goto out;
 		}
 
 		if (!strncmp(buff, "stats", strlen("stats"))) {
@@ -408,6 +408,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				if (new_iterval >= 1) {
 					sleep_interval = new_iterval;
 				}
+				free(sleep_string);
 			} else if (!(strncmp(buff + strlen("settings "), "ban irqs ",
 							strlen("ban irqs ")))) {
 				char *end;
@@ -419,12 +420,14 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				cl_banned_irqs = NULL;
 				need_rescan = 1;
 				if (!strncmp(irq_string, "NONE", strlen("NONE"))) {
-					return TRUE;
+					free(irq_string);
+					goto out;
 				}
 				int irq = strtoul(irq_string, &end, 10);
 				do {
 					add_cl_banned_irq(irq);
 				} while((irq = strtoul(end, &end, 10)));
+				free(irq_string);
 			} else if (!(strncmp(buff + strlen("settings "), "cpus ",
 							strlen("cpus")))) {
 				char *cpu_ban_string = malloc(
@@ -436,6 +439,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 					banned_cpumask_from_ui = NULL;
 				}
 				need_rescan = 1;
+				free(cpu_ban_string);
 			}
 		}
 		if (!strncmp(buff, "setup", strlen("setup"))) {
@@ -450,10 +454,14 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			snprintf(setup + strlen(setup), strlen(banned) + 7 + 1,
 					"BANNED %s", banned);
 			send(sock, setup, strlen(setup), 0);
+			free(setup);
 		}
 
 		close(sock);
 	}
+
+out:
+	free(msg.msg_control);
 	return TRUE;
 }
 
