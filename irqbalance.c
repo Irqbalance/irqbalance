@@ -444,8 +444,8 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		}
 		if (!strncmp(buff, "setup", strlen("setup"))) {
 			char banned[512];
-			char *setup = calloc(strlen("SLEEP  ") + 11 +1, 1);
-			snprintf(setup, 2048, "SLEEP %d ", sleep_interval);
+			char *setup = calloc(strlen("SLEEP  ") + 11 + 1, 1);
+			snprintf(setup, strlen("SLEEP  ") + 11 + 1, "SLEEP %d ", sleep_interval);
 			if(g_list_length(cl_banned_irqs) > 0) {
 				for_each_irq(cl_banned_irqs, get_irq_data, setup);
 			}
