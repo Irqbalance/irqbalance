@@ -8,6 +8,7 @@
 #include <glib-unix.h>
 
 #define SOCKET_PATH "irqbalance"
+#define SOCKET_TMPFS "/var/run"
 
 #define STATS "stats"
 #define SET_SLEEP "settings sleep "

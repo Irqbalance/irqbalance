@@ -57,12 +57,18 @@ int init_connection()
 	}
 	addr.sun_family = AF_UNIX;
 	char socket_name[64];
-	snprintf(socket_name, 64, "%s%d.sock", SOCKET_PATH, irqbalance_pid);
-	strncpy(addr.sun_path, socket_name, strlen(addr.sun_path));
 
-	if(connect(socket_fd, (struct sockaddr *)&addr,
-				sizeof(sa_family_t) + strlen(socket_name) + 1) < 0) {
-		return 0;
+	snprintf(socket_name, 64, "%s/%s%d.sock", SOCKET_TMPFS, SOCKET_PATH, irqbalance_pid);
+	strncpy(addr.sun_path, socket_name, strlen(socket_name));
+
+	if(connect(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		/* Try connect to abstract */
+		memset(&addr, 0, sizeof(struct sockaddr_un));
+		addr.sun_family = AF_UNIX;
+		if (connect(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			return 0;
+		}
+
 	}
 
 	return socket_fd;
