@@ -84,6 +84,8 @@ When specified, the referenced script or directory will execute once for each di
 with the sysfs device path and IRQ number passed as arguments.  Note that the
 device path argument will point to the parent directory from which the IRQ
 attributes directory may be directly opened.
+Policy scripts specified need to be owned and executable by the user of irqbalance process,
+if a directory is specified, non-executable files will be skipped.
 The script may specify zero or more key=value pairs that will guide irqbalance in
 the management of that IRQ.  Key=value pairs are printed by the script on stdout
 and will be captured and interpreted by irqbalance.  Irqbalance expects a zero

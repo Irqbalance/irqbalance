@@ -561,6 +561,11 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 				if (stat(script, &sbuf))
 					continue;
 				if (S_ISREG(sbuf.st_mode)) {
+					if (!(sbuf.st_mode & S_IXUSR)) {
+						log(TO_CONSOLE, LOG_DEBUG, "Skipping script %s due to lack of executable permission\n", script);
+						continue;
+					}
+
 					memset(pol, -1, sizeof(struct user_irq_policy));
 					ret = run_script_for_policy(script, path, irq, pol);
 					if ((ret < 0) || (ret >= 2)) {
