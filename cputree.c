@@ -368,9 +368,14 @@ static void do_one_cpu(char *path)
 			entry = readdir(dir);
 			if (!entry)
 				break;
-			if (strstr(entry->d_name, "node")) {
-				nodeid = strtoul(&entry->d_name[4], NULL, 10);
-				break;
+			if (strncmp(entry->d_name, "node", 4) == 0) {
+				char *end;
+				int num;
+				num = strtol(entry->d_name + 4, &end, 10);
+				if (!*end && num >= 0) {
+					nodeid = num;
+					break;
+				}
 			}
 		} while (entry);
 		closedir(dir);
