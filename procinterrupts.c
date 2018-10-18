@@ -168,6 +168,7 @@ GList* collect_full_irq_list()
 
 	while (!feof(file)) {
 		int	 number;
+		int      is_xen_dyn = 0;
 		struct irq_info *info;
 		char *c;
 		char *savedline = NULL;
@@ -188,9 +189,13 @@ GList* collect_full_irq_list()
 
 		savedline = strdup(line);
 		irq_name = strtok_r(savedline, " ", &savedptr);
+		if (strstr(irq_name, "xen-dyn") != NULL)
+			is_xen_dyn = 1;
 		last_token = strtok_r(NULL, " ", &savedptr);
 		while ((p = strtok_r(NULL, " ", &savedptr))) {
 			irq_name = last_token;
+			if (strstr(irq_name, "xen-dyn") != NULL)
+				is_xen_dyn = 1;
 			last_token = p;
 		}
 
@@ -210,7 +215,7 @@ GList* collect_full_irq_list()
 		info = calloc(sizeof(struct irq_info), 1);
 		if (info) {
 			info->irq = number;
-			if (strstr(irq_name, "xen-dyn-event") != NULL) {
+			if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
 				info->type = IRQ_TYPE_VIRT_EVENT;
 				info->class = IRQ_VIRT_EVENT;
 			} else {
