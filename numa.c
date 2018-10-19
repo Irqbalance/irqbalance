@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -115,7 +116,9 @@ void build_numa_node_list(void)
 		entry = readdir(dir);
 		if (!entry)
 			break;
-		if ((entry->d_type == DT_DIR) && (strstr(entry->d_name, "node"))) {
+		if ((entry->d_type == DT_DIR) &&
+		    (strncmp(entry->d_name, "node", 4) == 0) &&
+		    isdigit(entry->d_name[4])) {
 			add_one_node(entry->d_name);
 		}
 	} while (entry);
