@@ -376,7 +376,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		}
 		if ((recv_size = recvmsg(sock, &msg, 0)) < 0) {
 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
-			goto out;
+			goto out_close;
 		}
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if ((cmsg->cmsg_level == SOL_SOCKET) &&
@@ -388,7 +388,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		}
 		if (!valid_user) {
 			log(TO_ALL, LOG_INFO, "Permission denied for user to connect to socket.\n");
-			goto out;
+			goto out_close;
 		}
 
 		if (!strncmp(buff, "stats", strlen("stats"))) {
@@ -421,7 +421,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				need_rescan = 1;
 				if (!strncmp(irq_string, "NONE", strlen("NONE"))) {
 					free(irq_string);
-					goto out;
+					goto out_close;
 				}
 				int irq = strtoul(irq_string, &end, 10);
 				do {
@@ -457,6 +457,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			free(setup);
 		}
 
+out_close:
 		close(sock);
 	}
 
