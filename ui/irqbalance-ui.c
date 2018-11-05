@@ -66,6 +66,7 @@ int init_connection()
 		memset(&addr, 0, sizeof(struct sockaddr_un));
 		addr.sun_family = AF_UNIX;
 		if (connect(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			close(socket_fd);
 			return 0;
 		}
 
