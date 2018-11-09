@@ -84,7 +84,6 @@ struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
 	{"debug", 0, NULL, 'd'},
 	{"foreground", 0, NULL, 'f'},
-	{"hintpolicy", 1, NULL, 'h'},
 	{"powerthresh", 1, NULL, 'p'},
 	{"banirq", 1 , NULL, 'i'},
 	{"deepestcache", 1, NULL, 'c'},
@@ -99,7 +98,7 @@ struct option lopts[] = {
 
 static void usage(void)
 {
-	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j] [--hintpolicy= | -h [exact|subset|ignore]]\n");
+	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j]\n");
 	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--banmod= | -m <module>] [--policyscript= | -l <script>]\n");
 	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>] [--interval= | -t <n>]\n");
 }
