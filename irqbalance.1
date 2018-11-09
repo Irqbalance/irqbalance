@@ -62,12 +62,21 @@ in an effort to prevent that CPU from waking up without need.
 .B -i, --banirq=<irqnum>
 Add the specified IRQ to the set of banned IRQs. irqbalance will not affect
 the affinity of any IRQs on the banned list, allowing them to be specified
-manually.  This option is addative and can be specified multiple times. For
+manually.  This option is additive and can be specified multiple times. For
 example to ban IRQs 43 and 44 from balancing, use the following command line:
 .B irqbalance --banirq=43 --banirq=44
 
 .TP
-.B --deepestcache=<integer>
+.B -m, --banmod=<module_name>
+Add the specified module to the set of banned modules, similiar to --banirq.
+irqbalance will not affect the affinity of any IRQs of given modules, allowing
+them to be specified manually. This option is additive and can be specified
+multiple times. For example to ban all IRQs of module foo and module bar from
+balancing, use the following command line:
+.B irqbalance --banmod=foo --banmod=bar
+
+.TP
+.B -c, --deepestcache=<integer>
 This allows a user to specify the cache level at which irqbalance partitions
 cache domains.  Specifying a deeper cache may allow a greater degree of
 flexibility for irqbalance to assign IRQ affinity to achieve greater performance
