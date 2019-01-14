@@ -158,7 +158,7 @@ extern unsigned int log_mask;
 #endif /* HAVE_LIBSYSTEMD */
 
 #define SOCKET_PATH "irqbalance"
-#define SOCKET_TMPFS "/var/run"
+#define SOCKET_TMPFS "/run/irqbalance/"
 
 #endif /* __INCLUDE_GUARD_IRQBALANCE_H_ */
 

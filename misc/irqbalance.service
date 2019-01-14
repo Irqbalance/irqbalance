@@ -12,7 +12,7 @@ NoNewPrivileges=yes
 ReadOnlyPaths=/
 ReadWritePaths=/proc/irq
 RestrictAddressFamilies=AF_UNIX
-TemporaryFileSystem=/run:ro
+RuntimeDirectory=irqbalance/
 
 [Install]
 WantedBy=multi-user.target
