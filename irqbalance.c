@@ -482,7 +482,7 @@ int init_socket()
 	 */
 	addr.sun_family = AF_UNIX;
 	snprintf(socket_name, 64, "%s/%s%d.sock", SOCKET_TMPFS, SOCKET_PATH, getpid());
-	strncpy(addr.sun_path, socket_name, strlen(socket_name));
+	strncpy(addr.sun_path, socket_name, sizeof(addr.sun_path));
 	if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the file-based socket.\n");
 
