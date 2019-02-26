@@ -155,6 +155,8 @@ Same as --debug.
 .TP
 .B IRQBALANCE_BANNED_CPUS
 Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to.
+If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
+system as the default value.
 
 .SH "SIGNALS"
 .TP
