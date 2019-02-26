@@ -130,7 +130,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 	if ((info->level == BALANCE_NONE) && cpus_empty(banned_cpus))
 		return;
 
-	if (irq_numa_node(info)->number != -1) {
+	if (irq_numa_node(info)->number != -1 || !numa_avail) {
 		/*
 		 * Need to make sure this node is elligible for migration
 		 * given the banned cpu list
@@ -138,12 +138,13 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		if (!cpus_intersects(irq_numa_node(info)->mask, unbanned_cpus))
 			goto find_placement;
 		/*
- 		 * This irq belongs to a device with a preferred numa node
- 		 * put it on that node
- 		 */
+		 * This irq belongs to a device with a preferred numa node
+		 * put it on that node
+		 */
 		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->interrupts, info);
 		info->assigned_obj = irq_numa_node(info);
 		irq_numa_node(info)->load += info->load + 1;
+
 		return;
 	}
 

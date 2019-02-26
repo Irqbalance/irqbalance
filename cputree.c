@@ -126,9 +126,10 @@ static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)
 	GList *entry;
 	struct topo_obj *node;
 	struct topo_obj *cand_node;
+	struct topo_obj *package;
 
 	node = get_numa_node(nodeid);
-	if (!node || node->number == -1)
+	if (!node || (numa_avail && (node->number == -1)))
 		return;
 
 	entry = g_list_first(obj->numa_nodes);
@@ -141,6 +142,21 @@ static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)
 
 	if (!entry)
 		obj->numa_nodes = g_list_append(obj->numa_nodes, node);
+
+	if (!numa_avail && obj->obj_type == OBJ_TYPE_PACKAGE) {
+		entry = g_list_first(node->children);
+		while (entry) {
+			package = entry->data;
+			if (package == obj)
+				break;
+			entry = g_list_next(entry);
+		}
+
+		if (!entry) {
+			node->children = g_list_append(node->children, obj);
+			obj->parent = node;
+		}
+	}
 }
 
 static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
@@ -189,7 +205,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		cache->parent = package;
 	}
 
-	if (nodeid > -1)
+	if (!numa_avail || (nodeid > -1))
 		add_numa_node_to_topo_obj(package, nodeid);
 
 	return package;
@@ -236,7 +252,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cpu->parent = (struct topo_obj *)cache;
 	}
 
-	if (nodeid > -1)
+	if (!numa_avail || (nodeid > -1))
 		add_numa_node_to_topo_obj(cache, nodeid);
 
 	return cache;
