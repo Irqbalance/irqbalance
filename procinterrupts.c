@@ -438,7 +438,7 @@ void parse_proc_stat(void)
 
 	file = fopen("/proc/stat", "r");
 	if (!file) {
-		log(TO_ALL, LOG_WARNING, "WARNING cant open /proc/stat.  balacing is broken\n");
+		log(TO_ALL, LOG_WARNING, "WARNING cant open /proc/stat.  balancing is broken\n");
 		return;
 	}
 
