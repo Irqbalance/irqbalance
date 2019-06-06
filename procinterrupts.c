@@ -434,7 +434,7 @@ void parse_proc_stat(void)
 	size_t size = 0;
 	int cpunr, rc, cpucount;
 	struct topo_obj *cpu;
-	unsigned long long irq_load, softirq_load;
+	unsigned long long user_load, sys_load, irq_load, softirq_load;
 
 	file = fopen("/proc/stat", "r");
 	if (!file) {
@@ -463,8 +463,8 @@ void parse_proc_stat(void)
 		if (cpu_isset(cpunr, banned_cpus))
 			continue;
 
-		rc = sscanf(line, "%*s %*u %*u %*u %*u %*u %llu %llu", &irq_load, &softirq_load);
-		if (rc < 2)
+		rc = sscanf(line, "%*s %llu %*u %llu %*u %*u %llu %llu", &user_load, &sys_load, &irq_load, &softirq_load);
+		if (rc < 4)
 			break;	
 
 		cpu = find_cpu_core(cpunr);
@@ -475,11 +475,11 @@ void parse_proc_stat(void)
 		cpucount++;
 
 		/*
- 		 * For each cpu add the irq and softirq load and propagate that
+ 		 * For each cpu add the irq, softirq, user and sys load and propagate that
  		 * all the way up the device tree
  		 */
 		if (cycle_count) {
-			cpu->load = (irq_load + softirq_load) - (cpu->last_load);
+			cpu->load = (user_load + sys_load + irq_load + softirq_load) - (cpu->last_load);
 			/*
 			 * the [soft]irq_load values are in jiffies, with
 			 * HZ jiffies per second.  Convert the load to nanoseconds
@@ -488,7 +488,7 @@ void parse_proc_stat(void)
 			 */
 			cpu->load *= NSEC_PER_SEC/HZ;
 		}
-		cpu->last_load = (irq_load + softirq_load);
+		cpu->last_load = (user_load + sys_load + irq_load + softirq_load);
 	}
 
 	fclose(file);
