@@ -390,7 +390,7 @@ gboolean key_loop(gpointer data __attribute__((unused)))
 int main(int argc, char **argv)
 {
 	if(getuid() != 0) {
-		printf("This program needs to be executed with root priviledges\n");
+		printf("This program needs to be executed with root privileges\n");
 		return EACCES;
 	}
 	if(argc > 1) {
