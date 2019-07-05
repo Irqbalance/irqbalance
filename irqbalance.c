@@ -270,9 +270,9 @@ gboolean scan(gpointer data)
 		for_each_irq(NULL, force_rebalance_irq, NULL);
 		parse_proc_interrupts();
 		parse_proc_stat();
-		sleep_approx(sleep_interval);
-		clear_work_stats();
-		parse_proc_interrupts();
+
+		/* Still need to check hotplugged or not next round */
+		return TRUE;
 	}
 
 	parse_proc_stat();
