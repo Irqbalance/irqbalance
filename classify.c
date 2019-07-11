@@ -343,10 +343,10 @@ void add_cl_banned_module(char *modname)
  * related device. NULL devpath means no sysfs entries for
  * this irq.
  */
-static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct user_irq_policy *pol)
+static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *hint, struct user_irq_policy *pol)
 {
-	int irq_class = IRQ_OTHER;
-	struct irq_info *new, find;
+	int irq = hint->irq;
+	struct irq_info *new;
 	int numa_node;
 	char path[PATH_MAX];
 	FILE *fd;
@@ -358,8 +358,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 	/*
 	 * First check to make sure this isn't a duplicate entry
 	 */
-	find.irq = irq;
-	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+	entry = g_list_find_custom(interrupts_db, hint, compare_ints);
 	if (entry) {
 		log(TO_CONSOLE, LOG_INFO, "DROPPING DUPLICATE ENTRY FOR IRQ %d on path %s\n", irq, devpath);
 		return NULL;
@@ -375,23 +374,24 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, int irq, struct u
 		return NULL;
 
 	new->irq = irq;
-	new->class = IRQ_OTHER;
+	new->type = hint->type;
+	new->class = hint->class;
 
 	interrupts_db = g_list_append(interrupts_db, new);
 
  	/* Some special irqs have NULL devpath */
 	if (devpath != NULL) {
 		/* Map PCI class code to irq class */
-		irq_class = get_irq_class(devpath);
+		int irq_class = get_irq_class(devpath);
 		if (irq_class < 0)
 			goto get_numa_node;
+		new->class = irq_class;
 	}
 
-	new->class = irq_class;
 	if (pol->level >= 0)
 		new->level = pol->level;
 	else
-		new->level = map_class_to_level[irq_class];
+		new->level = map_class_to_level[new->class];
 
 get_numa_node:
 	numa_node = -1;
@@ -634,13 +634,16 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 	DIR *msidir;
 	FILE *fd;
 	int irqnum;
-	struct irq_info *new;
+	struct irq_info *new, hint;
 	char path[PATH_MAX];
 	char devpath[PATH_MAX];
 	struct user_irq_policy pol;
 
 	sprintf(path, "%s/%s/msi_irqs", SYSPCI_DIR, dirname);
 	sprintf(devpath, "%s/%s", SYSPCI_DIR, dirname);
+
+	/* Needs to be further classified */
+	hint.class = IRQ_OTHER;
 	
 	msidir = opendir(path);
 
@@ -659,10 +662,11 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 					add_banned_irq(irqnum, &banned_irqs);
 					continue;
 				}
-				new = add_one_irq_to_db(devpath, irqnum, &pol);
+				hint.irq = irqnum;
+				hint.type = IRQ_TYPE_MSIX;
+				new = add_one_irq_to_db(devpath, &hint, &pol);
 				if (!new)
 					continue;
-				new->type = IRQ_TYPE_MSIX;
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -694,10 +698,11 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 			goto done;
 		}
 
-		new = add_one_irq_to_db(devpath, irqnum, &pol);
+		hint.irq = irqnum;
+		hint.type = IRQ_TYPE_LEGACY;
+		new = add_one_irq_to_db(devpath, &hint, &pol);
 		if (!new)
 			goto done;
-		new->type = IRQ_TYPE_LEGACY;
 	}
 
 done:
@@ -744,22 +749,10 @@ static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 		add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
-		new = add_one_irq_to_db(NULL, irq, &pol);
+		new = add_one_irq_to_db(NULL, hint, &pol);
 
-	if (!new) {
+	if (!new)
 		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
-		return;
-	}
-
-	/*
-	 * Override some of the new irq defaults here
-	 */
-	if (hint) {
-		new->type = hint->type;
-		new->class = hint->class;
-	}
-
-	new->level = map_class_to_level[new->class];
 }
 
 static void add_missing_irq(struct irq_info *info, void *attr)
