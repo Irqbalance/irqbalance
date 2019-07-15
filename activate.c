@@ -60,8 +60,6 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
-	cpumask_t applied_mask;
-	int valid_mask = 0;
 
 	/*
  	 * only activate mappings for irqs that have moved
@@ -69,18 +67,13 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->moved)
 		return;
 
-	if (info->assigned_obj) {
-		applied_mask = info->assigned_obj->mask;
-		valid_mask = 1;
-	}
+	if (!info->assigned_obj)
+		return;
 
 	/*
  	 * Don't activate anything for which we have an invalid mask 
  	 */
-	if (!valid_mask || check_affinity(info, applied_mask))
-		return;
-
-	if (!info->assigned_obj)
+	if (check_affinity(info, info->assigned_obj->mask))
 		return;
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
@@ -88,7 +81,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!file)
 		return;
 
-	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
+	cpumask_scnprintf(buf, PATH_MAX, info->assigned_obj->mask);
 	fprintf(file, "%s", buf);
 	fclose(file);
 	info->moved = 0; /*migration is done*/
