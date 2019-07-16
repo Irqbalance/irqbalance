@@ -61,6 +61,7 @@ char *pidfile = NULL;
 char *polscript = NULL;
 long HZ;
 int sleep_interval = SLEEP_INTERVAL;
+int last_interval;
 GMainLoop *main_loop;
 
 char *banned_cpumask_from_ui = NULL;
@@ -251,7 +252,7 @@ gboolean force_rescan(gpointer data __attribute__((unused)))
 	return TRUE;
 }
 
-gboolean scan(gpointer data)
+gboolean scan(gpointer data __attribute__((unused)))
 {
 	log(TO_CONSOLE, LOG_INFO, "\n\n\n-----------------------------------------------------------------------------\n");
 	clear_work_stats();
@@ -289,9 +290,10 @@ gboolean scan(gpointer data)
 		keep_going = 0;
 	cycle_count++;
 
-	if (data != &sleep_interval) {
-		data = &sleep_interval;
-		g_timeout_add_seconds(sleep_interval, scan, data);
+	/* sleep_interval may be changed by socket */
+	if (last_interval != sleep_interval) {
+		last_interval = sleep_interval;
+		g_timeout_add_seconds(sleep_interval, scan, NULL);
 		return FALSE;
 	}
 
@@ -623,8 +625,8 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 	main_loop = g_main_loop_new(NULL, FALSE);
-	int *last_interval = &sleep_interval;
-	g_timeout_add_seconds(sleep_interval, scan, last_interval);
+	last_interval = sleep_interval;
+	g_timeout_add_seconds(sleep_interval, scan, NULL);
 	g_main_loop_run(main_loop);
 
 	g_main_loop_quit(main_loop);
