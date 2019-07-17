@@ -1,6 +1,6 @@
 [Unit]
 Description=irqbalance daemon
-Documentation=man:irqbalance(1)
+Documentation=man:irqbalance(8)
 Documentation=https://github.com/Irqbalance/irqbalance
 ConditionVirtualization=!container
 

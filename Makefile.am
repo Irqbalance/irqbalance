@@ -46,7 +46,7 @@ irqbalance_ui_SOURCES = $(UI_DIR)/helpers.c $(UI_DIR)/irqbalance-ui.c \
 irqbalance_ui_LDADD = $(GLIB2_LIBS) $(CURSES_LIBS)
 endif
 
-dist_man_MANS = irqbalance.1
+dist_man_MANS = irqbalance.8
 
 CONFIG_CLEAN_FILES = debug*.list config/*
 clean-generic:
