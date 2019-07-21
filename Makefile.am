@@ -47,6 +47,9 @@ irqbalance_ui_LDADD = $(GLIB2_LIBS) $(CURSES_LIBS)
 endif
 
 dist_man_MANS = irqbalance.1
+if IRQBALANCEUI
+dist_man_MANS += irqbalance-ui.1
+endif
 
 CONFIG_CLEAN_FILES = debug*.list config/*
 clean-generic:
