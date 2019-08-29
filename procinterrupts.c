@@ -137,6 +137,7 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 			if (matches[i].refine_match)
 			    matches[i].refine_match(name, info);
 			log(TO_ALL, LOG_DEBUG, "IRQ %s(%d) guessed as class %d\n", name, info->irq,info->class);
+			break;
 		}	
 	}
 	
