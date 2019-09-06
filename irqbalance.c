@@ -573,6 +573,21 @@ int main(int argc, char** argv)
 		log(TO_ALL, LOG_WARNING, "Unable to determin HZ defaulting to 100\n");
 		HZ = 100;
 	}
+	
+	if (!foreground_mode) {
+		int pidfd = -1;
+		if (daemon(0,0))
+			exit(EXIT_FAILURE);
+		/* Write pidfile which can be used to avoid starting mutiple instances */
+		if (pidfile && (pidfd = open(pidfile,
+			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
+			char str[16];
+			snprintf(str, sizeof(str), "%u\n", getpid());
+			write(pidfd, str, strlen(str));
+			close(pidfd);
+		}
+	}
 
 	build_object_tree();
 	if (debug_mode)
@@ -588,20 +603,6 @@ int main(int argc, char** argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (!foreground_mode) {
-		int pidfd = -1;
-		if (daemon(0,0))
-			exit(EXIT_FAILURE);
-		/* Write pidfile */
-		if (pidfile && (pidfd = open(pidfile,
-			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
-			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
-			char str[16];
-			snprintf(str, sizeof(str), "%u\n", getpid());
-			write(pidfd, str, strlen(str));
-			close(pidfd);
-		}
-	}
 
 	g_unix_signal_add(SIGINT, handler, NULL);
 	g_unix_signal_add(SIGTERM, handler, NULL);
