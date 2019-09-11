@@ -59,7 +59,7 @@ static void add_one_node(const char *nodename)
 	char *cpustr = NULL;
 	FILE *f;
 	ssize_t ret;
-	size_t blen;
+	size_t blen = 0;
 
 	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
