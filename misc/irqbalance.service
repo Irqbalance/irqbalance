@@ -5,7 +5,8 @@ Documentation=https://github.com/Irqbalance/irqbalance
 ConditionVirtualization=!container
 
 [Service]
-EnvironmentFile=/path/to/irqbalance.env
+Environmentfile=-/usr/lib/irqbalance/defaults.env
+EnvironmentFile=-/path/to/irqbalance.env
 ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
 CapabilityBoundingSet=
 NoNewPrivileges=yes

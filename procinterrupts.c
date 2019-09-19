@@ -161,7 +161,7 @@ GList* collect_full_irq_list()
 		return NULL;
 
 	/* first line is the header we don't need; nuke it */
-	if (getline(&line, &size, file)==0) {
+	if (getline(&line, &size, file)<=0) {
 		free(line);
 		fclose(file);
 		return NULL;
@@ -174,7 +174,7 @@ GList* collect_full_irq_list()
 		char *c;
 		char *savedline = NULL;
 
-		if (getline(&line, &size, file)==0)
+		if (getline(&line, &size, file)<=0)
 			break;
 
 		/* lines with letters in front are special, like NMI count. Ignore */
@@ -248,7 +248,7 @@ void parse_proc_interrupts(void)
 		return;
 
 	/* first line is the header we don't need; nuke it */
-	if (getline(&line, &size, file)==0) {
+	if (getline(&line, &size, file)<=0) {
 		free(line);
 		fclose(file);
 		return;
@@ -262,7 +262,7 @@ void parse_proc_interrupts(void)
 		struct irq_info *info;
 		char savedline[1024];
 
-		if (getline(&line, &size, file)==0)
+		if (getline(&line, &size, file)<=0)
 			break;
 
 		if (!proc_int_has_msi)
@@ -444,7 +444,7 @@ void parse_proc_stat(void)
 	}
 
 	/* first line is the header we don't need; nuke it */
-	if (getline(&line, &size, file)==0) {
+	if (getline(&line, &size, file)<=0) {
 		free(line);
 		log(TO_ALL, LOG_WARNING, "WARNING read /proc/stat. balancing is broken\n");
 		fclose(file);
@@ -453,7 +453,7 @@ void parse_proc_stat(void)
 
 	cpucount = 0;
 	while (!feof(file)) {
-		if (getline(&line, &size, file)==0)
+		if (getline(&line, &size, file)<=0)
 			break;
 
 		if (!strstr(line, "cpu"))

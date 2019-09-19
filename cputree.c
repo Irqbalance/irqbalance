@@ -91,10 +91,10 @@ static void setup_banned_cpus(void)
 		if (getline(&line, &size, file) > 0) {
 			if (strlen(line) && line[0] != '\n')
 				cpulist_parse(line, strlen(line), isolated_cpus);
-			free(line);
-			line = NULL;
-			size = 0;
 		}
+		free(line);
+		line = NULL;
+		size = 0;
 		fclose(file);
 	}
 
@@ -103,10 +103,10 @@ static void setup_banned_cpus(void)
 		if (getline(&line, &size, file) > 0) {
 			if (strlen(line) && line[0] != '\n')
 				cpulist_parse(line, strlen(line), nohz_full);
-			free(line);
-			line = NULL;
-			size = 0;
 		}
+		free(line);
+		line = NULL;
+		size = 0;
 		fclose(file);
 	}
 
@@ -278,7 +278,7 @@ static void do_one_cpu(char *path)
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
-		if (getline(&line, &size, file)==0)
+		if (getline(&line, &size, file)<=0)
 			return;
 		fclose(file);
 		if (line && line[0]=='0') {
@@ -323,7 +323,7 @@ static void do_one_cpu(char *path)
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
-		if (getline(&line, &size, file)) 
+		if (getline(&line, &size, file) > 0)
 			cpumask_parse_user(line, strlen(line), package_mask);
 		fclose(file);
 		free(line);
@@ -335,7 +335,7 @@ static void do_one_cpu(char *path)
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
-		if (getline(&line, &size, file))
+		if (getline(&line, &size, file) > 0)
 			packageid = strtoul(line, NULL, 10);
 		fclose(file);
 		free(line);
@@ -368,7 +368,7 @@ static void do_one_cpu(char *path)
 		if (file) {
 			char *line = NULL;
 			size_t size = 0;
-			if (getline(&line, &size, file))
+			if (getline(&line, &size, file) > 0)
 				cpumask_parse_user(line, strlen(line), cache_mask);
 			fclose(file);
 			free(line);
