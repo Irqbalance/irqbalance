@@ -44,7 +44,7 @@ static int check_affinity(struct irq_info *info, cpumask_t applied_mask)
 	file = fopen(buf, "r");
 	if (!file)
 		return 1;
-	if (getline(&line, &size, file)==0) {
+	if (getline(&line, &size, file)<=0) {
 		free(line);
 		fclose(file);
 		return 1;
