@@ -692,7 +692,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 		new = get_irq_info(irqnum);
 		if (new)
 			goto done;
-		get_irq_user_policy(irqnum, &pol);
+		get_irq_user_policy(devpath, irqnum, &pol);
 		if ((pol.ban == 1) || (check_for_irq_ban(irqnum, tmp_irqs))) {
 			add_banned_irq(irqnum, &banned_irqs);
 			goto done;
