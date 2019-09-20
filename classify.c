@@ -599,7 +599,7 @@ static int check_for_module_ban(char *name)
 		return 0;
 }
 
-static int check_for_irq_ban(char *path __attribute__((unused)), int irq, GList *proc_interrupts)
+static int check_for_irq_ban(int irq, GList *proc_interrupts)
 {
 	struct irq_info find, *res;
 	GList *entry;
@@ -658,7 +658,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 				if (new)
 					continue;
 				get_irq_user_policy(devpath, irqnum, &pol);
-				if ((pol.ban == 1) || (check_for_irq_ban(devpath, irqnum, tmp_irqs))) {
+				if ((pol.ban == 1) || (check_for_irq_ban(irqnum, tmp_irqs))) {
 					add_banned_irq(irqnum, &banned_irqs);
 					continue;
 				}
@@ -692,8 +692,8 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 		new = get_irq_info(irqnum);
 		if (new)
 			goto done;
-		get_irq_user_policy(devpath, irqnum, &pol);
-		if ((pol.ban == 1) || (check_for_irq_ban(devpath, irqnum, tmp_irqs))) {
+		get_irq_user_policy(irqnum, &pol);
+		if ((pol.ban == 1) || (check_for_irq_ban(irqnum, tmp_irqs))) {
 			add_banned_irq(irqnum, &banned_irqs);
 			goto done;
 		}
@@ -745,7 +745,7 @@ static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 
 	/* Set NULL devpath for the irq has no sysfs entries */
 	get_irq_user_policy(NULL, irq, &pol);
-	if ((pol.ban == 1) || check_for_irq_ban(NULL, irq, proc_interrupts)) { /*FIXME*/
+	if ((pol.ban == 1) || check_for_irq_ban(irq, proc_interrupts)) { /*FIXME*/
 		add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
