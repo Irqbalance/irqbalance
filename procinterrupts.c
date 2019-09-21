@@ -260,7 +260,6 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 		struct irq_info *info;
-		char savedline[1024];
 
 		if (getline(&line, &size, file)<=0)
 			break;
@@ -279,8 +278,6 @@ void parse_proc_interrupts(void)
 		c = strchr(line, ':');
 		if (!c)
 			continue;
-
-		strncpy(savedline, line, sizeof(savedline)-1);
 
 		*c = 0;
 		c++;
