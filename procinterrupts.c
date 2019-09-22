@@ -189,6 +189,8 @@ GList* collect_full_irq_list()
 			continue;
 
 		savedline = strdup(line);
+		if (!savedline)
+			break;
 		irq_name = strtok_r(savedline, " ", &savedptr);
 		if (strstr(irq_name, "xen-dyn") != NULL)
 			is_xen_dyn = 1;
