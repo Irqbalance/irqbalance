@@ -189,6 +189,8 @@ GList* collect_full_irq_list()
 			continue;
 
 		savedline = strdup(line);
+		if (!savedline)
+			break;
 		irq_name = strtok_r(savedline, " ", &savedptr);
 		if (strstr(irq_name, "xen-dyn") != NULL)
 			is_xen_dyn = 1;
@@ -260,7 +262,6 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 		struct irq_info *info;
-		char savedline[1024];
 
 		if (getline(&line, &size, file)<=0)
 			break;
@@ -279,8 +280,6 @@ void parse_proc_interrupts(void)
 		c = strchr(line, ':');
 		if (!c)
 			continue;
-
-		strncpy(savedline, line, sizeof(savedline)-1);
 
 		*c = 0;
 		c++;
