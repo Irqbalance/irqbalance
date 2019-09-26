@@ -278,13 +278,13 @@ static void do_one_cpu(char *path)
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
-		if (getline(&line, &size, file)<=0)
-			return;
-		fclose(file);
-		if (line && line[0]=='0') {
+		if ((getline(&line, &size, file) <= 0) ||
+			(line && line[0] == '0')) {
+			fclose(file);
 			free(line);
 			return;
 		}
+		fclose(file);
 		free(line);
 	}
 
