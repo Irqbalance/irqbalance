@@ -91,10 +91,10 @@ static void setup_banned_cpus(void)
 		if (getline(&line, &size, file) > 0) {
 			if (strlen(line) && line[0] != '\n')
 				cpulist_parse(line, strlen(line), isolated_cpus);
-			free(line);
-			line = NULL;
-			size = 0;
 		}
+		free(line);
+		line = NULL;
+		size = 0;
 		fclose(file);
 	}
 
@@ -103,10 +103,10 @@ static void setup_banned_cpus(void)
 		if (getline(&line, &size, file) > 0) {
 			if (strlen(line) && line[0] != '\n')
 				cpulist_parse(line, strlen(line), nohz_full);
-			free(line);
-			line = NULL;
-			size = 0;
 		}
+		free(line);
+		line = NULL;
+		size = 0;
 		fclose(file);
 	}
 
@@ -271,6 +271,7 @@ static void do_one_cpu(char *path)
 	int nodeid;
 	int packageid = 0;
 	unsigned int max_cache_index, cache_index, cache_stat;
+	int ret = 1;
 
 	/* skip offline cpus */
 	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
@@ -278,14 +279,12 @@ static void do_one_cpu(char *path)
 	if (file) {
 		char *line = NULL;
 		size_t size = 0;
-		if (getline(&line, &size, file)<=0)
-			return;
+		if (getline(&line, &size, file)>0)
+			ret = (line && line[0]=='0') ? 1 : 0;
 		fclose(file);
-		if (line && line[0]=='0') {
-			free(line);
-			return;
-		}
 		free(line);
+		if (ret)
+			return;
 	}
 
 	cpu = calloc(sizeof(struct topo_obj), 1);
@@ -327,6 +326,8 @@ static void do_one_cpu(char *path)
 			cpumask_parse_user(line, strlen(line), package_mask);
 		fclose(file);
 		free(line);
+		line = NULL;
+		size = 0;
 	}
 	/* try to read the package id */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/physical_package_id"),
@@ -339,6 +340,8 @@ static void do_one_cpu(char *path)
 			packageid = strtoul(line, NULL, 10);
 		fclose(file);
 		free(line);
+		line = NULL;
+		size = 0;
 	}
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
@@ -372,6 +375,8 @@ static void do_one_cpu(char *path)
 				cpumask_parse_user(line, strlen(line), cache_mask);
 			fclose(file);
 			free(line);
+			line = NULL;
+			size = 0;
 		}
 	}
 
