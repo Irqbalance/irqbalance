@@ -74,12 +74,11 @@ static void add_one_node(const char *nodename)
 		cpus_clear(new->mask);
 	} else {
 		ret = getline(&cpustr, &blen, f);
-		if (ret <= 0) {
+		if (ret <= 0)
 			cpus_clear(new->mask);
-		} else {
+		else
 			cpumask_parse_user(cpustr, ret, new->mask);
-			free(cpustr);
-		}
+		free(cpustr);
 	}
 	fclose(f);
 	new->obj_type = OBJ_TYPE_NODE;	
