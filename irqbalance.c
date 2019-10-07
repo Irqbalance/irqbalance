@@ -313,6 +313,9 @@ void get_irq_data(struct irq_info *irq, void *data)
 	else
 		*irqdata = realloc(*irqdata, strlen(*irqdata) + 24 + 1 + 11 + 20 + 20 + 11);
 
+	if (!*irqdata)
+		return;
+
 	sprintf(*irqdata + strlen(*irqdata),
 			"IRQ %d LOAD %lu DIFF %lu CLASS %d ", irq->irq, irq->load,
 			(irq->irq_count - irq->last_irq_count), irq->class);
@@ -343,6 +346,9 @@ void get_object_stat(struct topo_obj *object, void *data)
 	} else {
 		*stats = realloc(*stats, strlen(*stats) + irqdlen + 31 + 11 + 20 + 11 + 1);
 	}
+
+	if (!*stats)
+		return;
 
 	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %lu SAVE_MODE %d %s",
 			object->obj_type, object->number, object->load,
@@ -380,6 +386,10 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			goto out_close;
 		}
 		cmsg = CMSG_FIRSTHDR(&msg);
+		if (!cmsg) {
+			log(TO_ALL, LOG_WARNING, "Connection no memory.\n");
+			goto out_close;
+		}
 		if ((cmsg->cmsg_level == SOL_SOCKET) &&
 				(cmsg->cmsg_type == SCM_CREDENTIALS)) {
 			struct ucred *credentials = (struct ucred *) CMSG_DATA(cmsg);
@@ -403,6 +413,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 							strlen("sleep ")))) {
 				char *sleep_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings sleep ")));
+
+				if (!sleep_string)
+					goto out_close;
 				strncpy(sleep_string, buff + strlen("settings sleep "),
 						recv_size - strlen("settings sleep "));
 				int new_iterval = strtoul(sleep_string, NULL, 10);
@@ -415,6 +428,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				char *end;
 				char *irq_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings ban irqs ")));
+
+				if (!irq_string)
+					goto out_close;
 				strncpy(irq_string, buff + strlen("settings ban irqs "),
 						recv_size - strlen("settings ban irqs "));
 				g_list_free_full(cl_banned_irqs, free);
@@ -433,6 +449,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 							strlen("cpus")))) {
 				char *cpu_ban_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings cpus ")));
+
+				if (!cpu_ban_string)
+					goto out_close;
 				strncpy(cpu_ban_string, buff + strlen("settings cpus "),
 						recv_size - strlen("settings cpus "));
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
@@ -446,12 +465,17 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		if (!strncmp(buff, "setup", strlen("setup"))) {
 			char banned[512];
 			char *setup = calloc(strlen("SLEEP  ") + 11 + 1, 1);
+
+			if (!setup)
+				goto out_close;
 			snprintf(setup, strlen("SLEEP  ") + 11 + 1, "SLEEP %d ", sleep_interval);
 			if(g_list_length(cl_banned_irqs) > 0) {
 				for_each_irq(cl_banned_irqs, get_irq_data, setup);
 			}
 			cpumask_scnprintf(banned, 512, banned_cpus);
 			setup = realloc(setup, strlen(setup) + strlen(banned) + 7 + 1);
+			if (!setup)
+				goto out_close;
 			snprintf(setup + strlen(setup), strlen(banned) + 7 + 1,
 					"BANNED %s", banned);
 			send(sock, setup, strlen(setup), 0);
