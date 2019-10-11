@@ -583,6 +583,7 @@ static void get_irq_user_policy(char *path, int irq, struct user_irq_policy *pol
 					break;
 				}
 			}
+			closedir(poldir);
 		}
 	}
 }

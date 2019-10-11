@@ -424,6 +424,7 @@ int main(int argc, char **argv)
 					fclose(f);
 				}
 			} while((entry) && (irqbalance_pid == -1));
+			closedir(dir);
 		}
 		if(irqbalance_pid == -1) {
 			printf("Unable to determine irqbalance PID\n");
