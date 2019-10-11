@@ -432,6 +432,8 @@ static void dump_irq(struct irq_info *info, void *data)
 	int i;
 	char * indent = malloc (sizeof(char) * (spaces + 1));
 
+	if (!indent)
+		return;
 	for ( i = 0; i < spaces; i++ )
 		indent[i] = log_indent[0];
 
