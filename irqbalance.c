@@ -308,13 +308,17 @@ gboolean scan(gpointer data __attribute__((unused)))
 void get_irq_data(struct irq_info *irq, void *data)
 {
 	char **irqdata = (char **)data;
-	if (!*irqdata)
-		*irqdata = calloc(24 + 1 + 11 + 20 + 20 + 11, 1);
-	else
-		*irqdata = realloc(*irqdata, strlen(*irqdata) + 24 + 1 + 11 + 20 + 20 + 11);
+	char *newptr = NULL;
 
 	if (!*irqdata)
+		newptr = calloc(24 + 1 + 11 + 20 + 20 + 11, 1);
+	else
+		newptr = realloc(*irqdata, strlen(*irqdata) + 24 + 1 + 11 + 20 + 20 + 11);
+
+	if (!newptr)
 		return;
+
+	*irqdata = newptr;
 
 	sprintf(*irqdata + strlen(*irqdata),
 			"IRQ %d LOAD %lu DIFF %lu CLASS %d ", irq->irq, irq->load,
@@ -325,6 +329,7 @@ void get_object_stat(struct topo_obj *object, void *data)
 {
 	char **stats = (char **)data;	
 	char *irq_data = NULL;
+	char *newptr = NULL;
 	size_t irqdlen;
 
 	if (g_list_length(object->interrupts) > 0) {
@@ -342,13 +347,17 @@ void get_object_stat(struct topo_obj *object, void *data)
 	 * This should be adjusted if the string in the sprintf is changed
 	 */
 	if (!*stats) {
-		*stats = calloc(irqdlen + 31 + 11 + 20 + 11 + 1, 1);
+		newptr = calloc(irqdlen + 31 + 11 + 20 + 11 + 1, 1);
 	} else {
-		*stats = realloc(*stats, strlen(*stats) + irqdlen + 31 + 11 + 20 + 11 + 1);
+		newptr = realloc(*stats, strlen(*stats) + irqdlen + 31 + 11 + 20 + 11 + 1);
 	}
 
-	if (!*stats)
+	if (!newptr) {
+		free(irq_data);
 		return;
+	}
+
+	*stats = newptr;
 
 	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %lu SAVE_MODE %d %s",
 			object->obj_type, object->number, object->load,
@@ -465,20 +474,24 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		if (!strncmp(buff, "setup", strlen("setup"))) {
 			char banned[512];
 			char *setup = calloc(strlen("SLEEP  ") + 11 + 1, 1);
+			char *newptr = NULL;
 
 			if (!setup)
 				goto out_close;
 			snprintf(setup, strlen("SLEEP  ") + 11 + 1, "SLEEP %d ", sleep_interval);
 			if(g_list_length(cl_banned_irqs) > 0) {
-				for_each_irq(cl_banned_irqs, get_irq_data, setup);
+				for_each_irq(cl_banned_irqs, get_irq_data, &setup);
 			}
 			cpumask_scnprintf(banned, 512, banned_cpus);
-			setup = realloc(setup, strlen(setup) + strlen(banned) + 7 + 1);
-			if (!setup)
-				goto out_close;
+			newptr = realloc(setup, strlen(setup) + strlen(banned) + 7 + 1);
+			if (!newptr)
+				goto out_free_setup;
+
+			setup = newptr;
 			snprintf(setup + strlen(setup), strlen(banned) + 7 + 1,
 					"BANNED %s", banned);
 			send(sock, setup, strlen(setup), 0);
+out_free_setup:
 			free(setup);
 		}
 
