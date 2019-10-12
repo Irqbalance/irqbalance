@@ -36,22 +36,10 @@ static int check_affinity(struct irq_info *info, cpumask_t applied_mask)
 {
 	cpumask_t current_mask;
 	char buf[PATH_MAX];
-	char *line = NULL;
-	size_t size = 0;
-	FILE *file;
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
-	file = fopen(buf, "r");
-	if (!file)
+	if (process_one_line(buf, get_mask_from_bitmap, &current_mask) < 0)
 		return 1;
-	if (getline(&line, &size, file)<=0) {
-		free(line);
-		fclose(file);
-		return 1;
-	}
-	cpumask_parse_user(line, strlen(line), current_mask);
-	fclose(file);
-	free(line);
 
 	return cpus_equal(applied_mask, current_mask);
 }

@@ -59,6 +59,37 @@ cpumask_t cpu_possible_map;
 */
 cpumask_t unbanned_cpus;
 
+int process_one_line(char *path, void (*cb)(char *line, void *data), void *data)
+{
+	FILE *file;
+	char *line = NULL;
+	size_t size = 0;
+	int ret = -1;
+
+	file = fopen(path, "r");
+	if (!file)
+		return ret;
+
+	if (getline(&line, &size, file) > 0) {
+		cb(line, data);
+		ret = 0;
+	}
+	free(line);
+	fclose(file);
+	return ret;
+}
+
+void get_mask_from_bitmap(char *line, void *mask)
+{
+	cpumask_parse_user(line, strlen(line), *(cpumask_t *)mask);
+}
+
+static void get_mask_from_cpulist(char *line, void *mask)
+{
+	if (strlen(line) && line[0] != '\n')
+		cpulist_parse(line, strlen(line), *(cpumask_t *)mask);
+}
+
 /*
  * By default do not place IRQs on CPUs the kernel keeps isolated or
  * nohz_full, as specified through the boot commandline. Users can
@@ -66,9 +97,7 @@ cpumask_t unbanned_cpus;
  */
 static void setup_banned_cpus(void)
 {
-	FILE *file;
-	char *line = NULL;
-	size_t size = 0;
+	char *path = NULL;
 	char buffer[4096];
 	cpumask_t nohz_full;
 	cpumask_t isolated_cpus;
@@ -86,29 +115,12 @@ static void setup_banned_cpus(void)
 		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
 		goto out;
 	}
-	file = fopen("/sys/devices/system/cpu/isolated", "r");
-	if (file) {
-		if (getline(&line, &size, file) > 0) {
-			if (strlen(line) && line[0] != '\n')
-				cpulist_parse(line, strlen(line), isolated_cpus);
-		}
-		free(line);
-		line = NULL;
-		size = 0;
-		fclose(file);
-	}
 
-	file = fopen("/sys/devices/system/cpu/nohz_full", "r");
-	if (file) {
-		if (getline(&line, &size, file) > 0) {
-			if (strlen(line) && line[0] != '\n')
-				cpulist_parse(line, strlen(line), nohz_full);
-		}
-		free(line);
-		line = NULL;
-		size = 0;
-		fclose(file);
-	}
+	path = "/sys/devices/system/cpu/isolated";
+	process_one_line(path, get_mask_from_cpulist, &isolated_cpus);
+
+	path = "/sys/devices/system/cpu/nohz_full";
+	process_one_line(path, get_mask_from_cpulist, &nohz_full);
 
 	cpus_or(banned_cpus, nohz_full, isolated_cpus);
 
@@ -258,11 +270,24 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 	return cache;
 }
 
+static void get_offline_status(char *line, void *data)
+{
+	int *status = (int *)data;
+
+	*status = (line && line[0] == '0') ? 1 : 0;
+}
+
+static void get_packageid(char *line, void *data)
+{
+	int *packageid = (int *)data;
+
+	*packageid = strtoul(line, NULL, 10);
+}
+
 #define ADJ_SIZE(r,s) PATH_MAX-strlen(r)-strlen(#s) 
 static void do_one_cpu(char *path)
 {
 	struct topo_obj *cpu;
-	FILE *file;
 	char new_path[PATH_MAX];
 	cpumask_t cache_mask, package_mask;
 	struct topo_obj *cache;
@@ -271,21 +296,13 @@ static void do_one_cpu(char *path)
 	int nodeid;
 	int packageid = 0;
 	unsigned int max_cache_index, cache_index, cache_stat;
-	int ret = 1;
+	int offline_status = 0;
 
 	/* skip offline cpus */
 	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
-	file = fopen(new_path, "r");
-	if (file) {
-		char *line = NULL;
-		size_t size = 0;
-		if (getline(&line, &size, file)>0)
-			ret = (line && line[0]=='0') ? 1 : 0;
-		fclose(file);
-		free(line);
-		if (ret)
-			return;
-	}
+	process_one_line(new_path, get_offline_status, &offline_status);
+	if (offline_status)
+		return;
 
 	cpu = calloc(sizeof(struct topo_obj), 1);
 	if (!cpu)
@@ -313,36 +330,17 @@ static void do_one_cpu(char *path)
 		return;
 	}
 
+	cpu_set(cpu->number, package_mask);
 
 	/* try to read the package mask; if it doesn't exist assume solitary */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/core_siblings"),
 		 "%s/topology/core_siblings", path);
-	file = fopen(new_path, "r");
-	cpu_set(cpu->number, package_mask);
-	if (file) {
-		char *line = NULL;
-		size_t size = 0;
-		if (getline(&line, &size, file) > 0)
-			cpumask_parse_user(line, strlen(line), package_mask);
-		fclose(file);
-		free(line);
-		line = NULL;
-		size = 0;
-	}
+	process_one_line(new_path, get_mask_from_bitmap, &package_mask);
+
 	/* try to read the package id */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/physical_package_id"),
 		 "%s/topology/physical_package_id", path);
-	file = fopen(new_path, "r");
-	if (file) {
-		char *line = NULL;
-		size_t size = 0;
-		if (getline(&line, &size, file) > 0)
-			packageid = strtoul(line, NULL, 10);
-		fclose(file);
-		free(line);
-		line = NULL;
-		size = 0;
-	}
+	process_one_line(new_path, get_packageid, &packageid);
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available */
@@ -367,17 +365,7 @@ static void do_one_cpu(char *path)
 		/* Extra 10 subtraction is for the max character length of %d */
 		snprintf(new_path, ADJ_SIZE(path, "/cache/index%d/shared_cpu_map") - 10,
 			 "%s/cache/index%d/shared_cpu_map", path, max_cache_index);
-		file = fopen(new_path, "r");
-		if (file) {
-			char *line = NULL;
-			size_t size = 0;
-			if (getline(&line, &size, file) > 0)
-				cpumask_parse_user(line, strlen(line), cache_mask);
-			fclose(file);
-			free(line);
-			line = NULL;
-			size = 0;
-		}
+		process_one_line(new_path, get_mask_from_bitmap, &cache_mask);
 	}
 
 	nodeid=-1;
