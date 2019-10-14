@@ -229,7 +229,7 @@ GList* collect_full_irq_list()
 				info->class = IRQ_OTHER;
 #endif
 			}
-			info->name = strdupa(irq_mod);
+			info->name = strdup(irq_mod);
 			tmp_list = g_list_append(tmp_list, info);
 		}
 		free(savedline);
