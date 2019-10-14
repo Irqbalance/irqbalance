@@ -56,31 +56,15 @@ static void add_one_node(const char *nodename)
 {
 	char path[PATH_MAX];
 	struct topo_obj *new;
-	char *cpustr = NULL;
-	FILE *f;
-	ssize_t ret;
-	size_t blen;
 
 	new = calloc(1, sizeof(struct topo_obj));
 	if (!new)
 		return;
+
+	cpus_clear(new->mask);
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
-	f = fopen(path, "r");
-	if (!f) {
-		free(new);
-		return;
-	}
-	if (ferror(f)) {
-		cpus_clear(new->mask);
-	} else {
-		ret = getline(&cpustr, &blen, f);
-		if (ret <= 0)
-			cpus_clear(new->mask);
-		else
-			cpumask_parse_user(cpustr, ret, new->mask);
-		free(cpustr);
-	}
-	fclose(f);
+	process_one_line(path, get_mask_from_bitmap, &new->mask);
+
 	new->obj_type = OBJ_TYPE_NODE;	
 	new->number = strtoul(&nodename[4], NULL, 10);
 	new->obj_type_list = &numa_nodes;

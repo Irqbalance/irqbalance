@@ -350,10 +350,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 	int numa_node;
 	char path[PATH_MAX];
 	FILE *fd;
-	char *lcpu_mask;
 	GList *entry;
-	ssize_t ret;
-	size_t blen;
 
 	/*
 	 * First check to make sure this isn't a duplicate entry
@@ -409,23 +406,11 @@ get_numa_node:
 	else
 		new->numa_node = get_numa_node(numa_node);
 
-	sprintf(path, "%s/local_cpus", devpath);
-	fd = fopen(path, "r");
-	if (!fd) {
-		cpus_setall(new->cpumask);
-		goto out;
-	}
-	lcpu_mask = NULL;
-	ret = getline(&lcpu_mask, &blen, fd);
-	fclose(fd);
-	if (ret <= 0) {
-		cpus_setall(new->cpumask);
-	} else {
-		cpumask_parse_user(lcpu_mask, ret, new->cpumask);
-	}
-	free(lcpu_mask);
+	cpus_setall(new->cpumask);
 
-out:
+	sprintf(path, "%s/local_cpus", devpath);
+	process_one_line(path, get_mask_from_bitmap, &new->cpumask);
+
 	log(TO_CONSOLE, LOG_INFO, "Adding IRQ %d to database\n", irq);
 	return new;
 }

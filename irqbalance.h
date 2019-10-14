@@ -160,5 +160,8 @@ extern unsigned int log_mask;
 #define SOCKET_PATH "irqbalance"
 #define SOCKET_TMPFS "/run/irqbalance/"
 
+extern int process_one_line(char *path, void (*cb)(char *line, void *data), void *data);
+extern void get_mask_from_bitmap(char *line, void *mask);
+
 #endif /* __INCLUDE_GUARD_IRQBALANCE_H_ */
 
