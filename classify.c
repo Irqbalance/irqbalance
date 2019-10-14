@@ -750,6 +750,13 @@ static void add_missing_irq(struct irq_info *info, void *attr)
 		add_new_irq(info->irq, info, proc_interrupts);
 }
 
+static void free_tmp_irqs(gpointer data)
+{
+	struct irq_info *info = data;
+
+	free(info->name);
+	free(info);
+}
 
 void rebuild_irq_db(void)
 {
@@ -779,7 +786,7 @@ void rebuild_irq_db(void)
 
 	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
 
-	g_list_free_full(tmp_irqs, free);
+	g_list_free_full(tmp_irqs, free_tmp_irqs);
 
 }
 
