@@ -547,6 +547,7 @@ int init_socket()
 int main(int argc, char** argv)
 {
 	sigset_t sigset, old_sigset;
+	int ret = EXIT_SUCCESS;
 
 	sigemptyset(&sigset);
 	sigaddset(&sigset,SIGINT);
@@ -637,7 +638,7 @@ int main(int argc, char** argv)
 			    "single cpu.  Shutting down\n";
 
 		log(TO_ALL, LOG_WARNING, "%s", msg);
-		exit(EXIT_SUCCESS);
+		goto out;
 	}
 
 
@@ -660,7 +661,8 @@ int main(int argc, char** argv)
 	parse_proc_stat();
 
 	if (init_socket()) {
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
+		goto out;
 	}
 	main_loop = g_main_loop_new(NULL, FALSE);
 	last_interval = sleep_interval;
@@ -669,6 +671,7 @@ int main(int argc, char** argv)
 
 	g_main_loop_quit(main_loop);
 
+out:
 	free_object_tree();
 	free_cl_opts();
 
@@ -676,9 +679,10 @@ int main(int argc, char** argv)
 	if (!foreground_mode && pidfile)
 		unlink(pidfile);
 	/* Remove socket */
-	close(socket_fd);
+	if (socket_fd > 0)
+		close(socket_fd);
 	if (socket_name[0])
 		unlink(socket_name);
 
-	return EXIT_SUCCESS;
+	return ret;
 }
