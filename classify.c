@@ -392,7 +392,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 
 get_numa_node:
 	numa_node = -1;
-	if (numa_avail) {
+	if (devpath != NULL && numa_avail) {
 		sprintf(path, "%s/numa_node", devpath);
 		fd = fopen(path, "r");
 		if (fd) {
@@ -407,9 +407,10 @@ get_numa_node:
 		new->numa_node = get_numa_node(numa_node);
 
 	cpus_setall(new->cpumask);
-
-	sprintf(path, "%s/local_cpus", devpath);
-	process_one_line(path, get_mask_from_bitmap, &new->cpumask);
+	if (devpath != NULL) {
+		sprintf(path, "%s/local_cpus", devpath);
+		process_one_line(path, get_mask_from_bitmap, &new->cpumask);
+	}
 
 	log(TO_CONSOLE, LOG_INFO, "Adding IRQ %d to database\n", irq);
 	return new;
