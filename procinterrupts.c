@@ -212,7 +212,6 @@ GList* collect_full_irq_list()
 		irq_mod = last_token;
 
 		*c = 0;
-		c++;
 		number = strtoul(line, NULL, 10);
 
 		info = calloc(sizeof(struct irq_info), 1);
