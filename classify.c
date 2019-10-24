@@ -718,7 +718,6 @@ void free_cl_opts(void)
 {
 	g_list_free_full(cl_banned_modules, free);
 	g_list_free_full(cl_banned_irqs, free);
-	g_list_free(banned_irqs);
 }
 
 static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
@@ -744,11 +743,9 @@ static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
 
 static void add_missing_irq(struct irq_info *info, void *attr)
 {
-	struct irq_info *lookup = get_irq_info(info->irq);
 	GList *proc_interrupts = (GList *) attr;
 
-	if (!lookup)
-		add_new_irq(info->irq, info, proc_interrupts);
+	add_new_irq(info->irq, info, proc_interrupts);
 }
 
 static void free_tmp_irqs(gpointer data)
