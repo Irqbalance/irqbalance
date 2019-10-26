@@ -182,7 +182,7 @@ GList* collect_full_irq_list()
 		while (isblank(*(c)))
 			c++;
 
-		if (!(*c>='0' && *c<='9'))
+		if (!isdigit(*c))
 			break;
 		c = strchr(line, ':');
 		if (!c)
@@ -274,7 +274,7 @@ void parse_proc_interrupts(void)
 		while (isblank(*(c)))
 			c++;
 			
-		if (!(*c>='0' && *c<='9'))
+		if (!isdigit(*c))
 			break;
 		c = strchr(line, ':');
 		if (!c)
