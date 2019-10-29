@@ -540,6 +540,15 @@ void parse_cpu_tree(void)
 
 }
 
+static void free_cpu_topo(gpointer data)
+{
+	struct topo_obj *obj = data;
+
+	g_list_free(obj->children);
+	g_list_free(obj->interrupts);
+	g_list_free(obj->numa_nodes);
+	free(obj);
+}
 
 /*
  * This function frees all memory related to a cpu tree so that a new tree
@@ -547,43 +556,17 @@ void parse_cpu_tree(void)
  */
 void clear_cpu_tree(void)
 {
-	GList *item;
-	struct topo_obj *cpu;
-	struct topo_obj *cache_domain;
-	struct topo_obj *package;
-
-	while (packages) {
-		item = g_list_first(packages);
-		package = item->data;
-		g_list_free(package->children);
-		g_list_free(package->interrupts);
-		g_list_free(package->numa_nodes);
-		free(package);
-		packages = g_list_delete_link(packages, item);
-	}
+	g_list_free_full(packages, free_cpu_topo);
+	packages = NULL;
 	package_count = 0;
 
-	while (cache_domains) {
-		item = g_list_first(cache_domains);
-		cache_domain = item->data;
-		g_list_free(cache_domain->children);
-		g_list_free(cache_domain->interrupts);
-		g_list_free(cache_domain->numa_nodes);
-		free(cache_domain);
-		cache_domains = g_list_delete_link(cache_domains, item);
-	}
+	g_list_free_full(cache_domains, free_cpu_topo);
+	cache_domains = NULL;
 	cache_domain_count = 0;
 
-
-	while (cpus) {
-		item = g_list_first(cpus);
-		cpu = item->data;
-		g_list_free(cpu->interrupts);
-		free(cpu);
-		cpus = g_list_delete_link(cpus, item);
-	}
+	g_list_free_full(cpus, free_cpu_topo);
+	cpus = NULL;
 	core_count = 0;
-
 }
 
 static gint compare_cpus(gconstpointer a, gconstpointer b)
