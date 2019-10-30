@@ -136,7 +136,6 @@ void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused))
 {
 	GList *entry;
 	struct topo_obj *node;
-	struct topo_obj *lchild;
 	int len;
 
 	len = g_list_length(p->numa_nodes);
@@ -154,14 +153,7 @@ void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused))
 	if (p->obj_type == OBJ_TYPE_PACKAGE && !p->parent)
 		p->parent = node;
 
-	entry = g_list_first(node->children);
-	while (entry) {
-		lchild = entry->data;
-		if (lchild == p)
-			break;
-		entry = g_list_next(entry);
-	}
-
+	entry = g_list_find(node->children, p);
 	if (!entry)
 		node->children = g_list_append(node->children, p);
 }
