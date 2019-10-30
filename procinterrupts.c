@@ -214,7 +214,7 @@ GList* collect_full_irq_list()
 		*c = 0;
 		number = strtoul(line, NULL, 10);
 
-		info = calloc(sizeof(struct irq_info), 1);
+		info = calloc(1, sizeof(struct irq_info));
 		if (info) {
 			info->irq = number;
 			if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
