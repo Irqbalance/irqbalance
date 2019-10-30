@@ -29,8 +29,6 @@
 #include <systemd/sd-journal.h>
 #endif
 
-extern int package_count;
-extern int cache_domain_count;
 extern int core_count;
 extern char *classes[];
 

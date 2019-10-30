@@ -44,7 +44,6 @@ GList *cpus;
 GList *cache_domains;
 GList *packages;
 
-int package_count;
 int cache_domain_count;
 int core_count;
 
@@ -201,7 +200,6 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		package->obj_type_list = &packages;
 		package->number = packageid;
 		packages = g_list_append(packages, package);
-		package_count++;
 	}
 
 	entry = g_list_first(package->children);
@@ -558,7 +556,6 @@ void clear_cpu_tree(void)
 {
 	g_list_free_full(packages, free_cpu_topo);
 	packages = NULL;
-	package_count = 0;
 
 	g_list_free_full(cache_domains, free_cpu_topo);
 	cache_domains = NULL;
