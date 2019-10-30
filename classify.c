@@ -275,7 +275,7 @@ static void add_banned_irq(int irq, GList **list)
 	if (entry)
 		return;
 
-	new = calloc(sizeof(struct irq_info), 1);
+	new = calloc(1, sizeof(struct irq_info));
 	if (!new) {
 		log(TO_CONSOLE, LOG_WARNING, "No memory to ban irq %d\n", irq);
 		return;
@@ -366,7 +366,7 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 		return NULL;
 	}
 
-	new = calloc(sizeof(struct irq_info), 1);
+	new = calloc(1, sizeof(struct irq_info));
 	if (!new)
 		return NULL;
 

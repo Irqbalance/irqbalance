@@ -192,7 +192,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 	}
 
 	if (!entry) {
-		package = calloc(sizeof(struct topo_obj), 1);
+		package = calloc(1, sizeof(struct topo_obj));
 		if (!package)
 			return NULL;
 		package->mask = package_mask;
@@ -238,7 +238,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 	}
 
 	if (!entry) {
-		cache = calloc(sizeof(struct topo_obj), 1);
+		cache = calloc(1, sizeof(struct topo_obj));
 		if (!cache)
 			return NULL;
 		cache->obj_type = OBJ_TYPE_CACHE;
@@ -302,7 +302,7 @@ static void do_one_cpu(char *path)
 	if (offline_status)
 		return;
 
-	cpu = calloc(sizeof(struct topo_obj), 1);
+	cpu = calloc(1, sizeof(struct topo_obj));
 	if (!cpu)
 		return;
 
