@@ -33,16 +33,33 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #include <glib.h>
 
 #include "irqbalance.h"
 
+#define SYSFS_NODE_PATH "/sys/devices/system/node"
+
 extern char *banned_cpumask_from_ui;
+
+static struct topo_obj unspecified_node_template = {
+	.load = 0,
+	.number = -1,
+	.obj_type = OBJ_TYPE_NODE,
+	.mask = CPU_MASK_ALL,
+	.interrupts = NULL,
+	.children = NULL,
+	.parent = NULL,
+	.obj_type_list = &numa_nodes,
+};
+
+static struct topo_obj unspecified_node;
 
 GList *cpus;
 GList *cache_domains;
 GList *packages;
+GList *numa_nodes = NULL;
 
 int cache_domain_count;
 int core_count;
@@ -130,6 +147,139 @@ out:
 	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
+}
+
+static void add_one_node(const char *nodename)
+{
+	char path[PATH_MAX];
+	struct topo_obj *new;
+
+	new = calloc(1, sizeof(struct topo_obj));
+	if (!new)
+		return;
+
+	cpus_clear(new->mask);
+	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);
+	process_one_line(path, get_mask_from_bitmap, &new->mask);
+
+	new->obj_type = OBJ_TYPE_NODE;
+	new->number = strtoul(&nodename[4], NULL, 10);
+	new->obj_type_list = &numa_nodes;
+	numa_nodes = g_list_append(numa_nodes, new);
+}
+
+void build_numa_node_list(void)
+{
+	DIR *dir;
+	struct dirent *entry;
+
+	/*
+	 * Note that we copy the unspcified node from the template here
+	 * in the event we just freed the object tree during a rescan.
+	 * This ensures we don't get stale list pointers anywhere
+	 */
+	memcpy(&unspecified_node, &unspecified_node_template, sizeof (struct topo_obj));
+
+	/*
+	 * Add the unspecified node
+	 */
+	numa_nodes = g_list_append(numa_nodes, &unspecified_node);
+
+	if (!numa_avail)
+		return;
+
+	dir = opendir(SYSFS_NODE_PATH);
+	if (!dir)
+		return;
+
+	do {
+		entry = readdir(dir);
+		if (!entry)
+			break;
+		if ((entry->d_type == DT_DIR) &&
+		    (strncmp(entry->d_name, "node", 4) == 0) &&
+		    isdigit(entry->d_name[4])) {
+			add_one_node(entry->d_name);
+		}
+	} while (entry);
+	closedir(dir);
+}
+
+static void free_numa_node(gpointer data)
+{
+	struct topo_obj *obj = data;
+	g_list_free(obj->children);
+	g_list_free(obj->interrupts);
+
+	if (data != &unspecified_node)
+		free(data);
+}
+
+void free_numa_node_list(void)
+{
+	g_list_free_full(numa_nodes, free_numa_node);
+	numa_nodes = NULL;
+}
+
+static gint compare_node(gconstpointer a, gconstpointer b)
+{
+	const struct topo_obj *ai = a;
+	const struct topo_obj *bi = b;
+
+	return (ai->number == bi->number) ? 0 : 1;
+}
+
+void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused)))
+{
+	GList *entry;
+	struct topo_obj *node;
+	int len;
+
+	len = g_list_length(p->numa_nodes);
+
+	if (len == 0) {
+		return;
+	} else if (len > 1) {
+		for_each_object(p->children, connect_cpu_mem_topo, NULL);
+		return;
+	}
+
+	entry = g_list_first(p->numa_nodes);
+	node = entry->data;
+
+	if (p->obj_type == OBJ_TYPE_PACKAGE && !p->parent)
+		p->parent = node;
+
+	entry = g_list_find(node->children, p);
+	if (!entry)
+		node->children = g_list_append(node->children, p);
+}
+
+void dump_numa_node_info(struct topo_obj *d, void *unused __attribute__((unused)))
+{
+	char buffer[4096];
+
+	log(TO_CONSOLE, LOG_INFO, "NUMA NODE NUMBER: %d\n", d->number);
+	cpumask_scnprintf(buffer, 4096, d->mask);
+	log(TO_CONSOLE, LOG_INFO, "LOCAL CPU MASK: %s\n", buffer);
+	log(TO_CONSOLE, LOG_INFO, "\n");
+}
+
+struct topo_obj *get_numa_node(int nodeid)
+{
+	struct topo_obj find;
+	GList *entry;
+
+	if (!numa_avail)
+		return &unspecified_node;
+
+	if (nodeid == -1)
+		return &unspecified_node;
+
+	find.number = nodeid;
+
+	entry = g_list_find_custom(numa_nodes, &find, compare_node);
+	return entry ? entry->data : NULL;
 }
 
 static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)

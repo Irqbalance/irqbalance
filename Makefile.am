@@ -38,7 +38,7 @@ sbin_PROGRAMS += irqbalance-ui
 endif
 
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
-	irqlist.c numa.c placement.c procinterrupts.c
+	irqlist.c placement.c procinterrupts.c
 irqbalance_LDADD = $(LIBCAP_NG_LIBS) $(GLIB2_LIBS)
 if IRQBALANCEUI
 irqbalance_ui_SOURCES = $(UI_DIR)/helpers.c $(UI_DIR)/irqbalance-ui.c \
