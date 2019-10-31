@@ -78,10 +78,7 @@ extern long HZ;
 /*
  * Numa node access routines
  */
-extern void build_numa_node_list(void);
-extern void free_numa_node_list(void);
 extern void dump_numa_node_info(struct topo_obj *node, void *data);
-extern void connect_cpu_mem_topo(struct topo_obj *p, void *data);
 extern struct topo_obj *get_numa_node(int nodeid);
 
 /*

@@ -208,14 +208,12 @@ static void parse_command_line(int argc, char **argv)
  */
 static void build_object_tree(void)
 {
-	build_numa_node_list();
 	parse_cpu_tree();
 	rebuild_irq_db();
 }
 
 static void free_object_tree(void)
 {
-	free_numa_node_list();
 	clear_cpu_tree();
 	free_irq_db();
 }

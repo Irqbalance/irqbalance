@@ -168,7 +168,7 @@ static void add_one_node(const char *nodename)
 	numa_nodes = g_list_append(numa_nodes, new);
 }
 
-void build_numa_node_list(void)
+static void build_numa_node_list(void)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -205,22 +205,6 @@ void build_numa_node_list(void)
 	closedir(dir);
 }
 
-static void free_numa_node(gpointer data)
-{
-	struct topo_obj *obj = data;
-	g_list_free(obj->children);
-	g_list_free(obj->interrupts);
-
-	if (data != &unspecified_node)
-		free(data);
-}
-
-void free_numa_node_list(void)
-{
-	g_list_free_full(numa_nodes, free_numa_node);
-	numa_nodes = NULL;
-}
-
 static gint compare_node(gconstpointer a, gconstpointer b)
 {
 	const struct topo_obj *ai = a;
@@ -229,7 +213,7 @@ static gint compare_node(gconstpointer a, gconstpointer b)
 	return (ai->number == bi->number) ? 0 : 1;
 }
 
-void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused)))
+static void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused)))
 {
 	GList *entry;
 	struct topo_obj *node;
@@ -620,7 +604,7 @@ void clear_work_stats(void)
 }
 
 
-void parse_cpu_tree(void)
+static void build_cpu_tree(void)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -653,7 +637,12 @@ void parse_cpu_tree(void)
 
 	if (debug_mode)
 		dump_tree();
+}
 
+void parse_cpu_tree(void)
+{
+	build_numa_node_list();
+	build_cpu_tree();
 }
 
 static void free_cpu_topo(gpointer data)
@@ -663,7 +652,11 @@ static void free_cpu_topo(gpointer data)
 	g_list_free(obj->children);
 	g_list_free(obj->interrupts);
 	g_list_free(obj->numa_nodes);
-	free(obj);
+
+	if (obj->obj_type == OBJ_TYPE_NODE && data == &unspecified_node)
+		return;
+	else
+		free(obj);
 }
 
 /*
@@ -672,6 +665,9 @@ static void free_cpu_topo(gpointer data)
  */
 void clear_cpu_tree(void)
 {
+	g_list_free_full(numa_nodes, free_cpu_topo);
+	numa_nodes = NULL;
+
 	g_list_free_full(packages, free_cpu_topo);
 	packages = NULL;
 
