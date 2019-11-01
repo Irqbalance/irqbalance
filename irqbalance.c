@@ -52,6 +52,7 @@ int foreground_mode;
 int numa_avail;
 int journal_logging = 0;
 int need_rescan;
+int need_rebuild;
 unsigned int log_mask = TO_ALL;
 const char *log_indent;
 unsigned long power_thresh = ULONG_MAX;
@@ -260,14 +261,25 @@ gboolean scan(gpointer data __attribute__((unused)))
 
 
 	/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-	if (need_rescan) {
+	if (need_rescan || need_rebuild) {
+		int try_times = 0;
+
 		need_rescan = 0;
 		cycle_count = 0;
 		log(TO_CONSOLE, LOG_INFO, "Rescanning cpu topology \n");
 		clear_work_stats();
 
-		free_object_tree();
-		build_object_tree();
+		do {
+			free_object_tree();
+			if (++try_times > 3) {
+				log(TO_CONSOLE, LOG_WARNING, "Rescanning cpu topology: fail\n");
+				goto out;
+			}
+
+			need_rebuild = 0;
+			build_object_tree();
+		} while (need_rebuild);
+
 		for_each_irq(NULL, force_rebalance_irq, NULL);
 		parse_proc_interrupts();
 		parse_proc_stat();
@@ -284,6 +296,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 	calculate_placement();
 	activate_mappings();
 
+out:
 	if (debug_mode)
 		dump_tree();
 	if (one_shot_mode)

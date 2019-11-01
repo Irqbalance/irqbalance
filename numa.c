@@ -58,8 +58,10 @@ static void add_one_node(const char *nodename)
 	struct topo_obj *new;
 
 	new = calloc(1, sizeof(struct topo_obj));
-	if (!new)
+	if (!new) {
+		need_rebuild = 1;
 		return;
+	}
 
 	cpus_clear(new->mask);
 	sprintf(path, "%s/%s/cpumap", SYSFS_NODE_PATH, nodename);

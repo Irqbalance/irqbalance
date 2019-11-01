@@ -67,6 +67,7 @@ extern int debug_mode;
 extern int journal_logging;
 extern int one_shot_mode;
 extern int need_rescan;
+extern int need_rebuild;
 extern unsigned long long cycle_count;
 extern unsigned long power_thresh;
 extern unsigned long deepest_cache;

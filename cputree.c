@@ -176,8 +176,10 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 
 	if (!entry) {
 		package = calloc(1, sizeof(struct topo_obj));
-		if (!package)
+		if (!package) {
+			need_rebuild = 1;
 			return NULL;
+		}
 		package->mask = package_mask;
 		package->obj_type = OBJ_TYPE_PACKAGE;
 		package->obj_type_list = &packages;
@@ -214,8 +216,10 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 
 	if (!entry) {
 		cache = calloc(1, sizeof(struct topo_obj));
-		if (!cache)
+		if (!cache) {
+			need_rebuild = 1;
 			return NULL;
+		}
 		cache->obj_type = OBJ_TYPE_CACHE;
 		cache->mask = cache_mask;
 		cache->number = cache_domain_count;
@@ -271,8 +275,10 @@ static void do_one_cpu(char *path)
 		return;
 
 	cpu = calloc(1, sizeof(struct topo_obj));
-	if (!cpu)
+	if (!cpu) {
+		need_rebuild = 1;
 		return;
+	}
 
 	cpu->obj_type = OBJ_TYPE_CPU;
 
@@ -372,8 +378,8 @@ static void do_one_cpu(char *path)
 	cpus_and(package_mask, package_mask, unbanned_cpus);
 
 	cache = add_cpu_to_cache_domain(cpu, cache_mask, nodeid);
-	add_cache_domain_to_package(cache, packageid, package_mask,
-	    nodeid);
+	if (cache)
+		add_cache_domain_to_package(cache, packageid, package_mask, nodeid);
 
 	cpu->obj_type_list = &cpus;
 	cpus = g_list_append(cpus, cpu);
