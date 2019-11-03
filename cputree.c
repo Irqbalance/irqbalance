@@ -138,7 +138,7 @@ static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)
 	struct topo_obj *node;
 
 	node = get_numa_node(nodeid);
-	if (!node || (numa_avail && (node->number == -1)))
+	if (!node || (numa_avail && (node->number == NUMA_NO_NODE)))
 		return;
 
 	entry = g_list_find(obj->numa_nodes, node);
@@ -193,7 +193,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		cache->parent = package;
 	}
 
-	if (!numa_avail || (nodeid > -1))
+	if (!numa_avail || (nodeid > NUMA_NO_NODE))
 		add_numa_node_to_topo_obj(package, nodeid);
 
 	return package;
@@ -234,7 +234,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cpu->parent = (struct topo_obj *)cache;
 	}
 
-	if (!numa_avail || (nodeid > -1))
+	if (!numa_avail || (nodeid > NUMA_NO_NODE))
 		add_numa_node_to_topo_obj(cache, nodeid);
 
 	return cache;
@@ -340,7 +340,7 @@ static void do_one_cpu(char *path)
 		process_one_line(new_path, get_mask_from_bitmap, &cache_mask);
 	}
 
-	nodeid=-1;
+	nodeid = NUMA_NO_NODE;
 	if (numa_avail) {
 		struct topo_obj *node;
 

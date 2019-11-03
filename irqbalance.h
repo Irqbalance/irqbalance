@@ -29,6 +29,8 @@
 #include <systemd/sd-journal.h>
 #endif
 
+#define	NUMA_NO_NODE (-1)
+
 extern int core_count;
 extern char *classes[];
 

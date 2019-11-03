@@ -41,7 +41,7 @@ GList *numa_nodes = NULL;
 
 static struct topo_obj unspecified_node_template = {
 	.load = 0,
-	.number = -1,
+	.number = NUMA_NO_NODE,
 	.obj_type = OBJ_TYPE_NODE,
 	.mask = CPU_MASK_ALL,
 	.interrupts = NULL,
@@ -178,7 +178,7 @@ struct topo_obj *get_numa_node(int nodeid)
 	if (!numa_avail)
 		return &unspecified_node;
 
-	if (nodeid == -1)
+	if (nodeid == NUMA_NO_NODE)
 		return &unspecified_node;
 
 	find.number = nodeid;
