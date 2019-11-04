@@ -51,6 +51,7 @@ void dump_tree(void);
 
 void activate_mappings(void);
 void clear_cpu_tree(void);
+void free_cpu_topo(gpointer data);
 
 /*===================NEW BALANCER FUNCTIONS============================*/
 

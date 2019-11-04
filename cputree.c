@@ -508,7 +508,7 @@ void parse_cpu_tree(void)
 
 }
 
-static void free_cpu_topo(gpointer data)
+void free_cpu_topo(gpointer data)
 {
 	struct topo_obj *obj = data;
 
