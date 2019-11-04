@@ -646,7 +646,7 @@ int main(int argc, char** argv)
 
 
 	/* On single core UP systems irqbalance obviously has no work to do */
-	if (core_count<2) {
+	if (num_online_cpus() <= 1) {
 		char *msg = "Balancing is ineffective on systems with a "
 			    "single cpu.  Shutting down\n";
 
