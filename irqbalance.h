@@ -29,7 +29,8 @@
 #include <systemd/sd-journal.h>
 #endif
 
-extern int core_count;
+#define	NUMA_NO_NODE (-1)
+
 extern char *classes[];
 
 extern void parse_cpu_tree(void);

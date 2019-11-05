@@ -59,18 +59,10 @@
  * for_each_cpu_mask(cpu, mask)		for-loop cpu over mask
  *
  * int num_online_cpus()		Number of online CPUs
- * int num_possible_cpus()		Number of all possible CPUs
- * int num_present_cpus()		Number of present CPUs
  *
  * int cpu_online(cpu)			Is some cpu online?
- * int cpu_possible(cpu)		Is some cpu possible?
- * int cpu_present(cpu)			Is some cpu present (can schedule)?
  *
- * int any_online_cpu(mask)		First online cpu in mask
- *
- * for_each_possible_cpu(cpu)		for-loop cpu over cpu_possible_map
  * for_each_online_cpu(cpu)		for-loop cpu over cpu_online_map
- * for_each_present_cpu(cpu)		for-loop cpu over cpu_present_map
  *
  * Subtlety:
  * 1) The 'type-checked' form of cpu_isset() causes gcc (3.3.2, anyway)
@@ -314,87 +306,18 @@ static inline void __cpus_remap(cpumask_t *dstp, const cpumask_t *srcp,
 #endif /* NR_CPUS */
 
 /*
- * The following particular system cpumasks and operations manage
- * possible, present and online cpus.  Each of them is a fixed size
- * bitmap of size NR_CPUS.
- *
- *  #ifdef CONFIG_HOTPLUG_CPU
- *     cpu_possible_map - has bit 'cpu' set iff cpu is populatable
- *     cpu_present_map  - has bit 'cpu' set iff cpu is populated
- *     cpu_online_map   - has bit 'cpu' set iff cpu available to scheduler
- *  #else
- *     cpu_possible_map - has bit 'cpu' set iff cpu is populated
- *     cpu_present_map  - copy of cpu_possible_map
- *     cpu_online_map   - has bit 'cpu' set iff cpu available to scheduler
- *  #endif
- *
- *  In either case, NR_CPUS is fixed at compile time, as the static
- *  size of these bitmaps.  The cpu_possible_map is fixed at boot
- *  time, as the set of CPU id's that it is possible might ever
- *  be plugged in at anytime during the life of that system boot.
- *  The cpu_present_map is dynamic(*), representing which CPUs
- *  are currently plugged in.  And cpu_online_map is the dynamic
- *  subset of cpu_present_map, indicating those CPUs available
- *  for scheduling.
- *
- *  If HOTPLUG is enabled, then cpu_possible_map is forced to have
- *  all NR_CPUS bits set, otherwise it is just the set of CPUs that
- *  ACPI reports present at boot.
- *
- *  If HOTPLUG is enabled, then cpu_present_map varies dynamically,
- *  depending on what ACPI reports as currently plugged in, otherwise
- *  cpu_present_map is just a copy of cpu_possible_map.
- *
- *  (*) Well, cpu_present_map is dynamic in the hotplug case.  If not
- *      hotplug, it's a copy of cpu_possible_map, hence fixed at boot.
- *
- * Subtleties:
- * 1) UP arch's (NR_CPUS == 1, CONFIG_SMP not defined) hardcode
- *    assumption that their single CPU is online.  The UP
- *    cpu_{online,possible,present}_maps are placebos.  Changing them
- *    will have no useful affect on the following num_*_cpus()
- *    and cpu_*() macros in the UP case.  This ugliness is a UP
- *    optimization - don't waste any instructions or memory references
- *    asking if you're online or how many CPUs there are if there is
- *    only one CPU.
- * 2) Most SMP arch's #define some of these maps to be some
- *    other map specific to that arch.  Therefore, the following
- *    must be #define macros, not inlines.  To see why, examine
- *    the assembly code produced by the following.  Note that
- *    set1() writes phys_x_map, but set2() writes x_map:
- *        int x_map, phys_x_map;
- *        #define set1(a) x_map = a
- *        inline void set2(int a) { x_map = a; }
- *        #define x_map phys_x_map
- *        main(){ set1(3); set2(5); }
+ * cpu_online_map   - has bit 'cpu' set iff cpu available to scheduler
  */
-
-extern cpumask_t cpu_possible_map;
 extern cpumask_t cpu_online_map;
-extern cpumask_t cpu_present_map;
 
 #if NR_CPUS > 1
 #define num_online_cpus()	cpus_weight(cpu_online_map)
-#define num_possible_cpus()	cpus_weight(cpu_possible_map)
-#define num_present_cpus()	cpus_weight(cpu_present_map)
 #define cpu_online(cpu)		cpu_isset((cpu), cpu_online_map)
-#define cpu_possible(cpu)	cpu_isset((cpu), cpu_possible_map)
-#define cpu_present(cpu)	cpu_isset((cpu), cpu_present_map)
 #else
 #define num_online_cpus()	1
-#define num_possible_cpus()	1
-#define num_present_cpus()	1
 #define cpu_online(cpu)		((cpu) == 0)
-#define cpu_possible(cpu)	((cpu) == 0)
-#define cpu_present(cpu)	((cpu) == 0)
 #endif
 
-int highest_possible_processor_id(void);
-#define any_online_cpu(mask) __any_online_cpu(&(mask))
-int __any_online_cpu(const cpumask_t *mask);
-
-#define for_each_possible_cpu(cpu)  for_each_cpu_mask((cpu), cpu_possible_map)
 #define for_each_online_cpu(cpu)  for_each_cpu_mask((cpu), cpu_online_map)
-#define for_each_present_cpu(cpu) for_each_cpu_mask((cpu), cpu_present_map)
 
 #endif /* __LINUX_CPUMASK_H */

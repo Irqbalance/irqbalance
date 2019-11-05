@@ -303,7 +303,7 @@ void parse_proc_interrupts(void)
 			c=c2;
 			cpunr++;
 		}
-		if (cpunr != core_count) {
+		if (cpunr != num_online_cpus()) {
 			need_rescan = 1;
 			break;
 		}

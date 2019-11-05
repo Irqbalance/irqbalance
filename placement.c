@@ -45,7 +45,7 @@ static void find_best_object(struct topo_obj *d, void *data)
 	/*
  	 * Don't consider the unspecified numa node here
  	 */
-	if (numa_avail && (d->obj_type == OBJ_TYPE_NODE) && (d->number == -1))
+	if (numa_avail && (d->obj_type == OBJ_TYPE_NODE) && (d->number == NUMA_NO_NODE))
 		return;
 
 	/*
@@ -130,7 +130,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 	if ((info->level == BALANCE_NONE) && cpus_empty(banned_cpus))
 		return;
 
-	if (irq_numa_node(info)->number != -1 || !numa_avail) {
+	if (irq_numa_node(info)->number != NUMA_NO_NODE || !numa_avail) {
 		/*
 		 * Need to make sure this node is elligible for migration
 		 * given the banned cpu list

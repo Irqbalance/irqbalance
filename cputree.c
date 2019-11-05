@@ -45,12 +45,11 @@ GList *cache_domains;
 GList *packages;
 
 int cache_domain_count;
-int core_count;
 
 /* Users want to be able to keep interrupts away from some cpus; store these in a cpumask_t */
 cpumask_t banned_cpus;
 
-cpumask_t cpu_possible_map;
+cpumask_t cpu_online_map;
 
 /* 
    it's convenient to have the complement of banned_cpus available so that 
@@ -138,7 +137,7 @@ static void add_numa_node_to_topo_obj(struct topo_obj *obj, int nodeid)
 	struct topo_obj *node;
 
 	node = get_numa_node(nodeid);
-	if (!node || (numa_avail && (node->number == -1)))
+	if (!node || (numa_avail && (node->number == NUMA_NO_NODE)))
 		return;
 
 	entry = g_list_find(obj->numa_nodes, node);
@@ -193,7 +192,7 @@ static struct topo_obj* add_cache_domain_to_package(struct topo_obj *cache,
 		cache->parent = package;
 	}
 
-	if (!numa_avail || (nodeid > -1))
+	if (!numa_avail || (nodeid > NUMA_NO_NODE))
 		add_numa_node_to_topo_obj(package, nodeid);
 
 	return package;
@@ -234,7 +233,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 		cpu->parent = (struct topo_obj *)cache;
 	}
 
-	if (!numa_avail || (nodeid > -1))
+	if (!numa_avail || (nodeid > NUMA_NO_NODE))
 		add_numa_node_to_topo_obj(cache, nodeid);
 
 	return cache;
@@ -284,7 +283,7 @@ static void do_one_cpu(char *path)
 
 	cpu->number = strtoul(&path[27], NULL, 10);
 
-	cpu_set(cpu->number, cpu_possible_map);
+	cpu_set(cpu->number, cpu_online_map);
 	
 	cpu_set(cpu->number, cpu->mask);
 
@@ -297,8 +296,6 @@ static void do_one_cpu(char *path)
 	/* if the cpu is on the banned list, just don't add it */
 	if (cpus_intersects(cpu->mask, banned_cpus)) {
 		free(cpu);
-		/* even though we don't use the cpu we do need to count it */
-		core_count++;
 		return;
 	}
 
@@ -340,7 +337,7 @@ static void do_one_cpu(char *path)
 		process_one_line(new_path, get_mask_from_bitmap, &cache_mask);
 	}
 
-	nodeid=-1;
+	nodeid = NUMA_NO_NODE;
 	if (numa_avail) {
 		struct topo_obj *node;
 
@@ -383,7 +380,6 @@ static void do_one_cpu(char *path)
 
 	cpu->obj_type_list = &cpus;
 	cpus = g_list_append(cpus, cpu);
-	core_count++;
 }
 
 static void dump_irq(struct irq_info *info, void *data)
@@ -537,7 +533,7 @@ void clear_cpu_tree(void)
 
 	g_list_free_full(cpus, free_cpu_topo);
 	cpus = NULL;
-	core_count = 0;
+	cpus_clear(cpu_online_map);
 }
 
 static gint compare_cpus(gconstpointer a, gconstpointer b)
