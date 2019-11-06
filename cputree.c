@@ -299,12 +299,13 @@ static void do_one_cpu(char *path)
 		return;
 	}
 
-	cpu_set(cpu->number, package_mask);
-
 	/* try to read the package mask; if it doesn't exist assume solitary */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/core_siblings"),
 		 "%s/topology/core_siblings", path);
-	process_one_line(new_path, get_mask_from_bitmap, &package_mask);
+	if (process_one_line(new_path, get_mask_from_bitmap, &package_mask)) {
+		cpus_clear(package_mask);
+		cpu_set(cpu->number, package_mask);
+	}
 
 	/* try to read the package id */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/physical_package_id"),
@@ -313,7 +314,6 @@ static void do_one_cpu(char *path)
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available */
-	cpu_set(cpu->number, cache_mask);
 	max_cache_index = 0;
 	cache_index = 1;
 	do {
