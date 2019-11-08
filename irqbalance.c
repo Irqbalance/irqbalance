@@ -65,6 +65,7 @@ int sleep_interval = SLEEP_INTERVAL;
 int last_interval;
 GMainLoop *main_loop;
 
+char *cpu_ban_string = NULL;
 char *banned_cpumask_from_ui = NULL;
 
 static void sleep_approx(int seconds)
@@ -469,7 +470,14 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				free(irq_string);
 			} else if (!(strncmp(buff + strlen("settings "), "cpus ",
 							strlen("cpus")))) {
-				char *cpu_ban_string = malloc(
+				/*
+				 * if cpu_ban_string has not been consumed,
+				 * just ignore this request.
+				 */
+				if (cpu_ban_string != NULL)
+					goto out_close;
+
+				cpu_ban_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings cpus ")));
 
 				if (!cpu_ban_string)
@@ -479,9 +487,16 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
 				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
+					free(cpu_ban_string);
+					cpu_ban_string = NULL;;
+				} else {
+					/*
+					 * don't free cpu_ban_string at here, it will be
+					 * released after we have store it to @banned_cpus
+					 * in setup_banned_cpus function.
+					 */
+					need_rescan = 1;
 				}
-				need_rescan = 1;
-				free(cpu_ban_string);
 			}
 		}
 		if (!strncmp(buff, "setup", strlen("setup"))) {

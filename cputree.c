@@ -39,6 +39,7 @@
 #include "irqbalance.h"
 
 extern char *banned_cpumask_from_ui;
+extern char *cpu_ban_string;
 
 GList *cpus;
 GList *cache_domains;
@@ -104,9 +105,13 @@ static void setup_banned_cpus(void)
 	cpus_clear(nohz_full);
 
 	/* A manually specified cpumask overrides auto-detection. */
-	if (banned_cpumask_from_ui != NULL) {
+	if (cpu_ban_string != NULL && banned_cpumask_from_ui != NULL) {
 		cpulist_parse(banned_cpumask_from_ui,
 			strlen(banned_cpumask_from_ui), banned_cpus);
+		/* release it safety, it was allocated in sock_handle */
+		free(cpu_ban_string);
+		cpu_ban_string = NULL;
+		banned_cpumask_from_ui = NULL;
 		goto out;
 	}
 	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
