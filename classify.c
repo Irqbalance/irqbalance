@@ -187,20 +187,11 @@ static int map_pci_irq_class(unsigned int pci_class)
 static unsigned int read_pci_data(const char *devpath, const char* file)
 {
 	char path[PATH_MAX];
-	FILE *fd;
 	unsigned int data = PCI_INVAL_DATA;
 
 	sprintf(path, "%s/%s", devpath, file);
-
-	fd = fopen(path, "r");
-
-	if (!fd) {
-		log(TO_CONSOLE, LOG_WARNING, "PCI: can't open file:%s\n", path);
-		return data;
-	}
-
-	(void) fscanf(fd, "%x", &data);
-	fclose(fd);
+	if (process_one_line(path, get_hex, &data) < 0)
+		log(TO_CONSOLE, LOG_WARNING, "PCI: can't get from file:%s\n", path);
 
 	return data;
 }
@@ -349,7 +340,6 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 	struct irq_info *new;
 	int numa_node;
 	char path[PATH_MAX];
-	FILE *fd;
 	GList *entry;
 
 	/*
@@ -394,11 +384,7 @@ get_numa_node:
 	numa_node = NUMA_NO_NODE;
 	if (devpath != NULL && numa_avail) {
 		sprintf(path, "%s/numa_node", devpath);
-		fd = fopen(path, "r");
-		if (fd) {
-			fscanf(fd, "%d", &numa_node);
-			fclose(fd);
-		}
+		process_one_line(path, get_int, &numa_node);
 	}
 
 	if (pol->numa_node_set == 1)
@@ -619,7 +605,6 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 {
 	struct dirent *entry;
 	DIR *msidir;
-	FILE *fd;
 	int irqnum;
 	struct irq_info *new, hint;
 	char path[PATH_MAX];
@@ -661,10 +646,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 	}
 
 	sprintf(path, "%s/%s/irq", SYSPCI_DIR, dirname);
-	fd = fopen(path, "r");
-	if (!fd)
-		return;
-	if (fscanf(fd, "%d", &irqnum) < 0)
+	if (process_one_line(path, get_int, &irqnum) < 0)
 		goto done;
 
 	/*
@@ -693,7 +675,6 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 	}
 
 done:
-	fclose(fd);
 	return;
 }
 

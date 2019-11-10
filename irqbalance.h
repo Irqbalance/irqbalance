@@ -163,6 +163,8 @@ extern unsigned int log_mask;
 
 extern int process_one_line(char *path, void (*cb)(char *line, void *data), void *data);
 extern void get_mask_from_bitmap(char *line, void *mask);
+extern void get_int(char *line, void *data);
+extern void get_hex(char *line, void *data);
 
 #endif /* __INCLUDE_GUARD_IRQBALANCE_H_ */
 
