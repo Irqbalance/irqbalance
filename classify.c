@@ -285,17 +285,6 @@ void add_cl_banned_irq(int irq)
 	add_banned_irq(irq, &cl_banned_irqs);
 }
 
-static int is_banned_irq(int irq)
-{
-	GList *entry;
-	struct irq_info find;
-
-	find.irq = irq;
-
-	entry = g_list_find_custom(banned_irqs, &find, compare_ints);
-	return entry ? 1:0;
-}
-
 gint substr_find(gconstpointer a, gconstpointer b)
 {
 	if (strstr(b, a))
@@ -340,21 +329,6 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 	struct irq_info *new;
 	int numa_node;
 	char path[PATH_MAX];
-	GList *entry;
-
-	/*
-	 * First check to make sure this isn't a duplicate entry
-	 */
-	entry = g_list_find_custom(interrupts_db, hint, compare_ints);
-	if (entry) {
-		log(TO_CONSOLE, LOG_INFO, "DROPPING DUPLICATE ENTRY FOR IRQ %d on path %s\n", irq, devpath);
-		return NULL;
-	}
-
-	if (is_banned_irq(irq)) {
-		log(TO_ALL, LOG_INFO, "SKIPPING BANNED IRQ %d\n", irq);
-		return NULL;
-	}
 
 	new = calloc(1, sizeof(struct irq_info));
 	if (!new)
