@@ -78,6 +78,16 @@ int process_one_line(char *path, void (*cb)(char *line, void *data), void *data)
 	return ret;
 }
 
+void get_hex(char *line, void *data)
+{
+	*(int *)data = strtoul(line, NULL, 16);
+}
+
+void get_int(char *line, void *data)
+{
+	*(int *)data = strtoul(line, NULL, 10);
+}
+
 void get_mask_from_bitmap(char *line, void *mask)
 {
 	cpumask_parse_user(line, strlen(line), *(cpumask_t *)mask);
@@ -244,20 +254,6 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 	return cache;
 }
 
-static void get_offline_status(char *line, void *data)
-{
-	int *status = (int *)data;
-
-	*status = (line && line[0] == '0') ? 1 : 0;
-}
-
-static void get_packageid(char *line, void *data)
-{
-	int *packageid = (int *)data;
-
-	*packageid = strtoul(line, NULL, 10);
-}
-
 #define ADJ_SIZE(r,s) PATH_MAX-strlen(r)-strlen(#s) 
 static void do_one_cpu(char *path)
 {
@@ -270,12 +266,12 @@ static void do_one_cpu(char *path)
 	int nodeid;
 	int packageid = 0;
 	unsigned int max_cache_index, cache_index, cache_stat;
-	int offline_status = 0;
+	int online_status = 1;
 
 	/* skip offline cpus */
 	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
-	process_one_line(new_path, get_offline_status, &offline_status);
-	if (offline_status)
+	process_one_line(new_path, get_int, &online_status);
+	if (!online_status)
 		return;
 
 	cpu = calloc(1, sizeof(struct topo_obj));
@@ -315,7 +311,7 @@ static void do_one_cpu(char *path)
 	/* try to read the package id */
 	snprintf(new_path, ADJ_SIZE(path, "/topology/physical_package_id"),
 		 "%s/topology/physical_package_id", path);
-	process_one_line(new_path, get_packageid, &packageid);
+	process_one_line(new_path, get_int, &packageid);
 
 	/* try to read the cache mask; if it doesn't exist assume solitary */
 	/* We want the deepest cache level available */
