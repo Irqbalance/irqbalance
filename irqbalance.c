@@ -702,6 +702,8 @@ int main(int argc, char** argv)
 out:
 	free_object_tree();
 	free_cl_opts();
+	if (polscript)
+		free(polscript);
 
 	/* Remove pidfile */
 	if (!foreground_mode && pidfile)
