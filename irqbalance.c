@@ -153,6 +153,7 @@ static void parse_command_line(int argc, char **argv)
 				add_cl_banned_irq((int)val);
 				break;
 			case 'l':
+				free(polscript);
 				polscript = strdup(optarg);
 				break;
 			case 'm':
@@ -702,8 +703,7 @@ int main(int argc, char** argv)
 out:
 	free_object_tree();
 	free_cl_opts();
-	if (polscript)
-		free(polscript);
+	free(polscript);
 
 	/* Remove pidfile */
 	if (!foreground_mode && pidfile)
