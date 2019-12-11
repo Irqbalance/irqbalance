@@ -572,6 +572,28 @@ static int check_for_irq_ban(int irq, GList *proc_interrupts)
 	return 0;
 }
 
+static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupts)
+{
+	struct irq_info *new;
+	struct user_irq_policy pol;
+	int irq = hint->irq;
+
+	new = get_irq_info(irq);
+	if (new)
+		return;
+
+	/* Set NULL devpath for the irq has no sysfs entries */
+	get_irq_user_policy(path, irq, &pol);
+	if ((pol.ban == 1) || check_for_irq_ban(irq, proc_interrupts)) { /*FIXME*/
+		add_banned_irq(irq, &banned_irqs);
+		new = get_irq_info(irq);
+	} else
+		new = add_one_irq_to_db(path, hint, &pol);
+
+	if (!new)
+		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
+}
+
 /*
  * Figures out which interrupt(s) relate to the device we"re looking at in dirname
  */
@@ -580,10 +602,9 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 	struct dirent *entry;
 	DIR *msidir;
 	int irqnum;
-	struct irq_info *new, hint;
+	struct irq_info hint;
 	char path[PATH_MAX];
 	char devpath[PATH_MAX];
-	struct user_irq_policy pol;
 
 	sprintf(path, "%s/%s/msi_irqs", SYSPCI_DIR, dirname);
 	sprintf(devpath, "%s/%s", SYSPCI_DIR, dirname);
@@ -600,19 +621,9 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
 			if (irqnum) {
-				new = get_irq_info(irqnum);
-				if (new)
-					continue;
-				get_irq_user_policy(devpath, irqnum, &pol);
-				if ((pol.ban == 1) || (check_for_irq_ban(irqnum, tmp_irqs))) {
-					add_banned_irq(irqnum, &banned_irqs);
-					continue;
-				}
 				hint.irq = irqnum;
 				hint.type = IRQ_TYPE_MSIX;
-				new = add_one_irq_to_db(devpath, &hint, &pol);
-				if (!new)
-					continue;
+				add_new_irq(devpath, &hint, tmp_irqs);
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -632,20 +643,9 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 #else
 	if (irqnum) {
 #endif
-		new = get_irq_info(irqnum);
-		if (new)
-			goto done;
-		get_irq_user_policy(devpath, irqnum, &pol);
-		if ((pol.ban == 1) || (check_for_irq_ban(irqnum, tmp_irqs))) {
-			add_banned_irq(irqnum, &banned_irqs);
-			goto done;
-		}
-
 		hint.irq = irqnum;
 		hint.type = IRQ_TYPE_LEGACY;
-		new = add_one_irq_to_db(devpath, &hint, &pol);
-		if (!new)
-			goto done;
+		add_new_irq(devpath, &hint, tmp_irqs);
 	}
 
 done:
@@ -675,32 +675,11 @@ void free_cl_opts(void)
 	g_list_free_full(cl_banned_irqs, free);
 }
 
-static void add_new_irq(int irq, struct irq_info *hint, GList *proc_interrupts)
-{
-	struct irq_info *new;
-	struct user_irq_policy pol;
-
-	new = get_irq_info(irq);
-	if (new)
-		return;
-
-	/* Set NULL devpath for the irq has no sysfs entries */
-	get_irq_user_policy(NULL, irq, &pol);
-	if ((pol.ban == 1) || check_for_irq_ban(irq, proc_interrupts)) { /*FIXME*/
-		add_banned_irq(irq, &banned_irqs);
-		new = get_irq_info(irq);
-	} else
-		new = add_one_irq_to_db(NULL, hint, &pol);
-
-	if (!new)
-		log(TO_CONSOLE, LOG_WARNING, "add_new_irq: Failed to add irq %d\n", irq);
-}
-
 static void add_missing_irq(struct irq_info *info, void *attr)
 {
 	GList *proc_interrupts = (GList *) attr;
 
-	add_new_irq(info->irq, info, proc_interrupts);
+	add_new_irq(NULL, info, proc_interrupts);
 }
 
 static void free_tmp_irqs(gpointer data)
