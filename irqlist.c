@@ -76,6 +76,7 @@ static void compute_deviations(struct topo_obj *obj, void *data)
 static void move_candidate_irqs(struct irq_info *info, void *data)
 {
 	struct load_balance_info *lb_info = data;
+	unsigned long delta_load = 0;
 
 	/* Don't rebalance irqs that don't want it */
 	if (info->level == BALANCE_NONE)
@@ -91,10 +92,17 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	if (info->load <= 1)
 		return;
 
+	if (migrate_ratio > 0) {
+		delta_load = (lb_info->adjustment_load - lb_info->min_load) / migrate_ratio;
+	}
+
 	/* If we can migrate an irq without swapping the imbalance do it. */
-	if ((lb_info->adjustment_load - info->load) > (lb_info->min_load + info->load)) {
+	if ((lb_info->min_load + info->load) - (lb_info->adjustment_load - info->load) < delta_load) {
 		lb_info->adjustment_load -= info->load;
 		lb_info->min_load += info->load;
+		if (lb_info->min_load > lb_info->adjustment_load) {
+			lb_info->min_load = lb_info->adjustment_load;
+		}
 	} else
 		return;
 

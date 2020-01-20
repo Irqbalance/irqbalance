@@ -77,6 +77,7 @@ extern char *polscript;
 extern cpumask_t banned_cpus;
 extern cpumask_t unbanned_cpus;
 extern long HZ;
+extern unsigned long migrate_ratio;
 
 /*
  * Numa node access routines

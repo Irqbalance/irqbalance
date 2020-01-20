@@ -67,6 +67,7 @@ GMainLoop *main_loop;
 
 char *cpu_ban_string = NULL;
 char *banned_cpumask_from_ui = NULL;
+unsigned long migrate_ratio = 0;
 
 static void sleep_approx(int seconds)
 {
@@ -96,6 +97,7 @@ struct option lopts[] = {
 	{"banmod", 1 , NULL, 'm'},
 	{"interval", 1 , NULL, 't'},
 	{"version", 0, NULL, 'V'},
+	{"migrateval", 1, NULL, 'e'},
 	{0, 0, 0, 0}
 };
 
@@ -103,7 +105,7 @@ static void usage(void)
 {
 	log(TO_CONSOLE, LOG_INFO, "irqbalance [--oneshot | -o] [--debug | -d] [--foreground | -f] [--journal | -j]\n");
 	log(TO_CONSOLE, LOG_INFO, "	[--powerthresh= | -p <off> | <n>] [--banirq= | -i <n>] [--banmod= | -m <module>] [--policyscript= | -l <script>]\n");
-	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>] [--interval= | -t <n>]\n");
+	log(TO_CONSOLE, LOG_INFO, "	[--pid= | -s <file>] [--deepestcache= | -c <n>] [--interval= | -t <n>] [--migrateval= | -e <n>]\n");
 }
 
 static void version(void)
@@ -118,7 +120,7 @@ static void parse_command_line(int argc, char **argv)
 	unsigned long val;
 
 	while ((opt = getopt_long(argc, argv,
-		"odfjVi:p:s:c:l:m:t:",
+		"odfjVi:p:s:c:l:m:t:e:",
 		lopts, &longind)) != -1) {
 
 		switch(opt) {
@@ -186,6 +188,9 @@ static void parse_command_line(int argc, char **argv)
 					usage();
 					exit(1);
 				}
+				break;
+			case 'e':
+				migrate_ratio = strtoul(optarg, NULL, 10);
 				break;
 		}
 	}
