@@ -471,12 +471,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				free(irq_string);
 			} else if (!(strncmp(buff + strlen("settings "), "cpus ",
 							strlen("cpus")))) {
-				/*
-				 * if cpu_ban_string has not been consumed,
-				 * just ignore this request.
-				 */
-				if (cpu_ban_string != NULL)
-					goto out_close;
+				banned_cpumask_from_ui = NULL;
+				free(cpu_ban_string);
+				cpu_ban_string = NULL;
 
 				cpu_ban_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings cpus ")));
@@ -489,15 +486,9 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
 					free(cpu_ban_string);
-					cpu_ban_string = NULL;;
-				} else {
-					/*
-					 * don't free cpu_ban_string at here, it will be
-					 * released after we have store it to @banned_cpus
-					 * in setup_banned_cpus function.
-					 */
-					need_rescan = 1;
+					cpu_ban_string = NULL;
 				}
+				need_rescan = 1;
 			}
 		}
 		if (!strncmp(buff, "setup", strlen("setup"))) {
