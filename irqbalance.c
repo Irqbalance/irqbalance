@@ -198,7 +198,7 @@ static void parse_command_line(int argc, char **argv)
 #endif
 
 /*
- * This builds our object tree.  The Heirarchy is typically pretty
+ * This builds our object tree.  The Hierarchy is typically pretty
  * straightforward.
  * At the top are numa_nodes
  * CPU packages belong to a single numa_node, unless the cache domains are in
@@ -633,7 +633,7 @@ int main(int argc, char** argv)
 
 	HZ = sysconf(_SC_CLK_TCK);
 	if (HZ == -1) {
-		log(TO_ALL, LOG_WARNING, "Unable to determin HZ defaulting to 100\n");
+		log(TO_ALL, LOG_WARNING, "Unable to determine HZ defaulting to 100\n");
 		HZ = 100;
 	}
 	
@@ -641,7 +641,7 @@ int main(int argc, char** argv)
 		int pidfd = -1;
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
-		/* Write pidfile which can be used to avoid starting mutiple instances */
+		/* Write pidfile which can be used to avoid starting multiple instances */
 		if (pidfile && (pidfd = open(pidfile,
 			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
