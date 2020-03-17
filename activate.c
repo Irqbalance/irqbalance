@@ -48,6 +48,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
+	int ret = 0;
 
 	/*
  	 * only activate mappings for irqs that have moved
@@ -70,7 +71,12 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 		return;
 
 	cpumask_scnprintf(buf, PATH_MAX, info->assigned_obj->mask);
-	fprintf(file, "%s", buf);
+	ret = fprintf(file, "%s", buf);
+	if (ret < 0) {
+		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
+		add_banned_irq(info->irq);
+		remove_one_irq_from_db(info->irq);
+	}
 	fclose(file);
 	info->moved = 0; /*migration is done*/
 }

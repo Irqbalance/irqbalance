@@ -256,7 +256,7 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
-static void add_banned_irq(int irq, GList **list)
+static void __add_banned_irq(int irq, GList **list)
 {
 	struct irq_info find, *new;
 	GList *entry;
@@ -280,9 +280,14 @@ static void add_banned_irq(int irq, GList **list)
 	return;
 }
 
+void add_banned_irq(int irq)
+{
+	__add_banned_irq(irq, &banned_irqs);
+}
+
 void add_cl_banned_irq(int irq)
 {
-	add_banned_irq(irq, &cl_banned_irqs);
+	__add_banned_irq(irq, &cl_banned_irqs);
 }
 
 gint substr_find(gconstpointer a, gconstpointer b)
@@ -374,6 +379,23 @@ get_numa_node:
 
 	log(TO_CONSOLE, LOG_INFO, "Adding IRQ %d to database\n", irq);
 	return new;
+}
+
+void remove_one_irq_from_db(int irq)
+{
+	struct irq_info find, *tmp;
+	GList *entry = NULL;
+
+	find.irq = irq;
+	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+	if (!entry)
+		return;
+
+	tmp = entry->data;
+	interrupts_db = g_list_remove(interrupts_db, tmp);
+	free(tmp);
+	log(TO_CONSOLE, LOG_INFO, "IRQ %d was removed from db.\n", irq);
+	return;
 }
 
 static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *pol)
@@ -585,7 +607,7 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 	/* Set NULL devpath for the irq has no sysfs entries */
 	get_irq_user_policy(path, irq, &pol);
 	if ((pol.ban == 1) || check_for_irq_ban(irq, proc_interrupts)) { /*FIXME*/
-		add_banned_irq(irq, &banned_irqs);
+		__add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
 		new = add_one_irq_to_db(path, hint, &pol);
