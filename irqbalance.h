@@ -162,7 +162,7 @@ extern unsigned int log_mask;
 #endif /* HAVE_LIBSYSTEMD */
 
 #define SOCKET_PATH "irqbalance"
-#define SOCKET_TMPFS "/run/irqbalance/"
+#define SOCKET_TMPFS "/run/irqbalance"
 
 extern int process_one_line(char *path, void (*cb)(char *line, void *data), void *data);
 extern void get_mask_from_bitmap(char *line, void *mask);
