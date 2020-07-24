@@ -110,6 +110,7 @@ static void setup_banned_cpus(void)
 	char buffer[4096];
 	cpumask_t nohz_full;
 	cpumask_t isolated_cpus;
+	char *env = NULL;
 
 	cpus_clear(isolated_cpus);
 	cpus_clear(nohz_full);
@@ -120,8 +121,9 @@ static void setup_banned_cpus(void)
 			strlen(banned_cpumask_from_ui), banned_cpus);
 		goto out;
 	}
-	if (getenv("IRQBALANCE_BANNED_CPUS"))  {
-		cpumask_parse_user(getenv("IRQBALANCE_BANNED_CPUS"), strlen(getenv("IRQBALANCE_BANNED_CPUS")), banned_cpus);
+	env = getenv("IRQBALANCE_BANNED_CPUS");
+	if (env && strlen(env))  {
+		cpumask_parse_user(env, strlen(env), banned_cpus);
 		goto out;
 	}
 
