@@ -195,7 +195,23 @@ static void parse_command_line(int argc, char **argv)
 		}
 	}
 }
-#endif
+#else /* ! HAVE_GETOPT_LONG */
+static void parse_command_line(int argc, char **argv)
+{
+	if (argc>1 && strstr(argv[1],"--debug")) {
+		debug_mode=1;
+		foreground_mode=1;
+	}
+	if (argc>1 && strstr(argv[1],"--foreground"))
+		foreground_mode=1;
+	if (argc>1 && strstr(argv[1],"--oneshot"))
+		one_shot_mode=1;
+	if (argc>1 && strstr(argv[1],"--journal")) {
+		journal_logging=1;
+		foreground_mode=1;
+	}
+}
+#endif /* HAVE_GETOPT_LONG */
 
 /*
  * This builds our object tree.  The Hierarchy is typically pretty
@@ -581,22 +597,8 @@ int main(int argc, char** argv)
 	sigaddset(&sigset,SIGUSR1);
 	sigaddset(&sigset,SIGUSR2);
 	sigprocmask(SIG_BLOCK, &sigset, &old_sigset);
-#ifdef HAVE_GETOPT_LONG
+
 	parse_command_line(argc, argv);
-#else /* ! HAVE_GETOPT_LONG */
-	if (argc>1 && strstr(argv[1],"--debug")) {
-		debug_mode=1;
-		foreground_mode=1;
-	}
-	if (argc>1 && strstr(argv[1],"--foreground"))
-		foreground_mode=1;
-	if (argc>1 && strstr(argv[1],"--oneshot"))
-		one_shot_mode=1;
-	if (argc>1 && strstr(argv[1],"--journal")) {
-		journal_logging=1;
-		foreground_mode=1;
-	}
-#endif /* HAVE_GETOPT_LONG */
 
 	/*
  	 * Open the syslog connection
