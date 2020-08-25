@@ -49,6 +49,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	char buf[PATH_MAX];
 	FILE *file;
 	int ret = 0;
+	cpumask_t applied_mask;
 
 	/*
  	 * only activate mappings for irqs that have moved
@@ -59,10 +60,13 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->assigned_obj)
 		return;
 
+	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
+	cpus_and(applied_mask, cpu_online_map, info->assigned_obj->mask);
+
 	/*
  	 * Don't activate anything for which we have an invalid mask 
  	 */
-	if (check_affinity(info, info->assigned_obj->mask))
+	if (check_affinity(info, applied_mask))
 		return;
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
@@ -70,7 +74,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!file)
 		return;
 
-	cpumask_scnprintf(buf, PATH_MAX, info->assigned_obj->mask);
+	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	if (ret < 0) {
 		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
