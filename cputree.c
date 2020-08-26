@@ -127,6 +127,12 @@ static void setup_banned_cpus(void)
 		goto out;
 	}
 
+	env = getenv("IRQBALANCE_BANNED_CPULIST");
+	if (env && strlen(env)) {
+		cpulist_parse(env, strlen(env), banned_cpus);
+		goto out;
+	}
+
 	path = "/sys/devices/system/cpu/isolated";
 	process_one_line(path, get_mask_from_cpulist, &isolated_cpus);
 
