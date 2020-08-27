@@ -263,6 +263,7 @@ static void do_one_cpu(char *path)
 {
 	struct topo_obj *cpu;
 	char new_path[PATH_MAX];
+	char *online_path ="/sys/devices/system/cpu/online";
 	cpumask_t cache_mask, package_mask;
 	struct topo_obj *cache;
 	DIR *dir;
@@ -270,12 +271,18 @@ static void do_one_cpu(char *path)
 	int nodeid;
 	int packageid = 0;
 	unsigned int max_cache_index, cache_index, cache_stat;
-	int online_status = 1;
+	cpumask_t online_cpus;
+	char *cpunrptr = NULL;
+	int cpunr = -1;
 
 	/* skip offline cpus */
-	snprintf(new_path, ADJ_SIZE(path,"/online"), "%s/online", path);
-	process_one_line(new_path, get_int, &online_status);
-	if (!online_status)
+	cpus_clear(online_cpus);
+	process_one_line(online_path, get_mask_from_cpulist, &online_cpus);
+	/* Get the current cpu number from the path */
+	cpunrptr = rindex(path, '/');
+	cpunrptr += 4;
+	cpunr = atoi(cpunrptr);
+	if (!cpu_isset(cpunr, online_cpus))
 		return;
 
 	cpu = calloc(1, sizeof(struct topo_obj));
