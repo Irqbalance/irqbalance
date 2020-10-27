@@ -157,6 +157,13 @@ Same as --debug.
 Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to.
 If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
 system as the default value.
+This is a hexmask without the leading ’0x’. On systems with large numbers of
+processors, each group of eight hex digits is separated by a comma ’,’. i.e.
+‘export IRQBALANCE_BANNED_CPUS=fc0‘ would prevent irqbalance from assigning irqs
+to the 7th-12th cpus (cpu6-cpu11) or ‘export IRQBALANCE_BANNED_CPUS=ff000000,00000001‘
+would prevent irqbalance from assigning irqs to the 1st (cpu0) and 57th-64th cpus
+(cpu56-cpu63).
+
 
 .TP
 .B IRQBALANCE_BANNED_CPULIST
