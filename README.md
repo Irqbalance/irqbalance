@@ -19,13 +19,7 @@ make install
 ## Developing Irqbalance
 
 Irqbalance is currently hosted on github, and so developers are welcome to use
-the issue/pull request/etc infrastructure found there.  However, most
-development discussions take place on the irqbalance mailing list, which can be
-subscribed to at:
-http://lists.infradead.org/mailman/listinfo/irqbalance
-
-New Developers are encouraged to use this mailing list to discuss ideas and
-propose patches.
+the issue/pull request/etc infrastructure found there.  
 
 ## Bug reporting
 
