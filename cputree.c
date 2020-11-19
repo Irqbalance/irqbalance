@@ -112,9 +112,6 @@ static void setup_banned_cpus(void)
 	cpumask_t isolated_cpus;
 	char *env = NULL;
 
-	cpus_clear(isolated_cpus);
-	cpus_clear(nohz_full);
-
 	/* A manually specified cpumask overrides auto-detection. */
 	if (cpu_ban_string != NULL && banned_cpumask_from_ui != NULL) {
 		cpulist_parse(banned_cpumask_from_ui,
@@ -133,6 +130,9 @@ static void setup_banned_cpus(void)
 		goto out;
 	}
 
+	cpus_clear(isolated_cpus);
+	cpus_clear(nohz_full);
+
 	path = "/sys/devices/system/cpu/isolated";
 	process_one_line(path, get_mask_from_cpulist, &isolated_cpus);
 
@@ -141,11 +141,11 @@ static void setup_banned_cpus(void)
 
 	cpus_or(banned_cpus, nohz_full, isolated_cpus);
 
-out:
 	cpumask_scnprintf(buffer, 4096, isolated_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
 	cpumask_scnprintf(buffer, 4096, nohz_full);
 	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
+out:
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
 }
