@@ -102,7 +102,7 @@ static void get_mask_from_cpulist(char *line, void *mask)
 /*
  * By default do not place IRQs on CPUs the kernel keeps isolated or
  * nohz_full, as specified through the boot commandline. Users can
- * override this with the IRQBALANCE_BANNED_CPUS environment variable.
+ * override this with the IRQBALANCE_BANNED_CPULIST environment variable.
  */
 static void setup_banned_cpus(void)
 {
@@ -118,9 +118,20 @@ static void setup_banned_cpus(void)
 			strlen(banned_cpumask_from_ui), banned_cpus);
 		goto out;
 	}
+
+	/*
+	 * Notes:
+	 * The IRQBALANCE_BANNED_CPUS will be discarded, please use
+	 * IRQBALANCE_BANNED_CPULIST instead.
+	 *
+	 * Before deleting this environment variable, Introduce a
+	 * deprecation period first for the consider of compatibility.
+	 */
 	env = getenv("IRQBALANCE_BANNED_CPUS");
 	if (env && strlen(env))  {
 		cpumask_parse_user(env, strlen(env), banned_cpus);
+		log(TO_ALL, LOG_WARNING,
+			"IRQBALANCE_BANNED_CPUS is discarded, Use IRQBALANCE_BANNED_CPULIST instead\n");
 		goto out;
 	}
 
