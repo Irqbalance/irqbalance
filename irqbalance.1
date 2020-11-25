@@ -163,7 +163,9 @@ processors, each group of eight hex digits is separated by a comma ’,’. i.e.
 to the 7th-12th cpus (cpu6-cpu11) or ‘export IRQBALANCE_BANNED_CPUS=ff000000,00000001‘
 would prevent irqbalance from assigning irqs to the 1st (cpu0) and 57th-64th cpus
 (cpu56-cpu63).
-
+Notes: This environment variable will be discarded, please use IRQBALANCE_BANNED_CPULIST
+instead. Before deleting this environment variable, Introduce a deprecation period first
+for the consider of compatibility.
 
 .TP
 .B IRQBALANCE_BANNED_CPULIST
