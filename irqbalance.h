@@ -40,8 +40,11 @@ extern GList* collect_full_irq_list();
 extern void parse_proc_stat(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
+extern void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq);
+extern int proc_irq_hotplug(char *line, int irq, struct irq_info **pinfo);
 
 extern GList *rebalance_irq_list;
+extern void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)));
 
 void update_migration_status(void);
 void dump_workloads(void);
@@ -52,7 +55,6 @@ void dump_tree(void);
 void activate_mappings(void);
 void clear_cpu_tree(void);
 void free_cpu_topo(gpointer data);
-
 /*===================NEW BALANCER FUNCTIONS============================*/
 
 /*

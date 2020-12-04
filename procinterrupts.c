@@ -145,16 +145,59 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 }
 #endif
 
+void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
+{
+	char *irq_name = NULL;
+	char *irq_mod = NULL;
+	char *savedptr = NULL;
+	char *last_token = NULL;
+	char *p = NULL;
+	int	is_xen_dyn = 0;
+#ifdef AARCH64
+	char *tmp = NULL;
+#endif
+
+	irq_name = strtok_r(savedline, " ", &savedptr);
+	if (strstr(irq_name, "xen-dyn") != NULL)
+		is_xen_dyn = 1;
+	last_token = strtok_r(NULL, " ", &savedptr);
+	while ((p = strtok_r(NULL, " ", &savedptr))) {
+		irq_name = last_token;
+		if (strstr(irq_name, "xen-dyn") != NULL)
+			is_xen_dyn = 1;
+		last_token = p;
+	}
+
+#ifdef AARCH64
+		irq_name = last_token;
+		tmp = strchr(irq_name, '\n');
+		if (tmp)
+			*tmp = 0;
+#endif
+	irq_mod = last_token;
+	info->irq = irq;
+
+	if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
+		info->type = IRQ_TYPE_VIRT_EVENT;
+		info->class = IRQ_VIRT_EVENT;
+	} else {
+#ifdef AARCH64
+		guess_arm_irq_hints(irq_name, info);			
+#else
+		info->type = IRQ_TYPE_LEGACY;
+		info->class = IRQ_OTHER;
+#endif
+	}
+	info->numa_node = get_numa_node(0);
+	info->name = strdup(irq_mod);
+}
+
 GList* collect_full_irq_list()
 {
 	GList *tmp_list = NULL;
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
-	char *irq_name, *irq_mod, *savedptr, *last_token, *p;
-#ifdef AARCH64
-	char *tmp;
-#endif
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -169,7 +212,6 @@ GList* collect_full_irq_list()
 
 	while (!feof(file)) {
 		int	 number;
-		int      is_xen_dyn = 0;
 		struct irq_info *info;
 		char *c;
 		char *savedline = NULL;
@@ -191,44 +233,12 @@ GList* collect_full_irq_list()
 		savedline = strdup(line);
 		if (!savedline)
 			break;
-		irq_name = strtok_r(savedline, " ", &savedptr);
-		if (strstr(irq_name, "xen-dyn") != NULL)
-			is_xen_dyn = 1;
-		last_token = strtok_r(NULL, " ", &savedptr);
-		while ((p = strtok_r(NULL, " ", &savedptr))) {
-			irq_name = last_token;
-			if (strstr(irq_name, "xen-dyn") != NULL)
-				is_xen_dyn = 1;
-			last_token = p;
-		}
-
-#ifdef AARCH64
-		/* Of course the formatting for /proc/interrupts is different on different arches */
-		irq_name = last_token;
-		tmp = strchr(irq_name, '\n');
-		if (tmp)
-			*tmp = 0;
-#endif
-		irq_mod = last_token;
-
 		*c = 0;
 		number = strtoul(line, NULL, 10);
 
 		info = calloc(1, sizeof(struct irq_info));
 		if (info) {
-			info->irq = number;
-			if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
-				info->type = IRQ_TYPE_VIRT_EVENT;
-				info->class = IRQ_VIRT_EVENT;
-			} else {
-#ifdef AARCH64
-				guess_arm_irq_hints(irq_name, info);
-#else
-				info->type = IRQ_TYPE_LEGACY;
-				info->class = IRQ_OTHER;
-#endif
-			}
-			info->name = strdup(irq_mod);
+			init_irq_class_and_type(savedline, info, number);
 			tmp_list = g_list_append(tmp_list, info);
 		}
 		free(savedline);
@@ -238,11 +248,13 @@ GList* collect_full_irq_list()
 	return tmp_list;
 }
 
+
 void parse_proc_interrupts(void)
 {
 	FILE *file;
 	char *line = NULL;
 	size_t size = 0;
+	int ret;
 
 	file = fopen("/proc/interrupts", "r");
 	if (!file)
@@ -261,6 +273,7 @@ void parse_proc_interrupts(void)
 		uint64_t count;
 		char *c, *c2;
 		struct irq_info *info;
+		char *savedline = NULL;
 
 		if (getline(&line, &size, file)<=0)
 			break;
@@ -280,15 +293,24 @@ void parse_proc_interrupts(void)
 		if (!c)
 			continue;
 
+		savedline = strdup(line);
+		if (!savedline)
+			break;
 		*c = 0;
 		c++;
 		number = strtoul(line, NULL, 10);
 
 		info = get_irq_info(number);
 		if (!info) {
-			need_rescan = 1;
-			break;
+			ret = proc_irq_hotplug(savedline, number, &info);
+			if (ret < 0) {
+				/* hotplug fail, need to rescan */
+				need_rescan = 1;
+				free(savedline);
+				break;
+			}
 		}
+		free(savedline);
 
 		count = 0;
 		cpunr = 0;
@@ -316,7 +338,7 @@ void parse_proc_interrupts(void)
 			break;
 		}
 
-		info->last_irq_count = info->irq_count;		
+		info->last_irq_count = info->irq_count;
 		info->irq_count = count;
 
 		/* is interrupt MSI based? */

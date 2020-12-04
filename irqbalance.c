@@ -249,7 +249,7 @@ static void dump_object_tree(void)
 	for_each_object(numa_nodes, dump_numa_node_info, NULL);
 }
 
-static void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
+void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
 	if (info->level == BALANCE_NONE)
 		return;
