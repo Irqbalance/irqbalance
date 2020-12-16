@@ -619,7 +619,7 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 /*
  * Figures out which interrupt(s) relate to the device we"re looking at in dirname
  */
-static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
+static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_irq)
 {
 	struct dirent *entry;
 	DIR *msidir;
@@ -642,10 +642,14 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 			if (!entry)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
-			if (irqnum) {
+			/* If build_irq is valid, only add irq when it's number equals to  build_irq */
+			if (irqnum && ((build_irq < 0) || (irqnum == build_irq))) {
+				printf("add irq:%d %d for %s\n", irqnum, build_irq, path);
 				hint.irq = irqnum;
 				hint.type = IRQ_TYPE_MSIX;
 				add_new_irq(devpath, &hint, tmp_irqs);
+				if (build_irq >= 0)
+					break;
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -665,9 +669,12 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 #else
 	if (irqnum) {
 #endif
-		hint.irq = irqnum;
-		hint.type = IRQ_TYPE_LEGACY;
-		add_new_irq(devpath, &hint, tmp_irqs);
+		/* If build_irq is valid, only add irq when it's number equals to  build_irq */
+		if ((build_irq < 0) || (irqnum == build_irq)) {
+			hint.irq = irqnum;
+			hint.type = IRQ_TYPE_LEGACY;
+			add_new_irq(devpath, &hint, tmp_irqs);
+		}
 	}
 
 done:
@@ -712,31 +719,60 @@ static void free_tmp_irqs(gpointer data)
 	free(info);
 }
 
-void rebuild_irq_db(void)
+static struct irq_info * build_dev_irqs(GList *tmp_irqs, int build_irq)
 {
 	DIR *devdir;
 	struct dirent *entry;
+	struct irq_info *new_irq = NULL;
+
+	devdir = opendir(SYSPCI_DIR);
+	if (devdir) {
+		do {
+			entry = readdir(devdir);
+			if (!entry)
+				break;
+			/* when hotplug irqs, we add one irq at one time */
+			build_one_dev_entry(entry->d_name, tmp_irqs, build_irq);
+			if (build_irq >= 0) {
+				new_irq = get_irq_info(build_irq);
+				if (new_irq)
+					break;
+			}
+		} while (entry != NULL);
+		closedir(devdir);
+	}
+	return new_irq;
+}
+
+int proc_irq_hotplug(char *savedline, int irq, struct irq_info **pinfo)
+{
+	struct irq_info tmp_info = {0};
+
+	/* firstly, init irq info by read device info */
+	*pinfo = build_dev_irqs(interrupts_db, irq);
+	if (*pinfo == NULL) {
+		/* secondly, init irq info by parse savedline */
+		init_irq_class_and_type(savedline, &tmp_info, irq);
+		add_new_irq(NULL, &tmp_info, interrupts_db);
+		*pinfo = get_irq_info(irq);
+	}
+	if (*pinfo == NULL) {
+		return -1;
+	}
+
+	force_rebalance_irq(*pinfo, NULL);
+	return 0;
+}
+
+void rebuild_irq_db(void)
+{
 	GList *tmp_irqs = NULL;
 
 	free_irq_db();
 
 	tmp_irqs = collect_full_irq_list();
-
-	devdir = opendir(SYSPCI_DIR);
-
-	if (devdir) {
-		do {
-			entry = readdir(devdir);
-
-			if (!entry)
-				break;
-
-			build_one_dev_entry(entry->d_name, tmp_irqs);
-
-		} while (entry != NULL);
-
-		closedir(devdir);
-	}
+	
+	build_dev_irqs(tmp_irqs, -1);
 
 	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
 
