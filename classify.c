@@ -644,12 +644,13 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_
 			irqnum = strtol(entry->d_name, NULL, 10);
 			/* If build_irq is valid, only add irq when it's number equals to  build_irq */
 			if (irqnum && ((build_irq < 0) || (irqnum == build_irq))) {
-				printf("add irq:%d %d for %s\n", irqnum, build_irq, path);
 				hint.irq = irqnum;
 				hint.type = IRQ_TYPE_MSIX;
 				add_new_irq(devpath, &hint, tmp_irqs);
-				if (build_irq >= 0)
+				if (build_irq >= 0) {
+					log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
 					break;
+				}
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -674,6 +675,8 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_
 			hint.irq = irqnum;
 			hint.type = IRQ_TYPE_LEGACY;
 			add_new_irq(devpath, &hint, tmp_irqs);
+			if (build_irq >= 0)
+				log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
 		}
 	}
 
