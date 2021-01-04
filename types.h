@@ -70,6 +70,7 @@ struct irq_info {
 	uint64_t last_irq_count;
 	uint64_t load;
 	int moved;
+	int existing;
 	struct topo_obj *assigned_obj;
 	char *name;
 };

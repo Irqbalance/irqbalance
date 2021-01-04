@@ -852,3 +852,40 @@ void sort_irq_list(GList **list)
 {
 	*list = g_list_sort(*list, sort_irqs);
 }
+
+static void remove_no_existing_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	GList *entry = NULL;
+
+	if (info->existing) {
+		/* clear existing flag for next detection */
+		info->existing = 0;
+		return;
+	}
+
+	entry = g_list_find_custom(interrupts_db, info, compare_ints);
+	if (entry)
+		interrupts_db = g_list_delete_link(interrupts_db, entry);
+
+	entry = g_list_find_custom(rebalance_irq_list, info, compare_ints);
+	if (entry)
+		rebalance_irq_list = g_list_delete_link(rebalance_irq_list, entry);
+
+	if(info->assigned_obj) {
+		entry = g_list_find_custom(info->assigned_obj->interrupts, info, compare_ints);
+	    if (entry) {
+			info->assigned_obj->interrupts = g_list_delete_link(info->assigned_obj->interrupts, entry);
+		}
+	}
+	log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from interrupts_db.\n", info->irq);
+	free_irq(info, NULL);
+}
+
+void clear_no_existing_irqs(void)
+{
+	for_each_irq(NULL, remove_no_existing_irq, NULL);
+	if (banned_irqs) {
+		for_each_irq(banned_irqs, remove_no_existing_irq, NULL);
+	}
+}
+
