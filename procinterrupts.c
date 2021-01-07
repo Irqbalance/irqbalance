@@ -248,7 +248,6 @@ GList* collect_full_irq_list()
 	return tmp_list;
 }
 
-
 void parse_proc_interrupts(void)
 {
 	FILE *file;
@@ -310,6 +309,7 @@ void parse_proc_interrupts(void)
 				break;
 			}
 		}
+		info->existing = 1;
 		free(savedline);
 
 		count = 0;
@@ -354,6 +354,8 @@ void parse_proc_interrupts(void)
  		 */
 		msi_found_in_sysfs = 1;
 	}
+	if (!need_rescan)
+		clear_no_existing_irqs();
 	fclose(file);
 	free(line);
 }

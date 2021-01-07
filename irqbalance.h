@@ -42,6 +42,7 @@ extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
 extern void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq);
 extern int proc_irq_hotplug(char *line, int irq, struct irq_info **pinfo);
+extern void clear_no_existing_irqs(void);
 
 extern GList *rebalance_irq_list;
 extern void force_rebalance_irq(struct irq_info *info, void *data __attribute__((unused)));
