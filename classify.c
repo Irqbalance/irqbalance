@@ -361,9 +361,14 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 
 get_numa_node:
 	numa_node = NUMA_NO_NODE;
-	if (devpath != NULL && numa_avail) {
-		sprintf(path, "%s/numa_node", devpath);
-		process_one_line(path, get_int, &numa_node);
+	if (numa_avail) {
+		if (devpath != NULL) {
+			sprintf(path, "%s/numa_node", devpath);
+			process_one_line(path, get_int, &numa_node);
+		} else {
+			sprintf(path, "/proc/irq/%i/node", irq);
+			process_one_line(path, get_int, &numa_node);
+		}
 	}
 
 	if (pol->numa_node_set == 1)
