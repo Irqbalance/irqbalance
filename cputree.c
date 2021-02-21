@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <inttypes.h>
 
 #include <glib.h>
 
@@ -417,7 +418,7 @@ static void dump_irq(struct irq_info *info, void *data)
 		indent[i] = log_indent[0];
 
 	indent[i] = '\0';
-	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%lu:%lu) \n", indent,
+	log(TO_CONSOLE, LOG_INFO, "%sInterrupt %i node_num is %d (%s/%" PRIu64 ":%" PRIu64 ") \n", indent,
 	    info->irq, irq_numa_node(info)->number, classes[info->class], info->load, (info->irq_count - info->last_irq_count));
 	free(indent);
 }
