@@ -231,7 +231,7 @@ void handle_cpu_banning()
 	move(6, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 5;
+	size_t position = 6;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -433,7 +433,7 @@ void handle_irq_banning()
 	move(4, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 3;
+	size_t position = 4;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
