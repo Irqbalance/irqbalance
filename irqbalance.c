@@ -285,7 +285,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 
 
 	/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-	if (need_rescan || need_rebuild) {
+	while (need_rescan || need_rebuild) {
 		int try_times = 0;
 
 		need_rescan = 0;
