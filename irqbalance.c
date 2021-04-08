@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #ifdef HAVE_GETOPT_LONG 
 #include <getopt.h>
 #endif
@@ -284,7 +285,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 
 
 	/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-	if (need_rescan || need_rebuild) {
+	while (need_rescan || need_rebuild) {
 		int try_times = 0;
 
 		need_rescan = 0;
@@ -357,7 +358,7 @@ void get_irq_data(struct irq_info *irq, void *data)
 	*irqdata = newptr;
 
 	sprintf(*irqdata + strlen(*irqdata),
-			"IRQ %d LOAD %lu DIFF %lu CLASS %d ", irq->irq, irq->load,
+			"IRQ %d LOAD %" PRIu64 " DIFF %" PRIu64 " CLASS %d ", irq->irq, irq->load,
 			(irq->irq_count - irq->last_irq_count), irq->class);
 }
 
@@ -395,7 +396,7 @@ void get_object_stat(struct topo_obj *object, void *data)
 
 	*stats = newptr;
 
-	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %lu SAVE_MODE %d %s",
+	sprintf(*stats + strlen(*stats), "TYPE %d NUMBER %d LOAD %" PRIu64 " SAVE_MODE %d %s",
 			object->obj_type, object->number, object->load,
 			object->powersave_mode, irq_data ? irq_data : "");
 	free(irq_data);

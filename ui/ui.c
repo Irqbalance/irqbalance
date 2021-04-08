@@ -1,4 +1,5 @@
 
+#include <inttypes.h>
 #include <string.h>
 #include "ui.h"
 
@@ -230,7 +231,7 @@ void handle_cpu_banning()
 	move(6, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 5;
+	size_t position = 6;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -432,7 +433,7 @@ void handle_irq_banning()
 	move(4, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 3;
+	size_t position = 4;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -563,7 +564,7 @@ void settings()
 
 	char info[128] = "Current sleep interval between rebalancing: \0";
 	uint8_t sleep_input_offset = strlen(info) + 3;
-	snprintf(info + strlen(info), 128 - strlen(info), "%lu\n", setup.sleep);
+	snprintf(info + strlen(info), 128 - strlen(info), "%" PRIu64 "\n", setup.sleep);
 	attrset(COLOR_PAIR(1));
 	mvprintw(2, 3, info);
 	print_all_cpus();
@@ -588,7 +589,7 @@ void settings()
 			if(new_sleep != setup.sleep) {
 				setup.sleep = new_sleep;
 				char settings_data[128];
-				snprintf(settings_data, 128, "%s %lu", SET_SLEEP, new_sleep);
+				snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
 				send_settings(settings_data);
 			}
 			break;
