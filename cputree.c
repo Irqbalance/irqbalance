@@ -366,7 +366,7 @@ static void do_one_cpu(char *path)
 		struct topo_obj *node;
 
 		dir = opendir(path);
-		do {
+		while (dir) {
 			entry = readdir(dir);
 			if (!entry)
 				break;
@@ -379,8 +379,9 @@ static void do_one_cpu(char *path)
 					break;
 				}
 			}
-		} while (entry);
-		closedir(dir);
+		}
+		if (dir)
+			closedir(dir);
 
 		/*
 		 * In case of multiple NUMA nodes within a CPU package,
