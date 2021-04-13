@@ -1,4 +1,4 @@
-AC_INIT(irqbalance,1.7.0)
+AC_INIT(irqbalance,1.8.0)
 AC_PREREQ(2.12)dnl
 AM_CONFIG_HEADER(config.h)
 
