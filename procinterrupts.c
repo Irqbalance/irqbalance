@@ -148,13 +148,13 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 {
 	char *irq_name = NULL;
-	char *irq_mod = NULL;
 	char *savedptr = NULL;
 	char *last_token = NULL;
 	char *p = NULL;
-	int	is_xen_dyn = 0;
+	int is_xen_dyn = 0;
 #ifdef AARCH64
 	char *tmp = NULL;
+	char irq_fullname[PATH_MAX] = {0};
 #endif
 
 	irq_name = strtok_r(savedline, " ", &savedptr);
@@ -166,30 +166,40 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 		if (strstr(irq_name, "xen-dyn") != NULL)
 			is_xen_dyn = 1;
 		last_token = p;
+#ifdef AARCH64
+		/*
+		 * /proc/interrupts format defined, after of interrupt type
+		 * the reset string is mark the irq desc name.
+		 */
+		if (strncmp(irq_name, "Level", strlen("Level")) == 0 ||
+                                strncmp(irq_name, "Edge", strlen("Edge")) == 0)
+                        break;
+#endif
 	}
 
 #ifdef AARCH64
-		irq_name = last_token;
-		tmp = strchr(irq_name, '\n');
-		if (tmp)
-			*tmp = 0;
+	snprintf(irq_fullname, PATH_MAX, "%s %s", last_token, savedptr);
+	tmp = strchr(irq_fullname, '\n');
+	if (tmp)
+		*tmp = 0;
+#else
+	snprintf(irq_fullname, PATH_MAX, "%s", last_token);
 #endif
-	irq_mod = last_token;
 	info->irq = irq;
 
-	if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
+	if (strstr(irq_fullname, "-event") != NULL && is_xen_dyn == 1) {
 		info->type = IRQ_TYPE_VIRT_EVENT;
 		info->class = IRQ_VIRT_EVENT;
 	} else {
 #ifdef AARCH64
-		guess_arm_irq_hints(irq_name, info);			
+		guess_arm_irq_hints(irq_fullname, info);			
 #else
 		info->type = IRQ_TYPE_LEGACY;
 		info->class = IRQ_OTHER;
 #endif
 	}
 	info->numa_node = get_numa_node(0);
-	info->name = strdup(irq_mod);
+	info->name = strdup(irq_fullname);
 }
 
 GList* collect_full_irq_list()
