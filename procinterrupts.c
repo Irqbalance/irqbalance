@@ -152,9 +152,9 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 	char *last_token = NULL;
 	char *p = NULL;
 	int is_xen_dyn = 0;
+	char irq_fullname[PATH_MAX] = {0};
 #ifdef AARCH64
 	char *tmp = NULL;
-	char irq_fullname[PATH_MAX] = {0};
 #endif
 
 	irq_name = strtok_r(savedline, " ", &savedptr);
