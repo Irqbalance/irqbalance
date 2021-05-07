@@ -869,8 +869,16 @@ static void remove_no_existing_irq(struct irq_info *info, void *data __attribute
 	}
 
 	entry = g_list_find_custom(interrupts_db, info, compare_ints);
-	if (entry)
+	if (entry) {
 		interrupts_db = g_list_delete_link(interrupts_db, entry);
+		log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from interrupts_db.\n", info->irq);
+	}
+
+	entry = g_list_find_custom(banned_irqs, info, compare_ints);
+	if (entry) {
+		banned_irqs = g_list_delete_link(banned_irqs, entry);
+		log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from banned_irqs.\n", info->irq);
+	}
 
 	entry = g_list_find_custom(rebalance_irq_list, info, compare_ints);
 	if (entry)
@@ -882,7 +890,6 @@ static void remove_no_existing_irq(struct irq_info *info, void *data __attribute
 			info->assigned_obj->interrupts = g_list_delete_link(info->assigned_obj->interrupts, entry);
 		}
 	}
-	log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from interrupts_db.\n", info->irq);
 	free_irq(info, NULL);
 }
 
