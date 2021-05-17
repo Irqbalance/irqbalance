@@ -14,7 +14,7 @@ char *IRQ_CLASS_TO_STR[] = {
 			"Video",
 			"Ethernet",
 			"Gigabit Ethernet",
-			"10-Gigabit Ethernet,"
+			"10-Gigabit Ethernet",
 			"Virt Event"};
 
 void show_frame()
