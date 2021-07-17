@@ -196,3 +196,134 @@ void calculate_placement(void)
 	if (debug_mode)
 		validate_object_tree_placement();
 }
+
+
+extern GList *interrupts_db;
+
+
+gint compare_numbers(gconstpointer a, gconstpointer b)
+{
+	const struct topo_obj *ai = a;
+	const struct topo_obj *bi = b;
+
+	return ai->number - bi->number;
+}
+
+
+void clear_move_state(struct irq_info *irq, void *data __attribute__((unused))) {
+	irq->moved = 0;
+}
+
+void spread_irq(struct irq_info *irq, void *data) {
+	char buf[BUFSIZ];
+
+
+	uint64_t *cpu_list = (uint64_t *)data;
+	uint64_t cpu_count = g_list_length(cpus);
+	struct topo_obj find;
+	GList *entry = NULL;
+
+	uint64_t i = 1, j = 1, k = 1;
+	uint64_t min_idx = 0, min_count = UINT64_MAX;
+
+	cpumask_scnprintf(buf, BUFSIZ, irq->cpumask);
+
+	if (irq->moved)
+		return ;
+
+	while (i <= cpu_count) {
+		if (!cpu_isset(i, irq->cpumask)) {
+			i++;
+			continue;
+		}
+
+		// compare cpu-i and cpu-j, if cpu-i got interrupts more
+		// than cpu-j, it means, at least in this turn, place the
+		// irq on cpu-i is not good enough. So we may find next cpu to
+		// place this irq
+		j = i + 1;
+		while (!cpu_isset(j, irq->cpumask) 
+		|| (j <= cpu_count && cpu_list[i-1] == cpu_list[j-1]))
+			j++;
+
+		if (j <= cpu_count) {
+			// place irq to cpu-j
+			cpu_list[j-1]++;
+			find.number = j;
+		}
+		else {
+			// place irq to cpu-i
+			cpu_list[i-1]++;
+			find.number = i;
+		}
+		entry = g_list_find_custom(cpus, &find, compare_numbers);
+		break;
+	}
+
+	// didn't find the best, we choose the cpu bound with least irqs
+	if (entry) {
+		struct topo_obj *target_cpu = entry->data;
+		migrate_irq(&irq->assigned_obj->interrupts, &target_cpu->interrupts, irq);
+		irq->assigned_obj = target_cpu;
+
+		if (debug_mode)
+			printf("irq %d assigned to cpu %d\n", irq->irq, target_cpu->number);
+
+	}
+	else {
+		
+		for (k = 1; k <= cpu_count; k++) {
+			if (cpu_isset(k, unbanned_cpus) && cpu_list[k-1] < min_count) {
+				min_idx = k;
+				min_count = cpu_list[k-1];
+			}
+		}
+		find.number = min_idx-1;
+		entry = g_list_find_custom(cpus, &find, compare_numbers);
+		if (entry) {
+			cpu_list[min_idx-1]++;
+			struct topo_obj *target_cpu = entry->data;
+			migrate_irq(&irq->assigned_obj->interrupts, &target_cpu->interrupts, irq);
+			irq->assigned_obj = target_cpu;
+
+			if (debug_mode)
+				printf("irq %d assigned to cpu %d\n", irq->irq, target_cpu->number);
+		}
+	}
+	irq->moved = 1;
+
+	if (debug_mode)
+		printf("irq %d ---- mask : %s --- assigned to cpu-%d\n", irq->irq, buf, irq->assigned_obj->number);
+}
+
+
+void spread_irq_of_obj(struct topo_obj *obj, void *data) {
+	if (g_list_length(obj->interrupts) > 0)
+		for_each_irq(obj->interrupts, spread_irq, data);
+}
+
+
+void spread_irqs(void) {
+	uint64_t cpu_count = g_list_length(cpus);
+	uint64_t irqs_count = g_list_length(interrupts_db);
+	uint64_t banned_irqs_count = g_list_length(cl_banned_irqs);
+
+	uint64_t *cpu_list = (uint64_t *)malloc(sizeof(uint64_t) * cpu_count);
+	memset(cpu_list, 0, sizeof(uint64_t) * cpu_count);
+
+	if (debug_mode) {
+		printf("%lu cpu(s) in total\n", cpu_count);
+		printf("%lu irq(s) in total\n", irqs_count);
+		printf("%lu irq(s) banned in total\n", banned_irqs_count);
+	}
+
+	for_each_irq(interrupts_db, clear_move_state, NULL);
+
+	for_each_object(numa_nodes, spread_irq_of_obj, (void *)cpu_list);
+	for_each_object(packages, spread_irq_of_obj, (void *)cpu_list);
+	for_each_object(cache_domains, spread_irq_of_obj, (void *)cpu_list);
+	for_each_object(cpus, spread_irq_of_obj, (void *)cpu_list);
+
+
+	free(cpu_list);
+}

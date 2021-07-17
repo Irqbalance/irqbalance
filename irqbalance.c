@@ -50,6 +50,7 @@ char socket_name[64];
 int one_shot_mode;
 int debug_mode;
 int foreground_mode;
+int spread_mode;
 int numa_avail;
 int journal_logging = 0;
 int need_rescan;
@@ -99,6 +100,7 @@ struct option lopts[] = {
 	{"interval", 1 , NULL, 't'},
 	{"version", 0, NULL, 'V'},
 	{"migrateval", 1, NULL, 'e'},
+	{"spread", 0, NULL, 'a'},
 	{0, 0, 0, 0}
 };
 
@@ -192,6 +194,10 @@ static void parse_command_line(int argc, char **argv)
 				break;
 			case 'e':
 				migrate_ratio = strtoul(optarg, NULL, 10);
+				break;
+			case 'a':
+				one_shot_mode = 1;
+				spread_mode = 1;
 				break;
 		}
 	}
@@ -313,11 +319,14 @@ gboolean scan(gpointer data __attribute__((unused)))
 	}
 
 	parse_proc_stat();
-
-	if (cycle_count)	
+	if (cycle_count)
 		update_migration_status();
-
 	calculate_placement();
+	
+	if (spread_mode) {
+		spread_irqs();
+	}
+
 	activate_mappings();
 
 out:
@@ -613,7 +622,10 @@ int main(int argc, char** argv)
 		debug_mode=1;
 		foreground_mode=1;
 	}
-
+	if (getenv("IRQBALANCE_SPREAD")) {
+		one_shot_mode=1;
+		spread_mode=1;
+	}
 	/*
  	 * If we are't in debug mode, don't dump anything to the console
  	 * note that everything goes to the console before we check this
