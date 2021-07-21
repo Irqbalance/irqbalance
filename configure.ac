@@ -41,10 +41,13 @@ AC_C_INLINE
 AM_PROG_CC_C_O
 
 AC_ARG_WITH([irqbalance-ui],
-	[AC_HELP_STRING([--without-irqbalance-ui],
-			[Dont build the irqbalance ui component])],
-			[with_irqbalanceui=$withval], [with_irqbalanceui=yes])
-
+  [AS_HELP_STRING([--without-irqbalance-ui],
+    [Dont build the irqbalance ui component])],
+    [with_irqbalanceui=$withval], [with_irqbalanceui=yes])
+AS_IF(
+  [test "x$with_irqbalanceui" = "xyes"], [
+    AC_DEFINE([HAVE_IRQBALANCEUI], 1, [Build irqbalance ui component.])
+])
 AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],

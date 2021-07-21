@@ -39,7 +39,9 @@
 
 #include "irqbalance.h"
 
+#ifdef HAVE_IRQBALANCEUI
 extern char *banned_cpumask_from_ui;
+#endif
 extern char *cpu_ban_string;
 
 GList *cpus;
@@ -113,12 +115,14 @@ static void setup_banned_cpus(void)
 	cpumask_t isolated_cpus;
 	char *env = NULL;
 
+#ifdef HAVE_IRQBALANCEUI
 	/* A manually specified cpumask overrides auto-detection. */
 	if (cpu_ban_string != NULL && banned_cpumask_from_ui != NULL) {
 		cpulist_parse(banned_cpumask_from_ui,
 			strlen(banned_cpumask_from_ui), banned_cpus);
 		goto out;
 	}
+#endif
 
 	/*
 	 * Notes:
