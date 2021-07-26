@@ -223,7 +223,7 @@ void spread_irq(struct irq_info *irq, void *data) {
 	struct topo_obj find;
 	GList *entry = NULL;
 
-	uint64_t i = 1, j = 1, k = 1;
+	uint64_t i = 1, k = 1;
 	uint64_t min_idx = 0, min_count = UINT64_MAX;
 
 	cpumask_scnprintf(buf, BUFSIZ, irq->cpumask);
@@ -231,38 +231,24 @@ void spread_irq(struct irq_info *irq, void *data) {
 	if (irq->moved)
 		return ;
 
+
 	while (i <= cpu_count) {
-		if (!cpu_isset(i, irq->cpumask)) {
-			i++;
-			continue;
+		if (!cpu_isset(i, irq->cpumask) && min_count > cpu_list[i-1]) {
+			min_count = cpu_list[i-1];
+			min_idx = i;
 		}
+		
 
-		// compare cpu-i and cpu-j, if cpu-i got interrupts more
-		// than cpu-j, it means, at least in this turn, place the
-		// irq on cpu-i is not good enough. So we may find next cpu to
-		// place this irq
-		j = i + 1;
-		while (!cpu_isset(j, irq->cpumask) 
-		|| (j <= cpu_count && cpu_list[i-1] == cpu_list[j-1]))
-			j++;
-
-		if (j <= cpu_count) {
-			// place irq to cpu-j
-			cpu_list[j-1]++;
-			find.number = j;
-		}
-		else {
-			// place irq to cpu-i
-			cpu_list[i-1]++;
-			find.number = i;
-		}
-		entry = g_list_find_custom(cpus, &find, compare_numbers);
-		break;
+		i++;
 	}
+
+	find.number = min_idx;
+	entry = g_list_find_custom(cpus, &find, compare_numbers);
 
 	// didn't find the best, we choose the cpu bound with least irqs
 	if (entry) {
 		struct topo_obj *target_cpu = entry->data;
+                cpu_list[min_idx - 1]++;
 		migrate_irq(&irq->assigned_obj->interrupts, &target_cpu->interrupts, irq);
 		irq->assigned_obj = target_cpu;
 
@@ -323,7 +309,6 @@ void spread_irqs(void) {
 	for_each_object(packages, spread_irq_of_obj, (void *)cpu_list);
 	for_each_object(cache_domains, spread_irq_of_obj, (void *)cpu_list);
 	for_each_object(cpus, spread_irq_of_obj, (void *)cpu_list);
-
 
 	free(cpu_list);
 }
