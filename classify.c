@@ -376,6 +376,11 @@ get_numa_node:
 	else
 		new->numa_node = get_numa_node(numa_node);
 
+	if (!new->numa_node) {
+		log(TO_CONSOLE, LOG_WARNING, "IRQ %d has an unknown node\n", irq);
+		new->numa_node = get_numa_node(NUMA_NO_NODE);
+	}
+
 	cpus_setall(new->cpumask);
 	if (devpath != NULL) {
 		sprintf(path, "%s/local_cpus", devpath);
