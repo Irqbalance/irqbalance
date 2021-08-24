@@ -97,7 +97,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	}
 
 	/* If we can migrate an irq without swapping the imbalance do it. */
-	if ((lb_info->min_load + info->load) - (lb_info->adjustment_load - info->load) < delta_load) {
+	if ((lb_info->min_load + info->load) < delta_load + (lb_info->adjustment_load - info->load)) {
 		lb_info->adjustment_load -= info->load;
 		lb_info->min_load += info->load;
 		if (lb_info->min_load > lb_info->adjustment_load) {
