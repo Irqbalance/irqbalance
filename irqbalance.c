@@ -463,12 +463,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			if (!(strncmp(buff + strlen("settings "), "sleep ",
 							strlen("sleep ")))) {
 				char *sleep_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings sleep ")));
+						sizeof(char) * (recv_size - strlen("settings sleep ") + 1));
 
 				if (!sleep_string)
 					goto out_close;
 				strncpy(sleep_string, buff + strlen("settings sleep "),
 						recv_size - strlen("settings sleep "));
+				sleep_string[recv_size - strlen("settings sleep ")] = '\0';
 				int new_iterval = strtoul(sleep_string, NULL, 10);
 				if (new_iterval >= 1) {
 					sleep_interval = new_iterval;
@@ -478,12 +479,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 							strlen("ban irqs ")))) {
 				char *end;
 				char *irq_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings ban irqs ")));
+						sizeof(char) * (recv_size - strlen("settings ban irqs ") + 1));
 
 				if (!irq_string)
 					goto out_close;
 				strncpy(irq_string, buff + strlen("settings ban irqs "),
 						recv_size - strlen("settings ban irqs "));
+				irq_string[recv_size - strlen("settings ban irqs ")] = '\0';
 				g_list_free_full(cl_banned_irqs, free);
 				cl_banned_irqs = NULL;
 				need_rescan = 1;
@@ -503,12 +505,13 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				cpu_ban_string = NULL;
 
 				cpu_ban_string = malloc(
-						sizeof(char) * (recv_size - strlen("settings cpus ")));
+						sizeof(char) * (recv_size - strlen("settings cpus ") + 1));
 
 				if (!cpu_ban_string)
 					goto out_close;
 				strncpy(cpu_ban_string, buff + strlen("settings cpus "),
 						recv_size - strlen("settings cpus "));
+				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
 				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
