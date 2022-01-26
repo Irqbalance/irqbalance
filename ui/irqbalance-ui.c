@@ -21,6 +21,7 @@ GList *tree = NULL;
 setup_t setup;
 GMainLoop *main_loop;
 int is_tree = 1;
+static int default_bufsz = 8192;
 
 struct msghdr * create_credentials_msg()
 {
@@ -103,6 +104,7 @@ char * get_data(char *string)
 	/* Send "setup" to get sleep interval, banned IRQs and banned CPUs,
 	 * "stats" to get CPU tree statistics
 	 */
+try_again:
 	int socket_fd = init_connection();
 	if(!socket_fd) {
 		return NULL;
@@ -115,17 +117,18 @@ char * get_data(char *string)
 	msg->msg_iov = &iov;
 	sendmsg(socket_fd, msg, 0);
 
-	/*
-	 * This is just...horrible.  Mental note to replace this
-	 * With a select, ioctl to determine size, and malloc based
-	 * on that
-	 */
-	char *data = malloc(8192);
-	int len = recv(socket_fd, data, 8192, 0);
+	char *data = malloc(default_bufsz);
+	int len = recv(socket_fd, data, default_bufsz, MSG_TRUNC);
 	close(socket_fd);
 	data[len] = '\0';
 	free(msg->msg_control);
 	free(msg);
+	if (len >= default_bufsz) {
+		/* msg was truncated, increase bufsz and try again */
+		default_bufsz += 8192;
+		free(data);
+		goto try_again;
+	}
 	return data;
 }
 
