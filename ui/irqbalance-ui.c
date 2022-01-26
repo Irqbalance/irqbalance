@@ -104,8 +104,10 @@ char * get_data(char *string)
 	/* Send "setup" to get sleep interval, banned IRQs and banned CPUs,
 	 * "stats" to get CPU tree statistics
 	 */
+	int socket_fd;
+
 try_again:
-	int socket_fd = init_connection();
+	socket_fd = init_connection();
 	if(!socket_fd) {
 		return NULL;
 	}
