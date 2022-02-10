@@ -36,6 +36,28 @@ AS_IF([test "x$has_ncursesw" = "xyes"], [
   AC_SUBST([LIBS])
 ])
 
+AC_CANONICAL_HOST
+
+AC_ARG_ENABLE(thermal,
+  AS_HELP_STRING([--enable-thermal], [enable thermal event support [default=auto]]),,
+  AS_IF([test x"$host_cpu" = x"x86_64"], [enable_thermal=yes], [enable_thermal=no])
+)
+
+AS_IF([test x"$enable_thermal" = x"yes" && test x"$host_cpu" != x"x86_64"],
+  AC_MSG_ERROR([no thermal events support on $host_cpu systems.]),
+)
+
+AS_IF([test x"$enable_thermal" = x"yes"],
+  [PKG_CHECK_MODULES([LIBNL3], [libnl-3.0 libnl-genl-3.0], [have_thermal=yes],
+    AC_MSG_NOTICE([no thermal event support as libnl-3.0 is unavailable.])
+  )]
+)
+
+AS_IF([test "x$have_thermal" = xyes],
+  AC_DEFINE([HAVE_THERMAL], 1, [Build irqbalance to support thermal events])
+)
+AM_CONDITIONAL([THERMAL], [test "x$have_thermal" = xyes])
+
 AC_C_CONST
 AC_C_INLINE
 AM_PROG_CC_C_O

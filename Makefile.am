@@ -27,7 +27,7 @@ EXTRA_DIST = COPYING autogen.sh misc/irqbalance.service misc/irqbalance.env
 SUBDIRS = tests
 
 UI_DIR = ui
-AM_CFLAGS = $(LIBCAP_NG_CFLAGS) $(GLIB2_CFLAGS) $(NUMA_CFLAGS)
+AM_CFLAGS = $(LIBCAP_NG_CFLAGS) $(GLIB2_CFLAGS) $(NUMA_CFLAGS) $(LIBNL3_CFLAGS)
 AM_CPPFLAGS = -I${top_srcdir} -W -Wall -Wshadow -Wformat -Wundef -D_GNU_SOURCE
 noinst_HEADERS = bitmap.h constants.h cpumask.h irqbalance.h non-atomic.h \
 	types.h $(UI_DIR)/helpers.h $(UI_DIR)/irqbalance-ui.h $(UI_DIR)/ui.h
@@ -39,7 +39,10 @@ endif
 
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
 	irqlist.c numa.c placement.c procinterrupts.c
-irqbalance_LDADD = $(LIBCAP_NG_LIBS) $(GLIB2_LIBS) $(NUMA_LIBS)
+if THERMAL
+irqbalance_SOURCES += thermal.c
+endif
+irqbalance_LDADD = $(LIBCAP_NG_LIBS) $(GLIB2_LIBS) $(NUMA_LIBS) $(LIBNL3_LIBS)
 if IRQBALANCEUI
 irqbalance_ui_SOURCES = $(UI_DIR)/helpers.c $(UI_DIR)/irqbalance-ui.c \
 	$(UI_DIR)/ui.c
