@@ -3,6 +3,7 @@ Description=irqbalance daemon
 Documentation=man:irqbalance(1)
 Documentation=https://github.com/Irqbalance/irqbalance
 ConditionVirtualization=!container
+ConditionCPUs=>1
 
 [Service]
 EnvironmentFile=-/usr/lib/irqbalance/defaults.env
