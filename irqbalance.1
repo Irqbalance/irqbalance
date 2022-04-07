@@ -135,6 +135,17 @@ This indicates that an error has occurred in the script, and it should be skippe
 (further processing to continue)
 
 .TP
+.B --migrateval, -e <val>
+Specify a minimum migration ratio to trigger a rebalancing
+Normally any improvement in load distribution will trigger the migration of an
+irq, as long as preforming the migration will not simply move the load to a new
+cpu.  By specifying a migration value, the load balance improvement is subject
+to hysteresis defined by this value, which is inversely propotional to the
+value.  For example, a value of 2 in this option tells irqbalance that the
+improvement in load distribution must be at least 50%, a value of 4 indicates
+the load distribution improvement must be at least 25%, etc
+
+.TP
 .B -s, --pid=<file>
 Have irqbalance write its process id to the specified file.  By default no
 pidfile is written.  The written pidfile is automatically unlinked when
