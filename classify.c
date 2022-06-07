@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "irqbalance.h"
 #include "types.h"
@@ -578,7 +579,7 @@ static int check_for_module_ban(char *name)
 		return 0;
 }
 
-static int check_for_irq_ban(int irq, GList *proc_interrupts)
+static int check_for_irq_ban(int irq, char *mod, GList *proc_interrupts)
 {
 	struct irq_info find, *res;
 	GList *entry;
@@ -594,6 +595,9 @@ static int check_for_irq_ban(int irq, GList *proc_interrupts)
 	/*
 	 * Check to see if we banned module which the irq belongs to.
 	 */
+	if (mod != NULL && strlen(mod) > 0 && check_for_module_ban(mod))
+		return 1;
+
 	entry = g_list_find_custom(proc_interrupts, &find, compare_ints);
 	if (entry) {
 		res = entry->data;
@@ -609,14 +613,25 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 	struct irq_info *new;
 	struct user_irq_policy pol;
 	int irq = hint->irq;
+	char buf[PATH_MAX], drvpath[PATH_MAX];
+	char *mod = NULL;
+	int ret;
 
 	new = get_irq_info(irq);
 	if (new)
 		return;
 
+	if (path) {
+		sprintf(buf, "%s/driver", path);
+		ret = readlink(buf, drvpath, PATH_MAX);
+		if (ret > 0 && ret < PATH_MAX) {
+			drvpath[ret] = '\0';
+			mod = basename(drvpath);
+		}
+	}
 	/* Set NULL devpath for the irq has no sysfs entries */
 	get_irq_user_policy(path, irq, &pol);
-	if ((pol.ban == 1) || check_for_irq_ban(irq, proc_interrupts)) { /*FIXME*/
+	if ((pol.ban == 1) || check_for_irq_ban(irq, mod, proc_interrupts)) { /*FIXME*/
 		__add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
