@@ -178,7 +178,7 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 	}
 
 #ifdef AARCH64
-	if (strlen(savedptr) > 0) {
+	if (savedptr && strlen(savedptr) > 0) {
 		snprintf(irq_fullname, PATH_MAX, "%s %s", last_token, savedptr);
 		tmp = strchr(irq_fullname, '\n');
 		if (tmp)
