@@ -1,0 +1,11 @@
+option('capng', type : 'feature',
+  description : 'Build with libcap-ng support',
+)
+
+option('systemd', type : 'feature',
+  description : 'Build with systemd support',
+)
+
+option('ui', type : 'feature',
+  description : 'Build the UI component',
+)
