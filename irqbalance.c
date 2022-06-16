@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #endif
 #include "irqbalance.h"
+#include "thermal.h"
 
 volatile int keep_going = 1;
 int one_shot_mode;
@@ -703,6 +704,8 @@ int main(int argc, char** argv)
 		goto out;
 	}
 #endif
+	if (init_thermal())
+		log(TO_ALL, LOG_WARNING, "Failed to initialize thermal events.\n");
 	main_loop = g_main_loop_new(NULL, FALSE);
 	last_interval = sleep_interval;
 	g_timeout_add_seconds(sleep_interval, scan, NULL);
@@ -711,6 +714,7 @@ int main(int argc, char** argv)
 	g_main_loop_quit(main_loop);
 
 out:
+	deinit_thermal();
 	free_object_tree();
 	free_cl_opts();
 	free(polscript);

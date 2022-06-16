@@ -40,6 +40,7 @@
  *
  * void cpus_shift_right(dst, src, n)	Shift right
  * void cpus_shift_left(dst, src, n)	Shift left
+ * void cpus_copy(dst, src)		Copy from src to dst
  *
  * int first_cpu(mask)			Number lowest set bit, or NR_CPUS
  * int next_cpu(cpu, mask)		Next cpu past 'cpu', or NR_CPUS
@@ -195,6 +196,14 @@ static inline void __cpus_shift_left(cpumask_t *dstp,
 					const cpumask_t *srcp, int n, int nbits)
 {
 	bitmap_shift_left(dstp->bits, srcp->bits, n, nbits);
+}
+
+#define cpus_copy(dst, src) \
+			__cpus_copy(&(dst), &(src), NR_CPUS)
+static inline void __cpus_copy(cpumask_t *dstp,
+					const cpumask_t *srcp, int nbits)
+{
+	bitmap_copy(dstp->bits, srcp->bits, nbits);
 }
 
 static inline int __first_cpu(const cpumask_t *srcp)
