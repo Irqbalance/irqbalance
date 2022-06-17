@@ -574,13 +574,13 @@ int init_socket()
 	snprintf(socket_name, 64, "%s/%s%d.sock", SOCKET_TMPFS, SOCKET_PATH, getpid());
 	strncpy(addr.sun_path, socket_name, sizeof(addr.sun_path));
 	if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the file-based socket.\n");
+		log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the file-based socket: %s.\n", strerror(errno));
 
 		/* Try binding to abstract */
 		memset(&addr, 0, sizeof(struct sockaddr_un));
 		addr.sun_family = AF_UNIX;
 		if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-			log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the abstract socket, bailing out.\n");
+			log(TO_ALL, LOG_WARNING, "Daemon couldn't be bound to the abstract socket, bailing out.: %s\n", strerror(errno));
 			return 1;
 		}
 	}
