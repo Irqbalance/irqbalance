@@ -331,7 +331,7 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 	char assigned_to[128] = "\0";
 	for_each_int(irq->assigned_to, copy_assigned_obj, assigned_to);
 	assigned_to[strlen(assigned_to) - 2] = '\0';
-	mvprintw(*line_offset, 36, "%s", assigned_to);
+	mvprintw(*line_offset, 68, "%s", assigned_to);
 }
 
 void print_irq_line(irq_t *irq, void *data)
@@ -364,9 +364,9 @@ void print_irq_line(irq_t *irq, void *data)
 	}
 	mvprintw(*line_offset, 3, "IRQ %d", irq->vector);
 	mvprintw(*line_offset, 19, "%s", irq->is_banned ? "YES" : "NO ");
-	print_assigned_objects_string(irq, line_offset);
-	mvprintw(*line_offset, 84, "%s",
+	mvprintw(*line_offset, 36, "%s",
 			 irq->class < 0 ? "Unknown" : IRQ_CLASS_TO_STR[irq->class]);
+	print_assigned_objects_string(irq, line_offset);
 	(*line_offset)++;
 
 }
@@ -377,8 +377,8 @@ void print_all_irqs()
 	*line = 4;
 	attrset(COLOR_PAIR(0));
 	mvprintw(2, 3,
-			"NUMBER          IS BANNED        ASSIGNED TO CPUS      \
-			    CLASS");
+			"NUMBER          IS BANNED        CLASS      \
+			    ASSIGNED TO CPUS");
 	for_each_irq(all_irqs, print_irq_line, line);
 }
 
