@@ -16,11 +16,16 @@
 #include "helpers.h"
 
 
+enum states {
+	STATE_TREE,
+	STATE_SETTINGS,
+	STATE_SETUP_IRQS
+};
+int state;
 int irqbalance_pid = -1;
 GList *tree = NULL;
 setup_t setup;
 GMainLoop *main_loop;
-int is_tree = 1;
 static int default_bufsz = 8192;
 
 struct msghdr * create_credentials_msg()
@@ -359,7 +364,7 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 	parse_setup(setup_data);
 	char *irqbalance_data = get_data(STATS);
 	parse_into_tree(irqbalance_data);
-	if(is_tree) {
+	if(state == STATE_TREE) {
 		display_tree();
 	}
 	free(setup_data);
@@ -375,16 +380,35 @@ gboolean key_loop(gpointer data __attribute__((unused)))
 		close_window(0);
 		break;
 	case KEY_F(3):
-		is_tree = 1;
-		display_tree();
+		if (state == STATE_SETTINGS || state == STATE_SETUP_IRQS) {
+			state = STATE_TREE;
+			display_tree();
+		}
 		break;
 	case KEY_F(4):
-		is_tree = 0;
+		if (state == STATE_TREE || state == STATE_SETUP_IRQS) {
+			state = STATE_SETTINGS;
+			settings();
+		}
 		settings();
 		break;
 	case KEY_F(5):
-		is_tree = 0;
-		setup_irqs();
+		if (state == STATE_TREE || state == STATE_SETTINGS) {
+			state = STATE_SETUP_IRQS;
+			setup_irqs();
+		}
+		break;
+	case 'c':
+		if (state == STATE_SETTINGS)
+			handle_cpu_banning();
+		break;
+	case 'i':
+		if (state == STATE_SETUP_IRQS)
+			handle_irq_banning();
+		break;
+	case 's':
+		if (state == STATE_SETTINGS)
+			handle_sleep_setting();
 		break;
 	default:
 		break;
@@ -437,6 +461,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	state = STATE_TREE;
 	init();
 
 	main_loop = g_main_loop_new(NULL, FALSE);
