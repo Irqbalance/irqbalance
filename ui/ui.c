@@ -273,7 +273,8 @@ void handle_cpu_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1,
 				"Press <S> for changing sleep setup, <C> for CPU ban setup.  ");
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			break;
 		case 's':
@@ -287,8 +288,8 @@ void handle_cpu_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1,
 				"Press <S> for changing sleep setup, <C> for CPU ban setup.  ");
-			attrset(COLOR_PAIR(3));
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			char settings_string[1024] = "settings cpus \0";
 			for_each_cpu(all_cpus, get_new_cpu_ban_values, settings_string);
@@ -301,16 +302,6 @@ void handle_cpu_banning()
 		case 'q':
 			processing = 0;
 			close_window(0);
-			break;
-		case KEY_F(3):
-			is_tree = 1;
-			processing = 0;
-			display_tree();
-			break;
-		case KEY_F(5):
-			is_tree = 0;
-			processing = 0;
-			setup_irqs();
 			break;
 		default:
 			break;
@@ -475,7 +466,8 @@ void handle_irq_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1, "Press <I> for setting up IRQ banning.\
 				");
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			break;
 		case 's':
@@ -490,7 +482,8 @@ void handle_irq_banning()
 			mvprintw(LINES - 2, 1, "Press <I> for setting up IRQ banning.\
 				");
 			attrset(COLOR_PAIR(3));
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			char settings_string[1024] = BAN_IRQS;
 			for_each_irq(all_irqs, get_new_irq_ban_values, settings_string);
@@ -504,20 +497,33 @@ void handle_irq_banning()
 			processing = 0;
 			close_window(0);
 			break;
-		case KEY_F(3):
-			is_tree = 1;
-			processing = 0;
-			display_tree();
-			break;
-		case KEY_F(4):
-			is_tree = 0;
-			processing = 0;
-			settings();
-			break;
 		default:
 			break;
 		}
 	}
+}
+
+void handle_sleep_setting()
+{
+	char info[128] = "Current sleep interval between rebalancing: \0";
+	uint8_t sleep_input_offset = strlen(info) + 3;
+	mvprintw(LINES - 1, 1, "Press ESC for discarding your input.\
+												");
+	attrset(COLOR_PAIR(0));
+	mvprintw(LINES - 2, 1, "			\
+												");
+	uint64_t new_sleep = get_valid_sleep_input(sleep_input_offset);
+	if(new_sleep != setup.sleep) {
+		setup.sleep = new_sleep;
+		char settings_data[128];
+		snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
+		send_settings(settings_data);
+	}
+	attrset(COLOR_PAIR(5));
+	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
+	show_frame();
+	show_footer();
+	refresh();
 }
 
 void init()
@@ -563,60 +569,15 @@ void settings()
 	parse_setup(setup_data);
 
 	char info[128] = "Current sleep interval between rebalancing: \0";
-	uint8_t sleep_input_offset = strlen(info) + 3;
 	snprintf(info + strlen(info), 128 - strlen(info), "%" PRIu64 "\n", setup.sleep);
 	attrset(COLOR_PAIR(1));
 	mvprintw(2, 3, "%s", info);
 	print_all_cpus();
-
-	int user_input = 1;
-	while(user_input) {
-		attrset(COLOR_PAIR(5));
-		mvprintw(LINES - 2, 1,
-				 "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
-		show_frame();
-		show_footer();
-		refresh();
-		int c = getch();
-		switch(c) {
-		case 's': {
-			mvprintw(LINES - 1, 1, "Press ESC for discarding your input.\
-												");
-			attrset(COLOR_PAIR(0));
-			mvprintw(LINES - 2, 1, "			\
-												");
-			uint64_t new_sleep = get_valid_sleep_input(sleep_input_offset);
-			if(new_sleep != setup.sleep) {
-				setup.sleep = new_sleep;
-				char settings_data[128];
-				snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
-				send_settings(settings_data);
-			}
-			break;
-		}
-		case 'c':
-			handle_cpu_banning();
-			break;
-		/* We need to include window changing options as well because the
-		 * related char was eaten up by getch() already */
-		case 'q':
-			user_input = 0;
-			close_window(0);
-			break;
-		case KEY_F(3):
-			is_tree = 1;
-			user_input = 0;
-			display_tree();
-			break;
-		case KEY_F(5):
-			is_tree = 0;
-			user_input = 0;
-			setup_irqs();
-			break;
-		default:
-			break;
-		}
-	}
+	attrset(COLOR_PAIR(5));
+	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
+	show_frame();
+	show_footer();
+	refresh();
 	free(setup_data);
 }
 
@@ -631,32 +592,6 @@ void setup_irqs()
 	show_frame();
 	show_footer();
 	refresh();
-
-	int user_input = 1;
-	while(user_input) {
-		int c = getch();
-		switch(c) {
-		case 'i':
-			handle_irq_banning();
-			break;
-		case 'q':
-			user_input = 0;
-			close_window(0);
-			break;
-		case KEY_F(3):
-			is_tree = 1;
-			user_input = 0;
-			display_tree();
-			break;
-		case KEY_F(4):
-			is_tree = 0;
-			user_input = 0;
-			settings();
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void display_tree_node_irqs(irq_t *irq, void *data)

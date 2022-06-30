@@ -13,7 +13,6 @@
 
 extern GList *tree;
 extern setup_t setup;
-extern int is_tree;
 
 void show_frame();
 void show_footer();
@@ -29,6 +28,7 @@ void display_banned_cpus();
 int toggle_cpu(GList *cpu_list, int cpu_number);
 void get_new_cpu_ban_values(cpu_ban_t *cpu, void *data);
 void get_cpu();
+void handle_sleep_setting();
 void handle_cpu_banning();
 
 void copy_assigned_obj(int *number, void *data);
