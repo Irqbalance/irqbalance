@@ -156,11 +156,10 @@ void print_all_cpus()
 		for_each_int(setup.banned_cpus, get_banned_cpu, NULL);
 		all_cpus = g_list_sort(all_cpus, sort_all_cpus);
 	}
-	int *line = malloc(sizeof(int));
-	*line = 6;
+	int line = 6;
 	attrset(COLOR_PAIR(2));
 	mvprintw(4, 3, "NUMBER          IS BANNED");
-	for_each_cpu(all_cpus, print_cpu_line, line);
+	for_each_cpu(all_cpus, print_cpu_line, &line);
 }
 
 void add_banned_cpu(int *banned_cpu, void *data)
@@ -364,13 +363,12 @@ void print_irq_line(irq_t *irq, void *data)
 
 void print_all_irqs()
 {
-	int *line = malloc(sizeof(int));
-	*line = 4;
+	int line = 4;
 	attrset(COLOR_PAIR(0));
 	mvprintw(2, 3,
 			"NUMBER          IS BANNED        CLASS      \
 			    ASSIGNED TO CPUS");
-	for_each_irq(all_irqs, print_irq_line, line);
+	for_each_irq(all_irqs, print_irq_line, &line);
 }
 
 int toggle_irq(GList *irq_list, int position)
