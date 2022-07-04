@@ -14,6 +14,9 @@
 extern GList *tree;
 extern setup_t setup;
 
+extern int offset;
+extern int max_offset;
+
 void show_frame();
 void show_footer();
 

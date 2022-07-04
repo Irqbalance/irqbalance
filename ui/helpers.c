@@ -89,6 +89,7 @@ gpointer copy_cpu_ban(gconstpointer src, gpointer data __attribute__((unused)))
 	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
 	new->number = old->number;
 	new->is_banned = old->is_banned;
+	new->is_changed = 0;
 	return new;
 }
 
@@ -100,6 +101,7 @@ gpointer copy_irq(gconstpointer src, gpointer data __attribute__((unused)))
 	new->load = old->load;
 	new->diff = old->diff;
 	new->is_banned = old->is_banned;
+	new->is_changed = 0;
 	new->class = old->class;
 	new->assigned_to = g_list_copy(old->assigned_to);
 	return new;
