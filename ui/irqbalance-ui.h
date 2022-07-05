@@ -41,6 +41,7 @@ typedef struct irq {
 	uint64_t load;
 	uint64_t diff;
 	char is_banned;
+	char is_changed;
 	GList *assigned_to;
 	int class;
 } irq_t;
@@ -60,6 +61,7 @@ typedef struct cpu_node {
 typedef struct cpu_ban {
 	int number;
 	char is_banned;
+	char is_changed;
 } cpu_ban_t;
 
 typedef struct setup {

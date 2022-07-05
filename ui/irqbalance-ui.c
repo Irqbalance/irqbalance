@@ -371,47 +371,115 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 	free(irqbalance_data);
 	return TRUE;
 }
-
-gboolean key_loop(gpointer data __attribute__((unused)))
-{
-	int c = getch();
-	switch(c) {
-	case 'q':
-		close_window(0);
+void scroll_window() {
+	switch(state) {
+	case STATE_TREE:
+		display_tree();
 		break;
-	case KEY_F(3):
-		if (state == STATE_SETTINGS || state == STATE_SETUP_IRQS) {
-			state = STATE_TREE;
-			display_tree();
-		}
-		break;
-	case KEY_F(4):
-		if (state == STATE_TREE || state == STATE_SETUP_IRQS) {
-			state = STATE_SETTINGS;
-			settings();
-		}
+	case STATE_SETTINGS:
 		settings();
 		break;
-	case KEY_F(5):
-		if (state == STATE_TREE || state == STATE_SETTINGS) {
-			state = STATE_SETUP_IRQS;
-			setup_irqs();
-		}
-		break;
-	case 'c':
-		if (state == STATE_SETTINGS)
-			handle_cpu_banning();
-		break;
-	case 'i':
-		if (state == STATE_SETUP_IRQS)
-			handle_irq_banning();
-		break;
-	case 's':
-		if (state == STATE_SETTINGS)
-			handle_sleep_setting();
+	case STATE_SETUP_IRQS:
+		setup_irqs();
 		break;
 	default:
 		break;
+	}
+}
+
+gboolean key_loop(gpointer data __attribute__((unused)))
+{
+	while(1) {
+		int c = getch();
+		switch(c) {
+		case 'q':
+			close_window(0);
+			break;
+		case KEY_UP:
+			if (offset > 0) {
+				offset--;
+				scroll_window();
+			}
+			break;
+		case KEY_DOWN:
+			if (offset < max_offset) {
+				offset++;
+				scroll_window();
+			}
+			break;
+		case KEY_NPAGE:
+			switch (state) {
+			case STATE_TREE:
+				offset += LINES - 5;
+				break;
+			case STATE_SETTINGS:
+				offset += LINES - 8;
+				break;
+			case STATE_SETUP_IRQS:
+				offset += LINES - 6;
+				break;
+			default:
+				break;
+			}
+			if (offset > max_offset)
+				offset = max_offset;
+			scroll_window();
+			break;
+		case KEY_PPAGE:
+			switch (state) {
+			case STATE_TREE:
+				offset -= LINES - 5;
+				break;
+			case STATE_SETTINGS:
+				offset -= LINES - 8;
+				break;
+			case STATE_SETUP_IRQS:
+				offset -= LINES - 6;
+				break;
+			default:
+				break;
+			}
+			if (offset < 0)
+				offset = 0;
+			scroll_window();
+			break;
+		case KEY_F(3):
+			if (state == STATE_SETTINGS || state == STATE_SETUP_IRQS) {
+				state = STATE_TREE;
+				offset = 0;
+				display_tree();
+			}
+			break;
+		case KEY_F(4):
+			if (state == STATE_TREE || state == STATE_SETUP_IRQS) {
+				state = STATE_SETTINGS;
+				offset = 0;
+				settings();
+			}
+			settings();
+			break;
+		case KEY_F(5):
+			if (state == STATE_TREE || state == STATE_SETTINGS) {
+				state = STATE_SETUP_IRQS;
+				offset = 0;
+				setup_irqs();
+			}
+			break;
+		case 'c':
+			if (state == STATE_SETTINGS)
+				handle_cpu_banning();
+			break;
+		case 'i':
+			if (state == STATE_SETUP_IRQS)
+				handle_irq_banning();
+			break;
+		case 's':
+			if (state == STATE_SETTINGS)
+				handle_sleep_setting();
+			break;
+		default:
+			break;
+		}
 	}
 	return TRUE;
 }
