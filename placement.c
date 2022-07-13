@@ -135,8 +135,12 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		 * Need to make sure this node is elligible for migration
 		 * given the banned cpu list
 		 */
-		if (!cpus_intersects(irq_numa_node(info)->mask, unbanned_cpus))
+		if (!cpus_intersects(irq_numa_node(info)->mask, unbanned_cpus)) {
+			log(TO_CONSOLE, LOG_WARNING, "There is no suitable CPU in node:%d.\n", irq_numa_node(info)->number);
+			log(TO_CONSOLE, LOG_WARNING, "Irqbalance dispatch irq:%d to other node.\n", info->irq);
 			goto find_placement;
+		}
+
 		/*
 		 * This irq belongs to a device with a preferred numa node
 		 * put it on that node
