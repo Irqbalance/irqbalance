@@ -167,7 +167,7 @@ Same as --debug.
 .B IRQBALANCE_BANNED_CPUS
 Provides a mask of CPUs which irqbalance should ignore and never assign interrupts to.
 If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
-system as the default value.
+system as the default value. The "isolcpus=" boot parameter specifies the isolated CPUs. The "nohz_full=" boot parameter specifies the adaptive-ticks CPUs. By default, no CPU will be an isolated or adaptive-ticks CPU.
 This is a hexmask without the leading ’0x’. On systems with large numbers of
 processors, each group of eight hex digits is separated by a comma ’,’. i.e.
 ‘export IRQBALANCE_BANNED_CPUS=fc0‘ would prevent irqbalance from assigning irqs
