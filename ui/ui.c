@@ -352,9 +352,32 @@ void handle_cpu_banning()
 	}
 }
 
+static int rbot, rtop;
+
+static inline void bsnl_emit(char *buf, int buflen)
+{
+	int len = strlen(buf);
+	if (len > 0) {
+		snprintf(buf + len, buflen - len, ",");
+		len++;
+	}
+	if (rbot == rtop)
+		snprintf(buf + len, buflen - len, "%d", rbot);
+	else
+		snprintf(buf + len, buflen - len, "%d-%d", rbot, rtop);
+}
+
 void copy_assigned_obj(int *number, void *data)
 {
-	snprintf(data + strlen(data), 128 - strlen(data), "%d, ", *number);
+	if (rtop == -1) {
+		rbot = rtop = *number;
+		return;
+	}
+	if (*number > rtop + 1) {
+		bsnl_emit(data, 128);
+		rbot = *number;
+	}
+	rtop = *number;
 }
 
 void print_assigned_objects_string(irq_t *irq, int *line_offset)
@@ -363,9 +386,10 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 		return;
 	}
 	char assigned_to[128] = "\0";
+	rtop = -1;
 	for_each_int(irq->assigned_to, copy_assigned_obj, assigned_to);
-	assigned_to[strlen(assigned_to) - 2] = '\0';
-	mvprintw(*line_offset, 68, "%s", assigned_to);
+	bsnl_emit(assigned_to, 128);
+	mvprintw(*line_offset, 68, "%s             ", assigned_to);
 }
 
 void print_tmp_irq_line(irq_t *irq, void *data __attribute__((unused)))
