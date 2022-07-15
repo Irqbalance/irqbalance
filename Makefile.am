@@ -37,6 +37,10 @@ if IRQBALANCEUI
 sbin_PROGRAMS += irqbalance-ui
 endif
 
+if STATICBUILD
+irqbalance_LDFLAGS = -Wl,-Bstatic
+endif
+
 irqbalance_SOURCES = activate.c bitmap.c classify.c cputree.c irqbalance.c \
 	irqlist.c numa.c placement.c procinterrupts.c
 if THERMAL

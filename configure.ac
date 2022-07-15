@@ -1,6 +1,6 @@
 AC_INIT(irqbalance,1.9.0)
-AC_PREREQ(2.12)dnl
-AM_CONFIG_HEADER(config.h)
+AC_PREREQ(2.69)dnl
+AC_CONFIG_HEADERS(config.h)
 
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign] [subdir-objects])
@@ -11,18 +11,27 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
 
+AC_HEADER_STDC
+AC_CHECK_HEADERS([numa.h])
+
+AC_CHECK_FUNCS(getopt_long)
+
+AC_ARG_ENABLE([staticbuild],
+	AS_HELP_STRING([--enable-staticbuild], [enable static builds(default disabled)]))
+
+AM_CONDITIONAL([STATICBUILD], [test "x$enable_staticbuild" = "xyes"])
+
+# If we requested static building, enable that in pkg-config
+AS_IF([test "x$enable_staticbuild" = "xyes"], [
+	PKG_CONFIG="$PKG_CONFIG --static"],[])
+
+
 AC_ARG_ENABLE([numa],
   AS_HELP_STRING([--disable-numa], [enable numa support (default is auto)]))
 AS_IF([test "$enable_numa" = "no"],[
   ac_cv_header_numa_h=no
   ac_cv_lib_numa_numa_available=no
 ])
-
-AC_HEADER_STDC
-AC_CHECK_HEADERS([numa.h])
-
-AC_CHECK_FUNCS(getopt_long)
-
 PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
 AC_CHECK_LIB(m, floor)
 
