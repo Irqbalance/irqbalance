@@ -142,7 +142,7 @@ try_again:
 void parse_setup(char *setup_data)
 {
 	char *token, *ptr;
-	int i,j;
+	int i,j, cpu = 0;
 	char *copy;
 	irq_t *new_irq = NULL;
 	if((setup_data == NULL) || (strlen(setup_data) == 0)) return;
@@ -179,14 +179,17 @@ void parse_setup(char *setup_data)
 	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
 	token = strtok_r(NULL, " ", &ptr);
 	for(i = strlen(token) - 1; i >= 0; i--) {
+		if (token[i] == ',')
+			continue;
 		char *map = hex_to_bitmap(token[i]);
 		for(j = 3; j >= 0; j--) {
 			if(map[j] == '1') {
 				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
-				*banned_cpu = (4 * (strlen(token) - (i + 1)) + (4 - (j + 1)));
+				*banned_cpu = cpu;
 				setup.banned_cpus = g_list_append(setup.banned_cpus,
 								banned_cpu);
 			}
+			cpu++;
 		}
 		free(map);
 	
