@@ -9,6 +9,8 @@ int max_offset;
 GList *all_cpus = NULL;
 GList *all_irqs = NULL;
 
+static char **irq_name;
+
 char *IRQ_CLASS_TO_STR[] = {
 			"Other",
 			"Legacy",
@@ -392,6 +394,38 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 	mvprintw(*line_offset, 68, "%s             ", assigned_to);
 }
 
+void get_irq_name(int end)
+{
+	int i, cpunr, len;
+	FILE *output;
+	char *cmd;
+	char buffer[128];
+
+	if (irq_name == NULL) {
+		irq_name = malloc(sizeof(char *) * LINES);
+		for (i = 4; i < LINES; i++) {
+			irq_name[i] = malloc(sizeof(char) * 50);
+			memset(irq_name[i], 0, sizeof(char) * 50);
+		}
+	}
+
+	output = popen("cat /proc/interrupts | head -1 | awk '{print NF}'", "r");
+	if (!output)
+		return;
+	fscanf(output, "%d", &cpunr);
+	pclose(output);
+
+	len = snprintf(NULL, 0, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+	cmd = alloca(sizeof(char) * (len + 1));
+	snprintf(cmd, len + 1, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+	output = popen(cmd, "r");
+	for (i = 0; i <= offset; i++)
+		fgets(buffer, 50, output);
+	for (i = 4; i < end; i++)
+		fgets(irq_name[i], 50, output);
+	pclose(output);
+}
+
 void print_tmp_irq_line(irq_t *irq, void *data __attribute__((unused)))
 {
 	int line = max_offset - offset + 4;
@@ -428,6 +462,7 @@ void print_tmp_irq_line(irq_t *irq, void *data __attribute__((unused)))
 	mvprintw(line, 36, "%s               ",
 			 irq->class < 0 ? "Unknown" : IRQ_CLASS_TO_STR[irq->class]);
 	print_assigned_objects_string(irq, &line);
+	mvprintw(line, 120, "%s", irq_name[line]);
 }
 
 void print_irq_line(irq_t *irq, void *data __attribute__((unused)))
@@ -466,6 +501,7 @@ void print_irq_line(irq_t *irq, void *data __attribute__((unused)))
 	mvprintw(line, 36, "%s               ",
 			 irq->class < 0 ? "Unknown" : IRQ_CLASS_TO_STR[irq->class]);
 	print_assigned_objects_string(irq, &line);
+	mvprintw(line, 120, "%s", irq_name[line]);
 }
 
 void print_all_irqs()
@@ -474,7 +510,8 @@ void print_all_irqs()
 	attrset(COLOR_PAIR(0));
 	mvprintw(2, 3,
 			"NUMBER          IS BANNED        CLASS      \
-			    ASSIGNED TO CPUS");
+			    ASSIGNED TO CPUS                                    IRQ NAME");
+	get_irq_name(LINES - 2);
 	for_each_irq(all_irqs, print_irq_line, NULL);
 	max_offset -= LINES - 6;
 	if (max_offset < 0)
@@ -545,6 +582,7 @@ void handle_irq_banning()
 			} else if (offset > 0) {
 				offset--;
 				max_offset = 0;
+				get_irq_name(LINES - 3);
 				for_each_irq(tmp, print_tmp_irq_line, NULL);
 				max_offset -= LINES - 7;
 				if (max_offset < 0)
@@ -561,6 +599,7 @@ void handle_irq_banning()
 			} else if (offset < max_offset) {
 				offset++;
 				max_offset = 0;
+				get_irq_name(LINES - 3);
 				for_each_irq(tmp, print_tmp_irq_line, NULL);
 				max_offset -= LINES - 7;
 				if (max_offset < 0)
