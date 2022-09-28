@@ -579,16 +579,14 @@ static int check_for_module_ban(char *name)
 		return 0;
 }
 
-static int check_for_irq_ban(int irq, char *mod, GList *proc_interrupts)
+static int check_for_irq_ban(struct irq_info *irq, char *mod)
 {
-	struct irq_info find, *res;
 	GList *entry;
 
 	/*
 	 * Check to see if we banned this irq on the command line
 	 */
-	find.irq = irq;
-	entry = g_list_find_custom(cl_banned_irqs, &find, compare_ints);
+	entry = g_list_find_custom(cl_banned_irqs, irq, compare_ints);
 	if (entry)
 		return 1;
 
@@ -598,17 +596,16 @@ static int check_for_irq_ban(int irq, char *mod, GList *proc_interrupts)
 	if (mod != NULL && strlen(mod) > 0 && check_for_module_ban(mod))
 		return 1;
 
-	entry = g_list_find_custom(proc_interrupts, &find, compare_ints);
-	if (entry) {
-		res = entry->data;
-		if (check_for_module_ban(res->name))
-			return 1;
-	}
+    /*
+     * Check if any banned modules are substrings in irq->name
+     */
+	if (irq->name != NULL && strlen(irq->name) > 0 && check_for_module_ban(irq->name))
+		return 1;
 
 	return 0;
 }
 
-static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupts)
+static void add_new_irq(char *path, struct irq_info *hint)
 {
 	struct irq_info *new;
 	struct user_irq_policy pol;
@@ -631,7 +628,7 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 	}
 	/* Set NULL devpath for the irq has no sysfs entries */
 	get_irq_user_policy(path, irq, &pol);
-	if ((pol.ban == 1) || check_for_irq_ban(irq, mod, proc_interrupts)) { /*FIXME*/
+	if ((pol.ban == 1) || check_for_irq_ban(hint, mod)) { /*FIXME*/
 		__add_banned_irq(irq, &banned_irqs);
 		new = get_irq_info(irq);
 	} else
@@ -644,7 +641,7 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 /*
  * Figures out which interrupt(s) relate to the device we"re looking at in dirname
  */
-static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_irq)
+static void build_one_dev_entry(const char *dirname, int build_irq)
 {
 	struct dirent *entry;
 	DIR *msidir;
@@ -671,7 +668,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_
 			if (irqnum && ((build_irq < 0) || (irqnum == build_irq))) {
 				hint.irq = irqnum;
 				hint.type = IRQ_TYPE_MSIX;
-				add_new_irq(devpath, &hint, tmp_irqs);
+				add_new_irq(devpath, &hint);
 				if (build_irq >= 0) {
 					log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
 					break;
@@ -699,7 +696,7 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_
 		if ((build_irq < 0) || (irqnum == build_irq)) {
 			hint.irq = irqnum;
 			hint.type = IRQ_TYPE_LEGACY;
-			add_new_irq(devpath, &hint, tmp_irqs);
+			add_new_irq(devpath, &hint);
 			if (build_irq >= 0)
 				log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
 		}
@@ -732,11 +729,10 @@ void free_cl_opts(void)
 	g_list_free_full(cl_banned_irqs, free);
 }
 
-static void add_missing_irq(struct irq_info *info, void *attr)
+static void add_missing_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
-	GList *proc_interrupts = (GList *) attr;
 
-	add_new_irq(NULL, info, proc_interrupts);
+	add_new_irq(NULL, info);
 }
 
 static void free_tmp_irqs(gpointer data)
@@ -747,7 +743,7 @@ static void free_tmp_irqs(gpointer data)
 	free(info);
 }
 
-static struct irq_info * build_dev_irqs(GList *tmp_irqs, int build_irq)
+static struct irq_info * build_dev_irqs(int build_irq)
 {
 	DIR *devdir;
 	struct dirent *entry;
@@ -760,7 +756,7 @@ static struct irq_info * build_dev_irqs(GList *tmp_irqs, int build_irq)
 			if (!entry)
 				break;
 			/* when hotplug irqs, we add one irq at one time */
-			build_one_dev_entry(entry->d_name, tmp_irqs, build_irq);
+			build_one_dev_entry(entry->d_name, build_irq);
 			if (build_irq >= 0) {
 				new_irq = get_irq_info(build_irq);
 				if (new_irq)
@@ -777,11 +773,11 @@ int proc_irq_hotplug(char *savedline, int irq, struct irq_info **pinfo)
 	struct irq_info tmp_info = {0};
 
 	/* firstly, init irq info by read device info */
-	*pinfo = build_dev_irqs(interrupts_db, irq);
+	*pinfo = build_dev_irqs(irq);
 	if (*pinfo == NULL) {
 		/* secondly, init irq info by parse savedline */
 		init_irq_class_and_type(savedline, &tmp_info, irq);
-		add_new_irq(NULL, &tmp_info, interrupts_db);
+		add_new_irq(NULL, &tmp_info);
 		*pinfo = get_irq_info(irq);
 	}
 	if (*pinfo == NULL) {
@@ -800,10 +796,9 @@ void rebuild_irq_db(void)
 
 	tmp_irqs = collect_full_irq_list();
 	
-	build_dev_irqs(tmp_irqs, -1);
+	build_dev_irqs(-1);
 
-	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
-
+	for_each_irq(tmp_irqs, add_missing_irq, NULL);
 	g_list_free_full(tmp_irqs, free_tmp_irqs);
 
 }
