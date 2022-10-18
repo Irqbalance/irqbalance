@@ -259,7 +259,7 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 
 static void __add_banned_irq(int irq, GList **list)
 {
-	struct irq_info find, *new;
+	struct irq_info find = {0}, *new;
 	GList *entry;
 
 	find.irq = irq;
@@ -394,7 +394,7 @@ get_numa_node:
 
 void remove_one_irq_from_db(int irq)
 {
-	struct irq_info find, *tmp;
+	struct irq_info find = {0}, *tmp;
 	GList *entry = NULL;
 
 	find.irq = irq;
@@ -646,7 +646,7 @@ static void build_one_dev_entry(const char *dirname, int build_irq)
 	struct dirent *entry;
 	DIR *msidir;
 	int irqnum;
-	struct irq_info hint;
+	struct irq_info hint = {0};
 	char path[PATH_MAX];
 	char devpath[PATH_MAX];
 
@@ -818,7 +818,7 @@ void for_each_irq(GList *list, void (*cb)(struct irq_info *info, void *data), vo
 struct irq_info *get_irq_info(int irq)
 {
 	GList *entry;
-	struct irq_info find;
+	struct irq_info find = {0};
 
 	find.irq = irq;
 	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
@@ -832,7 +832,7 @@ struct irq_info *get_irq_info(int irq)
 void migrate_irq(GList **from, GList **to, struct irq_info *info)
 {
 	GList *entry;
-	struct irq_info find, *tmp;
+	struct irq_info find = {0}, *tmp;
 
 	find.irq = info->irq;
 	entry = g_list_find_custom(*from, &find, compare_ints);
