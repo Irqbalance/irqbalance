@@ -646,7 +646,7 @@ static void build_one_dev_entry(const char *dirname, int build_irq)
 	struct dirent *entry;
 	DIR *msidir;
 	int irqnum;
-	struct irq_info hint;
+	struct irq_info hint = {0};
 	char path[PATH_MAX];
 	char devpath[PATH_MAX];
 
