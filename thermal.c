@@ -99,13 +99,13 @@ static gboolean prepare_netlink(void)
 
 	rc = genl_connect(sock);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: socket bind failed.\n");
+		log(TO_ALL, LOG_INFO, "thermal: socket bind failed, thermald may not be running.\n");
 		return TRUE;
 	}
 
 	callback = nl_cb_alloc(NL_CB_DEFAULT);
 	if (!callback) {
-		log(TO_ALL, LOG_ERR, "thermal: callback allocation failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: callback allocation failed.\n");
 		return TRUE;
 	}
 
@@ -123,7 +123,7 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
 	int attrlen, rc, i;
 
 	if (!arg) {
-		log(TO_ALL, LOG_ERR, "thermal: group id - failed to receive argument.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: group id - failed to receive argument.\n");
 		return NL_SKIP;
 	}
 	data = arg;
@@ -148,14 +148,14 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
 		attrlen,	/* length of attribute stream */
 		policy);	/* validation policy */
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: group id - failed to create attributes.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: group id - failed to create attributes.\n");
 		return NL_SKIP;
 	}
 
 	/* start of the multi-cast group attribute */
 	mcgrp = attrs[CTRL_ATTR_MCAST_GROUPS];
 	if (!mcgrp) {
-		log(TO_ALL, LOG_ERR, "thermal: group id - no multi-cast group attributes.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: group id - no multi-cast group attributes.\n");
 		return NL_SKIP;
 	}
 
@@ -223,82 +223,82 @@ static gboolean establish_netlink(void)
 
 	msg = nlmsg_alloc();
 	if (!msg) {
-		log(TO_ALL, LOG_ERR, "thermal: message allocation failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: message allocation failed.\n");
 		goto err_out;
 	}
 
 	msghdr.id = genl_ctrl_resolve(sock, NL_FAMILY_NAME);
 	if (msghdr.id < 0) {
-		log(TO_ALL, LOG_ERR, "thermal: message id enumeration failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: message id enumeration failed.\n");
 		goto err_out;
 	}
 
 	hdr = genlmsg_put(msg, msghdr.port, msghdr.seq, msghdr.id, msghdr.hdrlen,
 			  msghdr.flags, msghdr.cmd, msghdr.version);
 	if (!hdr) {
-		log(TO_ALL, LOG_ERR, "thermal: netlink header setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: netlink header setup failed.\n");
 		goto err_out;
 	}
 
 	rc = nla_put_string(msg, CTRL_ATTR_FAMILY_NAME, THERMAL_GENL_FAMILY_NAME);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: message setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: message setup failed.\n");
 		goto err_out;
 	}
 
 	cloned_callback = nl_cb_clone(callback);
 	if (!cloned_callback) {
-		log(TO_ALL, LOG_ERR, "thermal: callback handle duplication failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: callback handle duplication failed.\n");
 		goto err_out;
 	}
 
 	rc = nl_send_auto(sock, msg);
 	if (rc < 0) {
-		log(TO_ALL, LOG_ERR, "thermal: failed to send the first message.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: failed to send the first message.\n");
 		goto err_out;
 	}
 
 	rc = nl_cb_err(cloned_callback, NL_CB_CUSTOM, handle_error, &callback_rc);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: error callback setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: error callback setup failed.\n");
 		goto err_out;
 	}
 
 	rc = nl_cb_set(cloned_callback, NL_CB_ACK, NL_CB_CUSTOM, handle_end, &callback_rc);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: ack callback setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: ack callback setup failed.\n");
 		goto err_out;
 	}
 
 	rc = nl_cb_set(cloned_callback, NL_CB_FINISH, NL_CB_CUSTOM, handle_end, &callback_rc);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: finish callback setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: finish callback setup failed.\n");
 		goto err_out;
 	}
 
 	rc = nl_cb_set(cloned_callback, NL_CB_VALID, NL_CB_CUSTOM, handle_groupid, &nldata);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: group id callback setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: group id callback setup failed.\n");
 		goto err_out;
 	}
 
 	while (callback_rc != 0) {
 		rc = nl_recvmsgs(sock, cloned_callback);
 		if (rc < 0) {
-			log(TO_ALL, LOG_ERR, "thermal: failed to receive messages.\n");
+			log(TO_ALL, LOG_WARNING, "thermal: failed to receive messages.\n");
 			goto err_out;
 		}
 	}
 
 	group_id = nldata.id;
 	if (group_id < 0) {
-		log(TO_ALL, LOG_ERR, "thermal: invalid group_id was received.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: invalid group_id was received.\n");
 		goto err_out;
 	}
 
 	rc = nl_socket_add_membership(sock, group_id);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: failed to join the netlink group.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: failed to join the netlink group.\n");
 		goto err_out;
 	}
 
@@ -428,20 +428,20 @@ static gboolean register_netlink_handler(void)
 	int rc;
 
 	if (sysconf(_SC_NPROCESSORS_ONLN) == SYSCONF_ERR) {
-		log(TO_ALL, LOG_ERR, "thermal: _SC_NPROCESSORS_ONLN not available.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: _SC_NPROCESSORS_ONLN not available.\n");
 		return TRUE;
 	}
 
 	rc = nl_cb_set(callback, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, handler_for_debug, NULL);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: debug handler registration failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: debug handler registration failed.\n");
 		return TRUE;
 	}
 
 
 	rc = nl_cb_set(callback, NL_CB_VALID, NL_CB_CUSTOM, handle_thermal_event, NULL);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: thermal handler registration failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: thermal handler registration failed.\n");
 		return TRUE;
 	}
 
@@ -461,7 +461,7 @@ gboolean receive_thermal_event(gint fd __attribute__((unused)),
 
 		err = nl_recvmsgs(sock, callback);
 		if (err) {
-			log(TO_ALL, LOG_ERR, "thermal: failed to receive messages (rc=%d).\n", err);
+			log(TO_ALL, LOG_WARNING, "thermal: failed to receive messages (rc=%d).\n", err);
 			retry++;
 
 			/*
@@ -469,9 +469,9 @@ gboolean receive_thermal_event(gint fd __attribute__((unused)),
 			 * failing down.
 			 */
 			if (retry <= MAX_RECV_ERRS) {
-				log(TO_ALL, LOG_ERR, "thermal: but keep the connection.\n");
+				log(TO_ALL, LOG_WARNING, "thermal: but keep the connection.\n");
 			} else {
-				log(TO_ALL, LOG_ERR, "thermal: disconnect now with %u failures.\n",
+				log(TO_ALL, LOG_WARNING, "thermal: disconnect now with %u failures.\n",
 				    retry);
 				return FALSE;
 			}
@@ -489,13 +489,13 @@ static gboolean set_netlink_nonblocking(void)
 
 	rc = nl_socket_set_nonblocking(sock);
 	if (rc) {
-		log(TO_ALL, LOG_ERR, "thermal: non-blocking mode setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: non-blocking mode setup failed.\n");
 		return TRUE;
 	}
 
 	fd = nl_socket_get_fd(sock);
 	if (fd == INVALID_NL_FD) {
-		log(TO_ALL, LOG_ERR, "thermal: file descriptor setup failed.\n");
+		log(TO_ALL, LOG_WARNING, "thermal: file descriptor setup failed.\n");
 		return TRUE;
 	}
 
