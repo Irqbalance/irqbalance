@@ -506,8 +506,14 @@ static gboolean set_netlink_nonblocking(void)
 
 void deinit_thermal(void)
 {
-	nl_cb_put(callback);
-	nl_socket_free(sock);
+	if (callback) {
+		nl_cb_put(callback);
+		callback = NULL;
+	}
+	if (sock) {
+		nl_socket_free(sock);
+		sock = NULL;
+	}
 }
 
 /*
