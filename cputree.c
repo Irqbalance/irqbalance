@@ -315,7 +315,7 @@ static void do_one_cpu(char *path)
 
 	cpu->obj_type = OBJ_TYPE_CPU;
 
-	cpu->number = strtoul(&path[27], NULL, 10);
+	cpu->number = cpunr;
 
 	cpu_set(cpu->number, cpu_online_map);
 	
