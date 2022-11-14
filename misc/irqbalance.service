@@ -11,7 +11,7 @@ EnvironmentFile=-/path/to/irqbalance.env
 ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
 ReadOnlyPaths=/
 ReadWritePaths=/proc/irq
-RestrictAddressFamilies=AF_UNIX
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
 RuntimeDirectory=irqbalance/
 
 [Install]
