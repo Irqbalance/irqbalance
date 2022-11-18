@@ -99,7 +99,7 @@ static gboolean prepare_netlink(void)
 
 	rc = genl_connect(sock);
 	if (rc) {
-		log(TO_ALL, LOG_INFO, "thermal: socket bind failed, thermald may not be running.\n");
+		log(TO_ALL, LOG_INFO, "thermal: socket bind failed.\n");
 		return TRUE;
 	}
 
