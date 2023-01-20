@@ -778,6 +778,8 @@ int proc_irq_hotplug(char *savedline, int irq, struct irq_info **pinfo)
 		/* secondly, init irq info by parse savedline */
 		init_irq_class_and_type(savedline, &tmp_info, irq);
 		add_new_irq(NULL, &tmp_info);
+		free(tmp_info.name);
+
 		*pinfo = get_irq_info(irq);
 	}
 	if (*pinfo == NULL) {
