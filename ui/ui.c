@@ -45,7 +45,7 @@ void show_footer()
 	while(strlen(footer) != (size_t)COLS - 1) {
 		snprintf(footer + strlen(footer), COLS - strlen(footer), " ");
 	}
-	attrset(COLOR_PAIR(4));
+	attrset(COLOR_PAIR(4) | A_BOLD);
 	mvprintw(LINES - 1, 0, "%s", footer);
 }
 
@@ -73,7 +73,7 @@ char * check_control_in_sleep_input(int max_len, int column_offest, int line_off
 				mvaddch(line_offset, column_offest + iteration, ' ');
 			}
 			move(line_offset, column_offest + iteration);
-			attrset(COLOR_PAIR(6));
+			attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
 			break;
 		case 27:
 			free(input_to);
@@ -93,7 +93,7 @@ int get_valid_sleep_input(int column_offest)
 	while(1) {
 		attrset(COLOR_PAIR(5));
 		mvprintw(2, column_offest, "			");
-		attrset(COLOR_PAIR(6));
+		attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
 		refresh();
 		move(2, column_offest);
 		curs_set(1);
@@ -115,7 +115,7 @@ int get_valid_sleep_input(int column_offest)
 			break;
 		} else {
 			new_sleep = setup.sleep;
-			attrset(COLOR_PAIR(4));
+			attrset(COLOR_PAIR(4) | A_BOLD);
 			mvprintw(LINES - 2, 1,
 				"Invalid input: %s								",
 				input);
@@ -705,16 +705,17 @@ void init()
 	echo();
 	if(has_colors()) {
 		start_color();
-		init_pair(1, COLOR_RED, COLOR_BLACK);
-		init_pair(2, COLOR_YELLOW, COLOR_BLACK);
-		init_pair(3, COLOR_GREEN, COLOR_BLACK);
+		use_default_colors();
+		init_pair(1, COLOR_RED, -1);
+		init_pair(2, COLOR_YELLOW, -1);
+		init_pair(3, COLOR_GREEN, -1);
 		init_pair(4, COLOR_WHITE, COLOR_BLUE);
-		init_pair(5, COLOR_WHITE, COLOR_RED);
-		init_pair(6, COLOR_RED, COLOR_WHITE);
-		init_pair(7, COLOR_BLACK, COLOR_CYAN);
-		init_pair(8, COLOR_BLUE, COLOR_BLACK);
-		init_pair(9, COLOR_CYAN, COLOR_BLACK);
-		init_pair(10, COLOR_MAGENTA, COLOR_BLACK);
+		init_pair(5, -1, COLOR_RED);
+		/* Pair 6 is unused */
+		/* Pair 7 is unused */
+		init_pair(8, COLOR_BLUE, -1);
+		init_pair(9, COLOR_CYAN, -1);
+		init_pair(10, COLOR_MAGENTA, -1);
 	}
 
 	offset = 0;
