@@ -407,7 +407,7 @@ static int handle_thermal_event(struct nl_msg *msg, void *arg __attribute__((unu
 		need_to_ban = !!(!event_data[INDEX_PERF] && !event_data[INDEX_EFFI]);
 		update_banned_cpus(cur_cpuidx, need_to_ban);
 
-		log(TO_ALL, LOG_DEBUG, "thermal: event - CPU %d, efficiency %d, perf %d.\n",
+		log(TO_ALL, LOG_DEBUG, "thermal: event - CPU %d, perf %d, efficiency %d.\n",
 		    cur_cpuidx, event_data[INDEX_PERF], event_data[INDEX_EFFI]);
 	}
 
