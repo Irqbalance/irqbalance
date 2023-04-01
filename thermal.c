@@ -190,7 +190,7 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
 static int handle_error(struct sockaddr_nl *sk_addr __attribute__((unused)),
 			struct nlmsgerr *err, void *arg)
 {
-	int rc = (err->error == -NLE_INTR) ? NL_SKIP : NL_STOP;
+	int rc = (err->error == -NLE_INTR) ? NL_STOP : NL_SKIP;
 
 	if (arg && err->error != -NLE_INTR) {
 		log(TO_ALL, LOG_INFO, "thermal: received a netlink error (%s).\n",
