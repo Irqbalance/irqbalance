@@ -86,10 +86,17 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	info->moved = 0; /*migration is done*/
 	return;
 error:
-	log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity: %s. add it to banned list",
+	log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity: %s",
 		info->irq, strerror(errno));
-	add_banned_irq(info->irq);
-	remove_one_irq_from_db(info->irq);
+	if (errno != ENOSPC) {
+		/*
+		 * Do not ban the IRQ if the APIC reports a transient out of
+		 * space error.
+		 */
+		log(TO_ALL, LOG_WARNING, "adding irq %i to ban list", info->irq);
+		add_banned_irq(info->irq);
+		remove_one_irq_from_db(info->irq);
+	}
 }
 
 void activate_mappings(void)
