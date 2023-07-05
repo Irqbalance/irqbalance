@@ -48,7 +48,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
-	int ret = 0;
+	int ret, errsave;
 	cpumask_t applied_mask;
 
 	/*
@@ -72,17 +72,24 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
 	if (!file)
-		return;
+		goto error;
 
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
-	if (ret < 0 || fflush(file)) {
-		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
-		add_banned_irq(info->irq);
-		remove_one_irq_from_db(info->irq);
+	errsave = errno;
+	if (fclose(file))
+		goto error;
+	if (ret < 0) {
+		errno = errsave;
+		goto error;
 	}
-	fclose(file);
 	info->moved = 0; /*migration is done*/
+	return;
+error:
+	log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity: %s. add it to banned list",
+		info->irq, strerror(errno));
+	add_banned_irq(info->irq);
+	remove_one_irq_from_db(info->irq);
 }
 
 void activate_mappings(void)
