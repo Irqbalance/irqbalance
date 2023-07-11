@@ -60,6 +60,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->assigned_obj)
 		return;
 
+	if (info->flags & IRQ_FLAG_AFFINITY_UNMANAGED)
+		return;
+
 	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
 	cpus_and(applied_mask, cpu_online_map, info->assigned_obj->mask);
 
@@ -77,9 +80,8 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	if (ret < 0) {
-		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
-		add_banned_irq(info->irq);
-		remove_one_irq_from_db(info->irq);
+		log(TO_ALL, LOG_WARNING, "cannot change IRQ %i affinity, will never try again\n", info->irq);
+		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
 	}
 	fclose(file);
 	info->moved = 0; /*migration is done*/
