@@ -25,10 +25,12 @@
  * of interrupts to the kernel.
  */
 #include "config.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "irqbalance.h"
 
@@ -48,7 +50,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
-	int ret = 0;
+	int errsave, ret;
 	cpumask_t applied_mask;
 
 	/*
@@ -79,11 +81,18 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
-	if (fclose(file) || ret < 0)
+	errsave = errno;
+	if (fclose(file)) {
+		errsave = errno;
+		goto error;
+	}
+	if (ret < 0)
 		goto error;
 	info->moved = 0; /*migration is done*/
 error:
-	log(TO_ALL, LOG_WARNING, "cannot change IRQ %i affinity, will never try again\n", info->irq);
+	log(TO_ALL, LOG_WARNING,
+		"Cannot change IRQ %i affinity: %s. Will never try again.\n",
+		info->irq, strerror(errsave));
 	info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
 }
 
