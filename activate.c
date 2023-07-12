@@ -75,16 +75,16 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
 	if (!file)
-		return;
+		goto error;
 
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
-	if (ret < 0) {
-		log(TO_ALL, LOG_WARNING, "cannot change IRQ %i affinity, will never try again\n", info->irq);
-		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
-	}
-	fclose(file);
+	if (fclose(file) || ret < 0)
+		goto error;
 	info->moved = 0; /*migration is done*/
+error:
+	log(TO_ALL, LOG_WARNING, "cannot change IRQ %i affinity, will never try again\n", info->irq);
+	info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
 }
 
 void activate_mappings(void)
