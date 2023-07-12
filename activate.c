@@ -91,9 +91,23 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	info->moved = 0; /*migration is done*/
 error:
 	log(TO_ALL, LOG_WARNING,
-		"Cannot change IRQ %i affinity: %s. Will never try again.\n",
+		"Cannot change IRQ %i affinity: %s\n",
 		info->irq, strerror(errsave));
-	info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
+	switch (errsave) {
+	case ENOSPC: /* Specified CPU APIC is full. */
+	case EAGAIN: /* Interrupted by signal. */
+	case EBUSY: /* Affinity change already in progress. */
+	case EINVAL: /* IRQ would be bound to no CPU. */
+	case ERANGE: /* CPU in mask is offline. */
+	case ENOMEM: /* Kernel cannot allocate CPU mask. */
+		/* Do not blacklist the IRQ on transient errors. */
+		break;
+	default:
+		/* Any other error is considered permanent. */
+		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
+		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
+			info->irq);
+	}
 }
 
 void activate_mappings(void)
