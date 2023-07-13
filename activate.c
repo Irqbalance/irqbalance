@@ -25,10 +25,12 @@
  * of interrupts to the kernel.
  */
 #include "config.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "irqbalance.h"
 
@@ -48,7 +50,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 {
 	char buf[PATH_MAX];
 	FILE *file;
-	int ret = 0;
+	int errsave, ret;
 	cpumask_t applied_mask;
 
 	/*
@@ -58,6 +60,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 		return;
 
 	if (!info->assigned_obj)
+		return;
+
+	if (info->flags & IRQ_FLAG_AFFINITY_UNMANAGED)
 		return;
 
 	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
@@ -72,17 +77,37 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
 	if (!file)
-		return;
+		goto error;
 
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
-	if (ret < 0) {
-		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
-		add_banned_irq(info->irq);
-		remove_one_irq_from_db(info->irq);
+	errsave = errno;
+	if (fclose(file)) {
+		errsave = errno;
+		goto error;
 	}
-	fclose(file);
+	if (ret < 0)
+		goto error;
 	info->moved = 0; /*migration is done*/
+error:
+	log(TO_ALL, LOG_WARNING,
+		"Cannot change IRQ %i affinity: %s\n",
+		info->irq, strerror(errsave));
+	switch (errsave) {
+	case ENOSPC: /* Specified CPU APIC is full. */
+	case EAGAIN: /* Interrupted by signal. */
+	case EBUSY: /* Affinity change already in progress. */
+	case EINVAL: /* IRQ would be bound to no CPU. */
+	case ERANGE: /* CPU in mask is offline. */
+	case ENOMEM: /* Kernel cannot allocate CPU mask. */
+		/* Do not blacklist the IRQ on transient errors. */
+		break;
+	default:
+		/* Any other error is considered permanent. */
+		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
+		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
+			info->irq);
+	}
 }
 
 void activate_mappings(void)
