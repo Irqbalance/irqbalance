@@ -89,6 +89,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (ret < 0)
 		goto error;
 	info->moved = 0; /*migration is done*/
+	return;
 error:
 	log(TO_ALL, LOG_WARNING,
 		"Cannot change IRQ %i affinity: %s\n",
