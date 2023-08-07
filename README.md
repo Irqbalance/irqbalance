@@ -10,16 +10,29 @@ minimizing cache miss rates for irq handlers.
 ## Building and Installing [![Build Status](https://travis-ci.org/Irqbalance/irqbalance.svg?branch=master)](https://travis-ci.org/Irqbalance/irqbalance)
 
 ```bash
+autoupdate ## May be required first time you build
 ./autogen.sh
 ./configure [options]
 make
 make install
 ```
 
+
+_Note: If you see `This machine seems not NUMA capable.` in debug and you built the binary yourself, you are likely missing the numa headers. Check `config.log`._
+
+
+### Ubuntu specific packages for building
+```
+sudo apt-get update 
+sudo apt-get install -y glib2.0 libglib2.0-dev git autoconf automake libtool make gcc pkg-config libncurses-dev libnuma-dev
+```
+
+
 ## Developing Irqbalance
 
 Irqbalance is currently hosted on github, and so developers are welcome to use
 the issue/pull request/etc infrastructure found there.  
+
 
 ## Bug reporting
 
