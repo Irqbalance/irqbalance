@@ -617,6 +617,16 @@ int main(int argc, char** argv)
 	parse_command_line(argc, argv);
 
 	/*
+	 * Check if we are run under systemd and enable journal_logging
+	 * and run in foreground if so. Systemd v232 or later will set
+	 * INVOCATION_ID.
+	 */
+	if (getenv("INVOCATION_ID")) {
+		journal_logging=1;
+		foreground_mode=1;
+	}
+
+	/*
  	 * Open the syslog connection
  	 */
 	openlog(argv[0], 0, LOG_DAEMON);
