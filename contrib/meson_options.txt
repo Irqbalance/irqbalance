@@ -2,6 +2,10 @@ option('capng', type : 'feature',
   description : 'Build with libcap-ng support',
 )
 
+option('numa', type : 'feature', value: 'enabled',
+  description : 'Build with numa support',
+)
+
 option('systemd', type : 'feature',
   description : 'Build with systemd support',
 )
