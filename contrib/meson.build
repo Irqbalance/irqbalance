@@ -28,6 +28,13 @@ if cdata.get('HAVE_IRQBALANCEUI')
     dependencies: [glib_dep, ncurses_dep],
     install: true,
   )
+
+  install_man(
+    '../irqbalance-ui.1',
+    install_dir: get_option('mandir') + '/man1',
+    install_mode: 'rw-r--r--',
+    locale: 'en',
+  )
 endif
 
 executable(
@@ -43,4 +50,11 @@ executable(
   '../procinterrupts.c',
   dependencies: [glib_dep, m_dep, capng_dep, numa_dep, systemd_dep],
   install: true,
+)
+
+install_man(
+  '../irqbalance.1',
+  install_dir: get_option('mandir') + '/man1',
+  install_mode: 'rw-r--r--',
+  locale: 'en',
 )
