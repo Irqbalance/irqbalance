@@ -10,6 +10,10 @@ option('systemd', type : 'feature',
   description : 'Build with systemd support',
 )
 
+option('thermal', type : 'feature',
+  description : 'Build with thermal support',
+)
+
 option('ui', type : 'feature',
   description : 'Build the UI component',
 )
