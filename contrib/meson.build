@@ -1,10 +1,11 @@
-project('irqbalance', 'c', version: '1.9.0', default_options: ['warning_level=1'])
+project('irqbalance', 'c', version: '1.9.3', default_options: ['warning_level=1'])
 cc = meson.get_compiler('c')
 
 glib_dep = dependency('glib-2.0')
 m_dep = cc.find_library('m', required: false)
 capng_dep = dependency('libcap-ng', required: get_option('capng'))
 ncurses_dep = dependency('curses', required: get_option('ui'))
+numa_dep = dependency('numa')
 systemd_dep = dependency('libsystemd', required: get_option('systemd'))
 
 cdata = configuration_data()
@@ -27,6 +28,13 @@ if cdata.get('HAVE_IRQBALANCEUI')
     dependencies: [glib_dep, ncurses_dep],
     install: true,
   )
+
+  install_man(
+    '../irqbalance-ui.1',
+    install_dir: get_option('mandir') + '/man1',
+    install_mode: 'rw-r--r--',
+    locale: 'en',
+  )
 endif
 
 executable(
@@ -40,6 +48,13 @@ executable(
   '../numa.c',
   '../placement.c',
   '../procinterrupts.c',
-  dependencies: [glib_dep, m_dep, capng_dep, systemd_dep],
+  dependencies: [glib_dep, m_dep, capng_dep, numa_dep, systemd_dep],
   install: true,
+)
+
+install_man(
+  '../irqbalance.1',
+  install_dir: get_option('mandir') + '/man1',
+  install_mode: 'rw-r--r--',
+  locale: 'en',
 )
