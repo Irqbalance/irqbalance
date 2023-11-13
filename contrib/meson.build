@@ -5,6 +5,7 @@ glib_dep = dependency('glib-2.0')
 m_dep = cc.find_library('m', required: false)
 capng_dep = dependency('libcap-ng', required: get_option('capng'))
 ncurses_dep = dependency('curses', required: get_option('ui'))
+numa_dep = dependency('numa')
 systemd_dep = dependency('libsystemd', required: get_option('systemd'))
 
 cdata = configuration_data()
@@ -40,6 +41,6 @@ executable(
   '../numa.c',
   '../placement.c',
   '../procinterrupts.c',
-  dependencies: [glib_dep, m_dep, capng_dep, systemd_dep],
+  dependencies: [glib_dep, m_dep, capng_dep, numa_dep, systemd_dep],
   install: true,
 )
