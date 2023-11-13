@@ -1,4 +1,4 @@
-project('irqbalance', 'c', version: '1.9.0', default_options: ['warning_level=1'])
+project('irqbalance', 'c', version: '1.9.3', default_options: ['warning_level=1'])
 cc = meson.get_compiler('c')
 
 glib_dep = dependency('glib-2.0')
