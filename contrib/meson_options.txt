@@ -2,8 +2,16 @@ option('capng', type : 'feature',
   description : 'Build with libcap-ng support',
 )
 
-option('systemd', type : 'feature',
+option('numa', type : 'feature', value: 'enabled',
+  description : 'Build with numa support',
+)
+
+option('systemd', type : 'feature', value: 'enabled',
   description : 'Build with systemd support',
+)
+
+option('thermal', type : 'feature',
+  description : 'Build with thermal support',
 )
 
 option('ui', type : 'feature',
