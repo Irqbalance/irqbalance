@@ -138,7 +138,8 @@ extern unsigned int log_mask;
 #ifdef HAVE_LIBSYSTEMD
 #define log(mask, lvl, fmt, args...) do {					\
 	if (journal_logging) {							\
-		sd_journal_print(lvl, fmt, ##args);				\
+        if (log_mask & mask & TO_SYSLOG) \
+            sd_journal_print(lvl, fmt, ##args);			\
 		if (log_mask & mask & TO_CONSOLE)				\
 			printf(fmt, ##args);					\
 	} else { 								\
