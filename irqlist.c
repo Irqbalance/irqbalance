@@ -78,7 +78,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	struct load_balance_info *lb_info = data;
 	unsigned long delta_load = 0;
 
-	/* Don't rebalance irqs that don't want it */
+	/* Don't rebalance irqs that don't want or support it */
 	if (info->level == BALANCE_NONE)
 		return;
 
