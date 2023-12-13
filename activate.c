@@ -62,9 +62,6 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	if (!info->assigned_obj)
 		return;
 
-	if (info->flags & IRQ_FLAG_AFFINITY_UNMANAGED)
-		return;
-
 	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
 	cpus_and(applied_mask, cpu_online_map, info->assigned_obj->mask);
 
@@ -105,7 +102,8 @@ error:
 		break;
 	default:
 		/* Any other error is considered permanent. */
-		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
+		info->level = BALANCE_NONE;
+		info->moved = 0; /* migration impossible, mark as done */
 		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
 			info->irq);
 	}

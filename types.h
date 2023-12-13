@@ -35,7 +35,6 @@
  * IRQ Internal tracking flags
  */
 #define IRQ_FLAG_BANNED                 (1ULL << 0)
-#define IRQ_FLAG_AFFINITY_UNMANAGED     (1ULL << 1)
 
 enum obj_type_e {
 	OBJ_TYPE_CPU,
