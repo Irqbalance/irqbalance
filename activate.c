@@ -73,6 +73,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 
 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
 	file = fopen(buf, "w");
+	errsave = errno;
 	if (!file)
 		goto error;
 
