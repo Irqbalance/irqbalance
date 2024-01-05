@@ -289,7 +289,7 @@ gboolean force_rescan(gpointer data __attribute__((unused)))
 
 gboolean scan(gpointer data __attribute__((unused)))
 {
-	log(TO_CONSOLE, LOG_INFO, "\n\n\n-----------------------------------------------------------------------------\n");
+	log(TO_CONSOLE, LOG_DEBUG, "----- Enter: %s -----\n", __func__);
 	clear_work_stats();
 	parse_proc_interrupts();
 
