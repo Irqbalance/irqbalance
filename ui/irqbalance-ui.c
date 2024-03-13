@@ -127,9 +127,13 @@ try_again:
 	char *data = malloc(default_bufsz);
 	int len = recv(socket_fd, data, default_bufsz, MSG_TRUNC);
 	close(socket_fd);
-	data[len] = '\0';
 	free(msg->msg_control);
 	free(msg);
+	if (len < 0) {
+		free(data);
+		return NULL;
+	}
+	data[len] = '\0';
 	if (len >= default_bufsz) {
 		/* msg was truncated, increase bufsz and try again */
 		default_bufsz += 8192;
