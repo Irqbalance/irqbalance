@@ -75,20 +75,6 @@ char socket_name[64];
 char *banned_cpumask_from_ui = NULL;
 #endif
 
-static void sleep_approx(int seconds)
-{
-	struct timespec ts;
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	ts.tv_sec = seconds;
-	ts.tv_nsec = -tv.tv_usec*1000;
-	while (ts.tv_nsec < 0) {
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	nanosleep(&ts, NULL);
-}
-
 #ifdef HAVE_GETOPT_LONG
 struct option lopts[] = {
 	{"oneshot", 0, NULL, 'o'},
@@ -317,9 +303,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 		for_each_irq(NULL, force_rebalance_irq, NULL);
 		parse_proc_interrupts();
 		parse_proc_stat();
-		sleep_approx(sleep_interval);
-		clear_work_stats();
-		parse_proc_interrupts();
+		return TRUE;
 	}
 
 	parse_proc_stat();
