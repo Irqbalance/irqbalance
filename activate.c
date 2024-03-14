@@ -82,6 +82,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	errsave = errno;
+	fflush(file);
 	if (fclose(file)) {
 		errsave = errno;
 		goto error;
