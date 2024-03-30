@@ -82,10 +82,13 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	errsave = errno;
-	fflush(file);
-	if (fclose(file)) {
+	if (ret >= 0 && fflush(file)) {
+		ret = -1;
 		errsave = errno;
-		goto error;
+	}
+	if (fclose(file)) {
+		ret = -1;
+		errsave = errno;
 	}
 	if (ret < 0)
 		goto error;
