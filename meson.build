@@ -40,7 +40,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
   install_man('irqbalance-ui.1')
 endif
 
-irqbalance_sources = [
+irqbalance_sources = files(
   'activate.c',
   'bitmap.c',
   'classify.c',
@@ -50,12 +50,12 @@ irqbalance_sources = [
   'numa.c',
   'placement.c',
   'procinterrupts.c',
-]
+)
 
 if libnl_3_dep.found() and libnl_genl_3_dep.found()
-  irqbalance_sources += [
+  irqbalance_sources += files(
     'thermal.c',
-  ]
+  )
 endif
 
 executable(
