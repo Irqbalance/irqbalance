@@ -190,7 +190,7 @@ void print_all_cpus(void)
 
 void add_banned_cpu(int *banned_cpu, void *data)
 {
-	snprintf(data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
+	snprintf((char *)data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
 }
 
 void display_banned_cpus(void)
