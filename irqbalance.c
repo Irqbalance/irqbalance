@@ -544,7 +544,7 @@ out:
 	return TRUE;
 }
 
-int init_socket()
+int init_socket(void)
 {
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(struct sockaddr_un));

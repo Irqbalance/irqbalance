@@ -25,7 +25,7 @@ void for_each_node(GList *list, void (*fp)(cpu_node_t *node, void *data), void *
 
 void dump_irq(irq_t *irq, void *data __attribute__((unused)));
 void dump_node(cpu_node_t *node, void *data __attribute__((unused)));
-void dump_tree();
+void dump_tree(void);
 
 
 #endif /* HELPERS_H */

@@ -72,8 +72,8 @@ typedef struct setup {
 
 /* Function prototypes */
 
-struct msghdr * create_credentials_msg();
-int init_connection();
+struct msghdr * create_credentials_msg(void);
+int init_connection(void);
 void send_settings(char *data);
 char * get_data(char *string);
 void parse_setup(char *setup_data);
@@ -83,7 +83,6 @@ void assign_cpu_lists(cpu_node_t *node, void *data);
 void assign_cpu_mask(cpu_node_t *node, void *data);
 void parse_into_tree(char *data);
 gboolean rescan_tree(gpointer data);
-int main();
 
 
 #endif /* IRQBALANCE_UI_H */

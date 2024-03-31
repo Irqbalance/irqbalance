@@ -206,7 +206,7 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 	info->name = strdup(irq_fullname);
 }
 
-GList* collect_full_irq_list()
+GList* collect_full_irq_list(void)
 {
 	GList *tmp_list = NULL;
 	FILE *file;

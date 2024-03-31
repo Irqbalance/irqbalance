@@ -28,7 +28,7 @@ setup_t setup;
 GMainLoop *main_loop;
 static int default_bufsz = 8192;
 
-struct msghdr * create_credentials_msg()
+struct msghdr * create_credentials_msg(void)
 {
 	struct ucred *credentials = malloc(sizeof(struct ucred));
 	credentials->pid = getpid();
@@ -51,7 +51,7 @@ struct msghdr * create_credentials_msg()
 	return msg;
 }
 
-int init_connection()
+int init_connection(void)
 {
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -378,7 +378,7 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 	free(irqbalance_data);
 	return TRUE;
 }
-void scroll_window() {
+void scroll_window(void) {
 	switch(state) {
 	case STATE_TREE:
 		display_tree();
