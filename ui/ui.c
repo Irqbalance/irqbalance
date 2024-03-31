@@ -101,7 +101,7 @@ int get_valid_sleep_input(int column_offest)
 		if(input == NULL) {
 			curs_set(0);
 			attrset(COLOR_PAIR(1));
-			mvprintw(2, column_offest, "%lu			", new_sleep);
+			mvprintw(2, column_offest, "%" PRIu64 "			", new_sleep);
 			move(LINES, COLS);
 			break;
 		}
@@ -125,7 +125,7 @@ int get_valid_sleep_input(int column_offest)
 	}
 
 	attrset(COLOR_PAIR(1));
-	mvprintw(2, column_offest, "%lu				", new_sleep);
+	mvprintw(2, column_offest, "%" PRIu64 "				", new_sleep);
 
 	return new_sleep;
 }
@@ -296,7 +296,7 @@ void handle_cpu_banning()
 		case '\r': {
 			attrset(COLOR_PAIR(3));
 			int banned = toggle_cpu(tmp, position + offset - 6);
-			mvprintw(position, 3, "CPU %d     ", position + offset - 6);
+			mvprintw(position, 3, "CPU %zu     ", position + offset - 6);
 			if(banned) {
 				mvprintw(position, 19, "YES");
 			} else {
@@ -770,7 +770,7 @@ void display_tree_node_irqs(irq_t *irq, void *data)
 	if (max_offset >= offset && max_offset - offset < LINES - 5) {
 		snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", (char *)data);
 		attrset(COLOR_PAIR(3));
-		printw("%sIRQ %u, IRQs since last rebalance %lu\n",
+		printw("%sIRQ %u, IRQs since last rebalance %" PRIu64 "\n",
 			indent, irq->vector, irq->diff);
 	}
 	max_offset++;
