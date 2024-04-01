@@ -26,7 +26,6 @@
 #include <malloc.h>
 #include <sys/time.h>
 #include <syslog.h>
-#include <unistd.h>
 #include <signal.h>
 #include <time.h>
 #include <sys/types.h>
@@ -330,10 +329,10 @@ out:
 
 	if (keep_going) {
 		return TRUE;
-	} else {
-		g_main_loop_quit(main_loop);
-		return FALSE;
 	}
+
+	g_main_loop_quit(main_loop);
+	return FALSE;
 }
 
 void get_irq_data(struct irq_info *irq, void *data)
@@ -422,7 +421,8 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			log(TO_ALL, LOG_WARNING, "Connection couldn't be accepted.\n");
 			goto out;
 		}
-		if ((recv_size = recvmsg(sock, &msg, 0)) < 0) {
+		recv_size = recvmsg(sock, &msg, 0);
+		if (recv_size < 0) {
 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
 			goto out_close;
 		}

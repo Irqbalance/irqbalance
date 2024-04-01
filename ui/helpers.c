@@ -117,7 +117,7 @@ void for_each_cpu(GList *list, void (*fp)(cpu_ban_t *cpu, void *data), void *dat
 	}
 }
 
-void for_each_int(GList *list, void (*fp)(int *number, void *data), void *data)
+void for_each_int(GList *list, void (*fp)(int *number, char *data), void *data)
 {
 	GList *entry;
 	entry = g_list_first(list);

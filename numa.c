@@ -116,7 +116,7 @@ void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused))
 
 	if (len == 0) {
 		return;
-	} else if (len > 1) {
+	} if (len > 1) {
 		for_each_object(p->children, connect_cpu_mem_topo, NULL);
 		return;
 	}

@@ -113,14 +113,13 @@ int get_valid_sleep_input(int column_offest)
 		new_sleep = strtol(input, &error, 10);
 		if((*error == '\0') && (new_sleep >= 1)) {
 			break;
-		} else {
-			new_sleep = setup.sleep;
-			attrset(COLOR_PAIR(4) | A_BOLD);
-			mvprintw(LINES - 2, 1,
-				"Invalid input: %s								",
-				input);
-			refresh();
 		}
+		new_sleep = setup.sleep;
+		attrset(COLOR_PAIR(4) | A_BOLD);
+		mvprintw(LINES - 2, 1,
+			"Invalid input: %s								",
+			input);
+		refresh();
 		free(input);
 	}
 
@@ -130,7 +129,7 @@ int get_valid_sleep_input(int column_offest)
 	return new_sleep;
 }
 
-void get_banned_cpu(int *cpu, void *data __attribute__((unused)))
+void get_banned_cpu(int *cpu, char *data __attribute__((unused)))
 {
 	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
 	new->number = *cpu;
@@ -188,9 +187,9 @@ void print_all_cpus(void)
 		max_offset = 0;
 }
 
-void add_banned_cpu(int *banned_cpu, void *data)
+void add_banned_cpu(int *banned_cpu, char *data)
 {
-	snprintf((char *)data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
+	snprintf(data + strlen(data), 1024 - strlen(data), "%d, ", *banned_cpu);
 }
 
 void display_banned_cpus(void)
@@ -369,7 +368,7 @@ static inline void bsnl_emit(char *buf, int buflen)
 		snprintf(buf + len, buflen - len, "%d-%d", rbot, rtop);
 }
 
-void copy_assigned_obj(int *number, void *data)
+void copy_assigned_obj(int *number, char *data)
 {
 	if (rtop == -1) {
 		rbot = rtop = *number;
