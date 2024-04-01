@@ -25,15 +25,15 @@ if cdata.get('HAVE_IRQBALANCEUI')
 
   executable(
     'irqbalance-ui',
-    '../ui/helpers.c',
-    '../ui/irqbalance-ui.c',
-    '../ui/ui.c',
+    'ui/helpers.c',
+    'ui/irqbalance-ui.c',
+    'ui/ui.c',
     dependencies: [glib_dep, ncurses_dep],
     install: true,
   )
 
   install_man(
-    '../irqbalance-ui.1',
+    'irqbalance-ui.1',
     install_dir: get_option('mandir') + '/man1',
     install_mode: 'rw-r--r--',
     locale: 'en',
@@ -41,20 +41,20 @@ if cdata.get('HAVE_IRQBALANCEUI')
 endif
 
 irqbalance_sources = [
-  '../activate.c',
-  '../bitmap.c',
-  '../classify.c',
-  '../cputree.c',
-  '../irqbalance.c',
-  '../irqlist.c',
-  '../numa.c',
-  '../placement.c',
-  '../procinterrupts.c',
+  'activate.c',
+  'bitmap.c',
+  'classify.c',
+  'cputree.c',
+  'irqbalance.c',
+  'irqlist.c',
+  'numa.c',
+  'placement.c',
+  'procinterrupts.c',
 ]
 
 if libnl_3_dep.found() and libnl_genl_3_dep.found()
   irqbalance_sources += [
-    '../thermal.c',
+    'thermal.c',
   ]
 endif
 
@@ -66,7 +66,7 @@ executable(
 )
 
 install_man(
-  '../irqbalance.1',
+  'irqbalance.1',
   install_dir: get_option('mandir') + '/man1',
   install_mode: 'rw-r--r--',
   locale: 'en',
