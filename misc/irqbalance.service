@@ -23,7 +23,6 @@ PrivateNetwork=yes
 PrivateUsers=true
 ProtectHostname=yes 
 ProtectClock=yes 
-ProtectKernelTunables=yes 
 ProtectKernelModules=yes 
 ProtectKernelLogs=yes 
 ProtectControlGroups=yes 
