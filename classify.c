@@ -102,8 +102,6 @@ static void apply_pci_quirks(const struct pci_info *pci, int *irq_class)
 				break;
 		}
 	}
-
-	return;
 }
 
 /* Determin IRQ class based on PCI class code */
@@ -283,7 +281,6 @@ static void add_banned_irq(int irq, GList **list)
 
 	*list = g_list_append(*list, new);
 	log(TO_CONSOLE, LOG_INFO, "IRQ %d was BANNED.\n", irq);
-	return;
 }
 
 void add_cl_banned_irq(int irq)
