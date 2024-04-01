@@ -291,11 +291,7 @@ void parse_into_tree(char *data)
 			free(copy);
 			 goto out;
 		}
-		new = malloc(sizeof(cpu_node_t));
-		new->irqs = NULL;
-		new->children = NULL;
-		new->cpu_list = NULL;
-		new->cpu_mask = NULL;
+		new = g_malloc0(sizeof(cpu_node_t));
 		new->type = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		if(new->type == OBJ_TYPE_NODE) {
 			parent = NULL;
