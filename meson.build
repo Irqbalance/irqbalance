@@ -10,7 +10,7 @@ glib_dep = dependency('glib-2.0')
 m_dep = cc.find_library('m', required: false)
 capng_dep = dependency('libcap-ng', required: get_option('capng'))
 ncurses_dep = dependency('curses', required: get_option('ui'))
-numa_dep = dependency('numa', required: get_option('numa'))
+numa_dep = cc.find_library('numa', required: get_option('numa'))
 libnl_3_dep = dependency('libnl-3.0', required: get_option('thermal'))
 libnl_genl_3_dep = dependency('libnl-genl-3.0', required: get_option('thermal'))
 systemd_dep = dependency('libsystemd', required: get_option('systemd'))
@@ -40,7 +40,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
   install_man('irqbalance-ui.1')
 endif
 
-irqbalance_sources = [
+irqbalance_sources = files(
   'activate.c',
   'bitmap.c',
   'classify.c',
@@ -50,12 +50,12 @@ irqbalance_sources = [
   'numa.c',
   'placement.c',
   'procinterrupts.c',
-]
+)
 
 if libnl_3_dep.found() and libnl_genl_3_dep.found()
-  irqbalance_sources += [
+  irqbalance_sources += files(
     'thermal.c',
-  ]
+  )
 endif
 
 executable(
