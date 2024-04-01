@@ -157,7 +157,7 @@ void parse_setup(char *setup_data)
 	setup.banned_irqs = NULL;
 	setup.banned_cpus = NULL;
 	token = strtok_r(copy, " ", &ptr);
-	if(strncmp(token, "SLEEP", strlen("SLEEP"))) goto out;
+	if(strncmp(token, "SLEEP", strlen("SLEEP")) != 0) goto out;
 	setup.sleep = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 	token = strtok_r(NULL, " ", &ptr);
 	/* Parse banned IRQ data */
@@ -165,13 +165,13 @@ void parse_setup(char *setup_data)
 		new_irq = malloc(sizeof(irq_t));
 		new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+		if(strncmp(token, "LOAD", strlen("LOAD")) != 0) goto out;
 		new_irq->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "DIFF", strlen("DIFF"))) goto out;
+		if(strncmp(token, "DIFF", strlen("DIFF")) != 0) goto out;
 		new_irq->diff = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(ptr, " ", &ptr);
-		if(strncmp(token, "CLASS", strlen("CLASS"))) goto out;
+		if(strncmp(token, "CLASS", strlen("CLASS")) != 0) goto out;
 		new_irq->class = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		new_irq->is_banned = 1;
 		new_irq->assigned_to = NULL;
@@ -180,7 +180,7 @@ void parse_setup(char *setup_data)
 		new_irq = NULL;
 	}
 
-	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
+	if(strncmp(token, "BANNED", strlen("BANNED")) != 0) goto out;
 	token = strtok_r(NULL, " ", &ptr);
 	for(i = strlen(token) - 1; i >= 0; i--) {
 		if (token[i] == ',')
@@ -287,7 +287,7 @@ void parse_into_tree(char *data)
 	token = strtok_r(copy, " ", &ptr);
 	while(token != NULL) {
 		/* Parse node data */
-		if(strncmp(token, "TYPE", strlen("TYPE"))) {
+		if(strncmp(token, "TYPE", strlen("TYPE")) != 0) {
 			free(copy);
 			 goto out;
 		}
@@ -303,13 +303,13 @@ void parse_into_tree(char *data)
 			parent = parent->parent;
 		}
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "NUMBER", strlen("NUMBER"))) goto out;
+		if(strncmp(token, "NUMBER", strlen("NUMBER")) != 0) goto out;
 		new->number = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+		if(strncmp(token, "LOAD", strlen("LOAD")) != 0) goto out;
 		new->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "SAVE_MODE", strlen("SAVE_MODE"))) goto out;
+		if(strncmp(token, "SAVE_MODE", strlen("SAVE_MODE")) != 0) goto out;
 		new->is_powersave = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
 
@@ -318,13 +318,13 @@ void parse_into_tree(char *data)
 			new_irq = malloc(sizeof(irq_t));
 			new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+			if(strncmp(token, "LOAD", strlen("LOAD")) != 0) goto out;
 			new_irq->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "DIFF", strlen("DIFF"))) goto out;
+			if(strncmp(token, "DIFF", strlen("DIFF")) != 0) goto out;
 			new_irq->diff = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "CLASS", strlen("CLASS"))) goto out;
+			if(strncmp(token, "CLASS", strlen("CLASS")) != 0) goto out;
 			new_irq->class = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			new_irq->is_banned = 0;
 			new->irqs = g_list_append(new->irqs, new_irq);
@@ -332,7 +332,7 @@ void parse_into_tree(char *data)
 			new_irq = NULL;
 		}
 
-		if((token == NULL) || (strncmp(token, "IRQ", strlen("IRQ")))) {
+		if((token == NULL) || (strncmp(token, "IRQ", strlen("IRQ")) != 0)) {
 			new->parent = parent;
 			if(parent == NULL) {
 				tree = g_list_append(tree, new);
