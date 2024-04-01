@@ -172,7 +172,7 @@ static void validate_irq(struct irq_info *info, void *data)
 {
 	if (info->assigned_obj != data)
 		log(TO_CONSOLE, LOG_INFO, "object validation error: irq %d is wrong, points to %p, should be %p\n",
-			info->irq, info->assigned_obj, data);
+			info->irq, (void*)info->assigned_obj, data);
 }
 
 static void validate_object(struct topo_obj *d, void *data __attribute__((unused)))

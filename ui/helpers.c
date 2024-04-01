@@ -165,7 +165,7 @@ void dump_node(cpu_node_t *node, void *data __attribute__((unused)))
 	}
 }
 
-void dump_tree()
+void dump_tree(void)
 {
 	for_each_node(tree, dump_node, NULL);
 }
