@@ -422,7 +422,8 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			log(TO_ALL, LOG_WARNING, "Connection couldn't be accepted.\n");
 			goto out;
 		}
-		if ((recv_size = recvmsg(sock, &msg, 0)) < 0) {
+		recv_size = recvmsg(sock, &msg, 0);
+		if (recv_size < 0) {
 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
 			goto out_close;
 		}

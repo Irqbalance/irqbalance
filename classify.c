@@ -200,25 +200,30 @@ static unsigned int read_pci_data(const char *devpath, const char* file)
 /* Get pci information for IRQ classification */
 static int get_pci_info(const char *devpath, struct pci_info *pci)
 {
-	unsigned int data = PCI_INVAL_DATA;
+	unsigned int data;
 
-	if ((data = read_pci_data(devpath, "vendor")) == PCI_INVAL_DATA)
+	data = read_pci_data(devpath, "vendor");
+	if (data == PCI_INVAL_DATA)
 		return -ENODEV;
 	pci->vendor = (unsigned short)data;
 
-	if ((data = read_pci_data(devpath, "device")) == PCI_INVAL_DATA)
+	data = read_pci_data(devpath, "device");
+	if (data == PCI_INVAL_DATA)
 		return -ENODEV;
 	pci->device = (unsigned short)data;
 
-	if ((data = read_pci_data(devpath, "subsystem_vendor")) == PCI_INVAL_DATA)
+	data = read_pci_data(devpath, "subsystem_vendor");
+	if (data == PCI_INVAL_DATA)
 		return -ENODEV;
 	pci->sub_vendor = (unsigned short)data;
 
-	if ((data = read_pci_data(devpath, "subsystem_device")) == PCI_INVAL_DATA)
+	data = read_pci_data(devpath, "subsystem_device");
+	if (data == PCI_INVAL_DATA)
 		return -ENODEV;
 	pci->sub_device = (unsigned short)data;
 
-	if ((data = read_pci_data(devpath, "class")) == PCI_INVAL_DATA)
+	data = read_pci_data(devpath, "class");
+	if (data == PCI_INVAL_DATA)
 		return -ENODEV;
 	pci->class = data;
 
