@@ -26,7 +26,6 @@
 #include <malloc.h>
 #include <sys/time.h>
 #include <syslog.h>
-#include <unistd.h>
 #include <signal.h>
 #include <time.h>
 #include <sys/types.h>
