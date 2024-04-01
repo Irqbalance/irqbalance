@@ -11,7 +11,6 @@
 #include "irqbalance-ui.h"
 #include "helpers.h"
 
-extern GList *tree;
 extern setup_t setup;
 
 extern int offset;
