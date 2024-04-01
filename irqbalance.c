@@ -330,10 +330,10 @@ out:
 
 	if (keep_going) {
 		return TRUE;
-	} else {
-		g_main_loop_quit(main_loop);
-		return FALSE;
 	}
+
+	g_main_loop_quit(main_loop);
+	return FALSE;
 }
 
 void get_irq_data(struct irq_info *irq, void *data)

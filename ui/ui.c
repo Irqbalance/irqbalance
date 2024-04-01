@@ -113,14 +113,13 @@ int get_valid_sleep_input(int column_offest)
 		new_sleep = strtol(input, &error, 10);
 		if((*error == '\0') && (new_sleep >= 1)) {
 			break;
-		} else {
-			new_sleep = setup.sleep;
-			attrset(COLOR_PAIR(4) | A_BOLD);
-			mvprintw(LINES - 2, 1,
-				"Invalid input: %s								",
-				input);
-			refresh();
 		}
+		new_sleep = setup.sleep;
+		attrset(COLOR_PAIR(4) | A_BOLD);
+		mvprintw(LINES - 2, 1,
+			"Invalid input: %s								",
+			input);
+		refresh();
 		free(input);
 	}
 

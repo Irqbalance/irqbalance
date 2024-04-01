@@ -295,8 +295,7 @@ gint substr_find(gconstpointer a, gconstpointer b)
 {
 	if (strstr(b, a))
 		return 0;
-	else
-		return 1;
+	return 1;
 }
 
 static void add_banned_module(char *modname, GList **modlist)
@@ -558,8 +557,7 @@ static int check_for_module_ban(char *name)
 
 	if (entry)
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 static int check_for_irq_ban(struct irq_info *irq, char *mod)

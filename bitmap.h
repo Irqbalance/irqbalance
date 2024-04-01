@@ -282,8 +282,7 @@ static inline int bitmap_equal(const unsigned long *src1,
 {
 	if (nbits <= BITS_PER_LONG)
 		return ! ((*src1 ^ *src2) & BITMAP_LAST_WORD_MASK(nbits));
-	else
-		return __bitmap_equal(src1, src2, nbits);
+	return __bitmap_equal(src1, src2, nbits);
 }
 
 static inline int bitmap_intersects(const unsigned long *src1,
@@ -291,8 +290,7 @@ static inline int bitmap_intersects(const unsigned long *src1,
 {
 	if (nbits <= BITS_PER_LONG)
 		return ((*src1 & *src2) & BITMAP_LAST_WORD_MASK(nbits)) != 0;
-	else
-		return __bitmap_intersects(src1, src2, nbits);
+	return __bitmap_intersects(src1, src2, nbits);
 }
 
 static inline int bitmap_subset(const unsigned long *src1,
@@ -300,24 +298,21 @@ static inline int bitmap_subset(const unsigned long *src1,
 {
 	if (nbits <= BITS_PER_LONG)
 		return ! ((*src1 & ~(*src2)) & BITMAP_LAST_WORD_MASK(nbits));
-	else
-		return __bitmap_subset(src1, src2, nbits);
+	return __bitmap_subset(src1, src2, nbits);
 }
 
 static inline int bitmap_empty(const unsigned long *src, int nbits)
 {
 	if (nbits <= BITS_PER_LONG)
 		return ! (*src & BITMAP_LAST_WORD_MASK(nbits));
-	else
-		return __bitmap_empty(src, nbits);
+	return __bitmap_empty(src, nbits);
 }
 
 static inline int bitmap_full(const unsigned long *src, int nbits)
 {
 	if (nbits <= BITS_PER_LONG)
 		return ! (~(*src) & BITMAP_LAST_WORD_MASK(nbits));
-	else
-		return __bitmap_full(src, nbits);
+	return __bitmap_full(src, nbits);
 }
 
 static inline int bitmap_weight(const unsigned long *src, int nbits)
