@@ -52,6 +52,7 @@ void dump_workloads(void);
 void sort_irq_list(GList **list);
 void calculate_placement(void);
 void dump_tree(void);
+void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info *info);
 
 void activate_mappings(void);
 void clear_cpu_tree(void);
