@@ -98,6 +98,7 @@ extern struct topo_obj *get_numa_node(int nodeid);
 #define cpu_numa_node(cpu) ((cpu)->parent->numa_nodes)
 extern struct topo_obj *find_cpu_core(int cpunr);
 extern int get_cpu_count(void);
+extern void clear_slots(void);
 
 /*
  * irq db functions

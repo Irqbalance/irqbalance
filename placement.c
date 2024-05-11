@@ -59,6 +59,9 @@ static void find_best_object(struct topo_obj *d, void *data)
 	if (d->powersave_mode)
 		return;
 
+	if (d->slots_left <= 0)
+		return;
+
 	newload = d->load;
 	if (newload < best->best_cost) {
 		best->best = d;

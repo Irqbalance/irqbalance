@@ -56,6 +56,7 @@ struct topo_obj {
 	GList *children;
 	GList *numa_nodes;
 	GList **obj_type_list;
+	int slots_left;
 };
 
 struct irq_info {

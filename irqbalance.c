@@ -298,6 +298,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 		} while (need_rebuild);
 
 		for_each_irq(NULL, force_rebalance_irq, NULL);
+		clear_slots();
 		parse_proc_interrupts();
 		parse_proc_stat();
 		return TRUE;
@@ -694,6 +695,8 @@ int main(int argc, char** argv)
 
 	parse_proc_interrupts();
 	parse_proc_stat();
+
+	clear_slots();
 
 #ifdef HAVE_IRQBALANCEUI
 	if (init_socket()) {

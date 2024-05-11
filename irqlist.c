@@ -211,8 +211,17 @@ void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info
 
 	migrate_irq(from_list, to_list, info);
 
-	if (to)
+	if (from) {
+		if (from->slots_left != INT_MAX)
+			from->slots_left++;
+	}
+
+	if (to) {
+		if (to->slots_left != INT_MAX)
+			to->slots_left--;
+
 		to->load += info->load + 1;
+	}
 
 	info->assigned_obj = to;
 }
