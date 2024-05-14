@@ -59,6 +59,9 @@ static void find_best_object(struct topo_obj *d, void *data)
 	if (d->powersave_mode)
 		return;
 
+	if (d->slots_left <= 0)
+		return;
+
 	newload = d->load;
 	if (newload < best->best_cost) {
 		best->best = d;
@@ -74,7 +77,6 @@ static void find_best_object_for_irq(struct irq_info *info, void *data)
 {
 	struct obj_placement place;
 	struct topo_obj *d = data;
-	struct topo_obj *asign;
 
 	if (!info->moved)
 		return;
@@ -107,13 +109,8 @@ static void find_best_object_for_irq(struct irq_info *info, void *data)
 
 	for_each_object(d->children, find_best_object, &place);
 
-	asign = place.best;
-
-	if (asign) {
-		migrate_irq(&d->interrupts, &asign->interrupts, info);
-		info->assigned_obj = asign;
-		asign->load += info->load;
-	}
+	if (place.best)
+		migrate_irq_obj(d, place.best, info);
 }
 
 static void place_irq_in_object(struct topo_obj *d, void *data __attribute__((unused)))
@@ -125,7 +122,6 @@ static void place_irq_in_object(struct topo_obj *d, void *data __attribute__((un
 static void place_irq_in_node(struct irq_info *info, void *data __attribute__((unused)))
 {
 	struct obj_placement place;
-	struct topo_obj *asign;
 
 	if ((info->level == BALANCE_NONE) && cpus_empty(banned_cpus))
 		return;
@@ -145,9 +141,7 @@ static void place_irq_in_node(struct irq_info *info, void *data __attribute__((u
 		 * This irq belongs to a device with a preferred numa node
 		 * put it on that node
 		 */
-		migrate_irq(&rebalance_irq_list, &irq_numa_node(info)->interrupts, info);
-		info->assigned_obj = irq_numa_node(info);
-		irq_numa_node(info)->load += info->load + 1;
+		migrate_irq_obj(NULL, irq_numa_node(info), info);
 
 		return;
 	}
@@ -159,13 +153,8 @@ find_placement:
 
 	for_each_object(numa_nodes, find_best_object, &place);
 
-	asign = place.best;
-
-	if (asign) {
-		migrate_irq(&rebalance_irq_list, &asign->interrupts, info);
-		info->assigned_obj = asign;
-		asign->load += info->load;
-	}
+	if (place.best)
+		migrate_irq_obj(NULL, place.best, info);
 }
 
 static void validate_irq(struct irq_info *info, void *data)

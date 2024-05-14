@@ -108,9 +108,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 
 	log(TO_CONSOLE, LOG_INFO, "Selecting irq %d for rebalancing\n", info->irq);
 
-	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
-
-	info->assigned_obj = NULL;
+	force_rebalance_irq(info, NULL);
 }
 
 static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
@@ -146,12 +144,6 @@ static void migrate_overloaded_irqs(struct topo_obj *obj, void *data)
 	}
 }
 
-static void force_irq_migration(struct irq_info *info, void *data __attribute__((unused)))
-{
-	migrate_irq(&info->assigned_obj->interrupts, &rebalance_irq_list, info);
-	info->assigned_obj = NULL;
-}
-
 static void clear_powersave_mode(struct topo_obj *obj, void *data __attribute__((unused)))
 {
 	obj->powersave_mode = 0;
@@ -183,7 +175,7 @@ void update_migration_status(void)
 			log(TO_ALL, LOG_INFO, "cpu %d entering powersave mode\n", info.powersave->number);
 			info.powersave->powersave_mode = 1;
 			if (g_list_length(info.powersave->interrupts) > 0)
-				for_each_irq(info.powersave->interrupts, force_irq_migration, NULL);
+				for_each_irq(info.powersave->interrupts, force_rebalance_irq, NULL);
 		} else if ((info.num_over) && (info.num_powersave)) {
 			log(TO_ALL, LOG_INFO, "Load average increasing, re-enabling all cpus for irq balancing\n");
 			for_each_object(cpus, clear_powersave_mode, NULL);
@@ -205,3 +197,31 @@ void dump_workloads(void)
 	for_each_irq(NULL, dump_workload, NULL);
 }
 
+void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info *info)
+{
+
+	GList **from_list;
+	GList **to_list;
+
+	if (!from)
+		from = info->assigned_obj;
+
+	from_list = from ? &from->interrupts : &rebalance_irq_list;
+	to_list = to ? &to->interrupts : &rebalance_irq_list;
+
+	migrate_irq(from_list, to_list, info);
+
+	if (from) {
+		if (from->slots_left != INT_MAX)
+			from->slots_left++;
+	}
+
+	if (to) {
+		if (to->slots_left != INT_MAX)
+			to->slots_left--;
+
+		to->load += info->load + 1;
+	}
+
+	info->assigned_obj = to;
+}

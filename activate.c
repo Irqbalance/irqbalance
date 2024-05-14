@@ -99,13 +99,24 @@ error:
 		"Cannot change IRQ %i affinity: %s\n",
 		info->irq, strerror(errsave));
 	switch (errsave) {
-	case ENOSPC: /* Specified CPU APIC is full. */
 	case EAGAIN: /* Interrupted by signal. */
 	case EBUSY: /* Affinity change already in progress. */
 	case EINVAL: /* IRQ would be bound to no CPU. */
 	case ERANGE: /* CPU in mask is offline. */
 	case ENOMEM: /* Kernel cannot allocate CPU mask. */
 		/* Do not blacklist the IRQ on transient errors. */
+		break;
+	case ENOSPC: /* Specified CPU APIC is full. */
+		if (info->assigned_obj->obj_type != OBJ_TYPE_CPU)
+			break;
+
+		if (info->assigned_obj->slots_left > 0)
+			info->assigned_obj->slots_left = -1;
+		else
+			/* Negative slots to count how many we need to free */
+			info->assigned_obj->slots_left--;
+
+		force_rebalance_irq(info, NULL);
 		break;
 	default:
 		/* Any other error is considered permanent. */

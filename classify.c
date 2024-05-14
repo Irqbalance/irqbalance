@@ -883,6 +883,8 @@ static void remove_no_existing_irq(struct irq_info *info, void *data __attribute
 		entry = g_list_find_custom(info->assigned_obj->interrupts, info, compare_ints);
 	    if (entry) {
 			info->assigned_obj->interrupts = g_list_delete_link(info->assigned_obj->interrupts, entry);
+			/* Probe number of slots again, don't guess whether the IRQ left a free slot */
+			info->assigned_obj->slots_left = INT_MAX;
 		}
 	}
 	free_irq(info, NULL);

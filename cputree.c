@@ -595,3 +595,13 @@ int get_cpu_count(void)
 	return g_list_length(cpus);
 }
 
+static void clear_obj_slots(struct topo_obj *d, void *data __attribute__((unused)))
+{
+	d->slots_left = INT_MAX;
+	for_each_object(d->children, clear_obj_slots, NULL);
+}
+
+void clear_slots(void)
+{
+	for_each_object(numa_nodes, clear_obj_slots, NULL);
+}
