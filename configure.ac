@@ -82,7 +82,7 @@ AS_IF(
 AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],
-  [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
+  [AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
 )
 AS_IF(
   [test "x$with_systemd" = xyes], [
