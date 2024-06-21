@@ -38,12 +38,6 @@ AC_CHECK_LIB(m, floor)
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
 
 PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
-AS_IF([test "x$has_ncursesw" = "xyes"], [
-  AC_SUBST([NCURSESW_CFLAGS])
-  AC_SUBST([NCURSESW_LIBS])
-  LIBS="$LIBS $NCURSESW_LIBS"
-  AC_SUBST([LIBS])
-])
 
 AC_CANONICAL_HOST
 
@@ -78,11 +72,17 @@ AC_ARG_WITH([irqbalance-ui],
 AS_IF(
   [test "x$with_irqbalanceui" = "xyes"], [
     AC_DEFINE([HAVE_IRQBALANCEUI], 1, [Build irqbalance ui component.])
+    AS_IF([test "x$has_ncursesw" = "xyes"], [
+        AC_SUBST([NCURSESW_CFLAGS])
+        AC_SUBST([NCURSESW_LIBS])
+        LIBS="$LIBS $NCURSESW_LIBS"
+        AC_SUBST([LIBS])
+   ])
 ])
 AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],
-  [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
+  [AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
 )
 AS_IF(
   [test "x$with_systemd" = xyes], [
