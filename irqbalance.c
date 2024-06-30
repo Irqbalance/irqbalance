@@ -409,7 +409,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 	struct msghdr msg = {
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
-		.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred))),
+		.msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred))),
 		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
 	};
 
@@ -540,7 +540,7 @@ out_close:
 	}
 
 out:
-	free(msg.msg_control);
+	g_free(msg.msg_control);
 	return TRUE;
 }
 

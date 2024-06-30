@@ -51,7 +51,7 @@ void show_footer(void)
 
 char * check_control_in_sleep_input(int max_len, int column_offest, int line_offset)
 {
-	char *input_to = malloc(max_len * sizeof(char));
+	char *input_to = g_malloc_n(max_len, sizeof(char));
 	int iteration = 0;
 	while(iteration < max_len) {
 		int new = getch();
@@ -76,7 +76,7 @@ char * check_control_in_sleep_input(int max_len, int column_offest, int line_off
 			attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
 			break;
 		case 27:
-			free(input_to);
+			g_free(input_to);
 			return NULL;
 		default:
 			input_to[iteration] = new;
@@ -112,7 +112,7 @@ int get_valid_sleep_input(int column_offest)
 		char *error;
 		new_sleep = strtol(input, &error, 10);
 		if((*error == '\0') && (new_sleep >= 1)) {
-			free(input);
+			g_free(input);
 			break;
 		}
 		new_sleep = setup.sleep;
@@ -121,7 +121,7 @@ int get_valid_sleep_input(int column_offest)
 			"Invalid input: %s								",
 			input);
 		refresh();
-		free(input);
+		g_free(input);
 	}
 
 	attrset(COLOR_PAIR(1));
@@ -132,7 +132,7 @@ int get_valid_sleep_input(int column_offest)
 
 void get_banned_cpu(int *cpu, char *data __attribute__((unused)))
 {
-	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
+	cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
 	new->number = *cpu;
 	new->is_banned = 1;
 	all_cpus = g_list_append(all_cpus, new);
@@ -237,7 +237,7 @@ void get_new_cpu_ban_values(cpu_ban_t *cpu, void *data)
 void get_cpu(cpu_node_t *node, void *data __attribute__((unused)))
 {
 	if(node->type == OBJ_TYPE_CPU) {
-		cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
+		cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
 		new->number = node->number;
 		new->is_banned = 0;
 		all_cpus = g_list_append(all_cpus, new);
@@ -402,10 +402,9 @@ void get_irq_name(int end)
 	char buffer[128];
 
 	if (irq_name == NULL) {
-		irq_name = malloc(sizeof(char *) * LINES);
+		irq_name = g_malloc_n(LINES, sizeof(char *));
 		for (i = 4; i < LINES; i++) {
-			irq_name[i] = malloc(sizeof(char) * 50);
-			memset(irq_name[i], 0, sizeof(char) * 50);
+			irq_name[i] = g_malloc0_n(50, sizeof(char));
 		}
 	}
 
