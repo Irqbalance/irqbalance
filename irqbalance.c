@@ -654,13 +654,16 @@ int main(int argc, char** argv)
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
 		/* Write pidfile which can be used to avoid starting multiple instances */
-		if (pidfile && (pidfd = open(pidfile,
-			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
-			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
-			char str[16];
-			snprintf(str, sizeof(str), "%u\n", getpid());
-			write(pidfd, str, strlen(str));
-			close(pidfd);
+		if (pidfile) {
+			pidfd = open(pidfile,
+				O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			if (pidfd >= 0) {
+				char str[16];
+				snprintf(str, sizeof(str), "%u\n", getpid());
+				write(pidfd, str, strlen(str));
+				close(pidfd);
+			}
 		}
 	}
 
