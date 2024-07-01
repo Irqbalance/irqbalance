@@ -112,6 +112,7 @@ int get_valid_sleep_input(int column_offest)
 		char *error;
 		new_sleep = strtol(input, &error, 10);
 		if((*error == '\0') && (new_sleep >= 1)) {
+			free(input);
 			break;
 		}
 		new_sleep = setup.sleep;
