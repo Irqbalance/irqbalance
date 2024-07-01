@@ -271,7 +271,7 @@ static struct topo_obj* add_cpu_to_cache_domain(struct topo_obj *cpu,
 	entry = g_list_find(cache->children, cpu);
 	if (!entry) {
 		cache->children = g_list_append(cache->children, cpu);
-		cpu->parent = (struct topo_obj *)cache;
+		cpu->parent = cache;
 	}
 
 	if (!numa_avail || (nodeid > NUMA_NO_NODE))
@@ -441,7 +441,7 @@ static void dump_numa_node_num(struct topo_obj *p, void *data __attribute__((unu
 
 static void dump_balance_obj(struct topo_obj *d, void *data __attribute__((unused)))
 {
-	struct topo_obj *c = (struct topo_obj *)d;
+	struct topo_obj *c = d;
 	log(TO_CONSOLE, LOG_INFO, "%s%s%s%sCPU number %i  numa_node is ",
 	    log_indent, log_indent, log_indent, log_indent, c->number);
 	for_each_object(cpu_numa_node(c), dump_numa_node_num, NULL);
