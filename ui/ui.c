@@ -418,6 +418,8 @@ void get_irq_name(int end)
 	cmd = alloca(sizeof(char) * (len + 1));
 	snprintf(cmd, len + 1, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
 	output = popen(cmd, "r");
+	if (!output)
+		return;
 	for (i = 0; i <= offset; i++)
 		fgets(buffer, 50, output);
 	for (i = 4; i < end; i++)

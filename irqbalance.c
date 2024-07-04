@@ -503,7 +503,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 						recv_size - strlen("settings cpus "));
 				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
-				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
+				if (banned_cpumask_from_ui && !strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
 					free(cpu_ban_string);
 					cpu_ban_string = NULL;
