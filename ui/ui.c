@@ -396,7 +396,7 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 
 void get_irq_name(int end)
 {
-	int i, cpunr, len;
+	int i, cpunr;
 	FILE *output;
 	char *cmd;
 	char buffer[128];
@@ -414,10 +414,9 @@ void get_irq_name(int end)
 	fscanf(output, "%d", &cpunr);
 	pclose(output);
 
-	len = snprintf(NULL, 0, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
-	cmd = alloca(sizeof(char) * (len + 1));
-	snprintf(cmd, len + 1, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+	cmd = g_strdup_printf("cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
 	output = popen(cmd, "r");
+	g_free(cmd);
 	if (!output)
 		return;
 	for (i = 0; i <= offset; i++)
@@ -683,9 +682,9 @@ void handle_sleep_setting(void)
 	uint64_t new_sleep = get_valid_sleep_input(sleep_input_offset);
 	if(new_sleep != setup.sleep) {
 		setup.sleep = new_sleep;
-		char settings_data[128];
-		snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
+		char *settings_data = g_strdup_printf("%s %" PRIu64, SET_SLEEP, new_sleep);
 		send_settings(settings_data);
+		g_free(settings_data);
 	}
 	attrset(COLOR_PAIR(5));
 	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
@@ -739,10 +738,10 @@ void settings(void)
 	char *setup_data = get_data(SETUP);
 	parse_setup(setup_data);
 
-	char info[128] = "Current sleep interval between rebalancing: \0";
-	snprintf(info + strlen(info), 128 - strlen(info), "%" PRIu64 "\n", setup.sleep);
+	char *info = g_strdup_printf("Current sleep interval between rebalancing: %" PRIu64 "\n", setup.sleep);
 	attrset(COLOR_PAIR(1));
 	mvprintw(2, 3, "%s", info);
+	g_free(info);
 	print_all_cpus();
 	attrset(COLOR_PAIR(5));
 	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
