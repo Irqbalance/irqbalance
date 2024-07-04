@@ -30,10 +30,11 @@ static int default_bufsz = 8192;
 
 struct msghdr * create_credentials_msg(void)
 {
-	struct ucred *credentials = g_malloc(sizeof(struct ucred));
-	credentials->pid = getpid();
-	credentials->uid = geteuid();
-	credentials->gid = getegid();
+	struct ucred credentials = {
+		.pid = getpid(),
+		.uid = geteuid(),
+		.gid = getegid(),
+	};
 
 	struct msghdr *msg = g_malloc0(sizeof(struct msghdr));
 	msg->msg_iovlen = 1;
@@ -44,9 +45,7 @@ struct msghdr * create_credentials_msg(void)
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_CREDENTIALS;
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-	memcpy(CMSG_DATA(cmsg), credentials, sizeof(struct ucred));
-
-	g_free(credentials);
+	memcpy(CMSG_DATA(cmsg), &credentials, sizeof(struct ucred));
 	return msg;
 }
 
