@@ -118,9 +118,10 @@ try_again:
 	}
 
 	struct msghdr *msg = create_credentials_msg();
-	struct iovec iov;
-	iov.iov_base = (void *) string;
-	iov.iov_len = strlen(string);
+	struct iovec iov = {
+		.iov_base = (void *) string,
+		.iov_len = strlen(string),
+	};
 	msg->msg_iov = &iov;
 	sendmsg(socket_fd, msg, 0);
 
