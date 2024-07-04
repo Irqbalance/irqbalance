@@ -70,7 +70,7 @@ unsigned long migrate_ratio = 0;
 
 #ifdef HAVE_IRQBALANCEUI
 int socket_fd;
-char socket_name[64];
+char socket_name[108];
 char *banned_cpumask_from_ui = NULL;
 #endif
 
