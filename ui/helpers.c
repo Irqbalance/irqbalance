@@ -73,7 +73,7 @@ char * hex_to_bitmap(char hex_digit) {
 		return "0000\0";
 	}
 
-	char *bitmap = malloc(5 * sizeof(char));
+	char *bitmap = g_malloc_n(5, sizeof(char));
 	bitmap[4] = '\0';
 	int i;
 	for(i = 3; i >= 0; i--) {
@@ -86,7 +86,7 @@ char * hex_to_bitmap(char hex_digit) {
 gpointer copy_cpu_ban(gconstpointer src, gpointer data __attribute__((unused)))
 {
 	cpu_ban_t *old = (cpu_ban_t *)src; 
-	cpu_ban_t *new = malloc(sizeof(cpu_ban_t));
+	cpu_ban_t *new = g_malloc(sizeof(cpu_ban_t));
 	new->number = old->number;
 	new->is_banned = old->is_banned;
 	new->is_changed = 0;
@@ -96,7 +96,7 @@ gpointer copy_cpu_ban(gconstpointer src, gpointer data __attribute__((unused)))
 gpointer copy_irq(gconstpointer src, gpointer data __attribute__((unused)))
 {
 	irq_t *old = (irq_t *)src; 
-	irq_t *new = malloc(sizeof(irq_t));
+	irq_t *new = g_malloc(sizeof(irq_t));
 	new->vector = old->vector;
 	new->load = old->load;
 	new->diff = old->diff;

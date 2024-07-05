@@ -70,7 +70,7 @@ unsigned long migrate_ratio = 0;
 
 #ifdef HAVE_IRQBALANCEUI
 int socket_fd;
-char socket_name[64];
+char socket_name[108];
 char *banned_cpumask_from_ui = NULL;
 #endif
 
@@ -406,11 +406,12 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 	int valid_user = 0;
 
 	struct iovec iov = { buff, 500 };
-	struct msghdr msg = { 0 };
-	msg.msg_iov = &iov;
-	msg.msg_iovlen = 1;
-	msg.msg_control = malloc(CMSG_SPACE(sizeof(struct ucred)));
-	msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+	struct msghdr msg = {
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred))),
+		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
+	};
 
 	struct cmsghdr *cmsg;
 
@@ -502,7 +503,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 						recv_size - strlen("settings cpus "));
 				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
-				if (!strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
+				if (banned_cpumask_from_ui && !strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
 					banned_cpumask_from_ui = NULL;
 					free(cpu_ban_string);
 					cpu_ban_string = NULL;
@@ -539,7 +540,7 @@ out_close:
 	}
 
 out:
-	free(msg.msg_control);
+	g_free(msg.msg_control);
 	return TRUE;
 }
 
@@ -653,13 +654,16 @@ int main(int argc, char** argv)
 		if (daemon(0,0))
 			exit(EXIT_FAILURE);
 		/* Write pidfile which can be used to avoid starting multiple instances */
-		if (pidfile && (pidfd = open(pidfile,
-			O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
-			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0) {
-			char str[16];
-			snprintf(str, sizeof(str), "%u\n", getpid());
-			write(pidfd, str, strlen(str));
-			close(pidfd);
+		if (pidfile) {
+			pidfd = open(pidfile,
+				O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			if (pidfd >= 0) {
+				char str[16];
+				snprintf(str, sizeof(str), "%u\n", getpid());
+				write(pidfd, str, strlen(str));
+				close(pidfd);
+			}
 		}
 	}
 
