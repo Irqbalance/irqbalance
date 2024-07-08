@@ -336,9 +336,9 @@ void handle_cpu_banning(void)
 			show_frame();
 			show_footer();
 			refresh();
-			char settings_string[1024] = "settings cpus \0";
+			char settings_string[1024] = "settings cpus ";
 			for_each_cpu(all_cpus, get_new_cpu_ban_values, settings_string);
-			if(!strcmp("settings cpus \0", settings_string)) {
+			if(g_str_has_prefix(settings_string, "settings cpus ")) {
 				strncpy(settings_string + strlen(settings_string),
 						"NULL", 1024 - strlen(settings_string));
 			}
@@ -654,7 +654,7 @@ void handle_irq_banning(void)
 			refresh();
 			char settings_string[1024] = BAN_IRQS;
 			for_each_irq(all_irqs, get_new_irq_ban_values, settings_string);
-			if(!strcmp(BAN_IRQS, settings_string)) {
+			if(g_str_has_prefix(settings_string, BAN_IRQS)) {
 				strncpy(settings_string + strlen(settings_string),
 						" NONE", 1024 - strlen(settings_string));
 			}

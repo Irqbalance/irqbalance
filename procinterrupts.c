@@ -85,7 +85,7 @@ static int check_platform_device(char *name, struct irq_info *info)
 
 		log(TO_ALL, LOG_DEBUG, "Checking entry %s\n", ent->d_name);
 		for (i = 0; pdev_irq_info[i].d_name != NULL; i++) {
-			if (!strncmp(ent->d_name, pdev_irq_info[i].d_name, strlen(pdev_irq_info[i].d_name))) {
+			if (g_str_has_prefix(ent->d_name, pdev_irq_info[i].d_name)) {
 				info->type = pdev_irq_info[i].type;
 				info->class = pdev_irq_info[i].class;
 				rc = 0;
@@ -171,8 +171,8 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 		 * /proc/interrupts format defined, after of interrupt type
 		 * the reset string is mark the irq desc name.
 		 */
-		if (strncmp(irq_name, "Level", strlen("Level")) == 0 ||
-                                strncmp(irq_name, "Edge", strlen("Edge")) == 0)
+		if (!g_str_has_prefix(irq_name, "Level") ||
+                                !g_str_has_prefix(irq_name, "Edge"))
                         break;
 #endif
 	}
