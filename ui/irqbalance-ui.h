@@ -72,7 +72,7 @@ typedef struct setup {
 
 /* Function prototypes */
 
-struct msghdr * create_credentials_msg(void);
+struct msghdr create_credentials_msg(void);
 int init_connection(void);
 void send_settings(char *data);
 char * get_data(char *string);

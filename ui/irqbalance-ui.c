@@ -28,7 +28,7 @@ setup_t setup;
 GMainLoop *main_loop;
 static int default_bufsz = 8192;
 
-struct msghdr * create_credentials_msg(void)
+struct msghdr create_credentials_msg(void)
 {
 	struct ucred credentials = {
 		.pid = getpid(),
@@ -36,12 +36,13 @@ struct msghdr * create_credentials_msg(void)
 		.gid = getegid(),
 	};
 
-	struct msghdr *msg = g_malloc0(sizeof(struct msghdr));
-	msg->msg_iovlen = 1;
-	msg->msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred)));
-	msg->msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+	struct msghdr msg = {
+		.msg_iovlen = 1,
+		.msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred))),
+		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
+	};
 
-	struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_CREDENTIALS;
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
@@ -90,16 +91,17 @@ void send_settings(char *data)
 		return;
 	}
 
-	struct msghdr *msg = create_credentials_msg();
-	struct iovec iov;
-	iov.iov_base = (void *) data;
-	iov.iov_len = strlen(data);
-	msg->msg_iov = &iov;
-	sendmsg(socket_fd, msg, 0);
+	struct iovec iov = {
+		.iov_base = (void *) data,
+		.iov_len = strlen(data),
+	};
+
+	struct msghdr msg = create_credentials_msg();
+	msg.msg_iov = &iov;
+	sendmsg(socket_fd, &msg, 0);
 
 	close(socket_fd);
-	g_free(msg->msg_control);
-	g_free(msg);
+	g_free(msg.msg_control);
 }
 
 char * get_data(char *string)
@@ -115,19 +117,18 @@ try_again:
 		return NULL;
 	}
 
-	struct msghdr *msg = create_credentials_msg();
+	struct msghdr msg = create_credentials_msg();
 	struct iovec iov = {
 		.iov_base = (void *) string,
 		.iov_len = strlen(string),
 	};
-	msg->msg_iov = &iov;
-	sendmsg(socket_fd, msg, 0);
+	msg.msg_iov = &iov;
+	sendmsg(socket_fd, &msg, 0);
 
 	char *data = g_malloc(default_bufsz);
 	int len = recv(socket_fd, data, default_bufsz, MSG_TRUNC);
 	close(socket_fd);
-	g_free(msg->msg_control);
-	g_free(msg);
+	g_free(msg.msg_control);
 	if (len < 0) {
 		g_free(data);
 		return NULL;
