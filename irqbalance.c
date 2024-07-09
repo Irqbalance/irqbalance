@@ -154,7 +154,7 @@ static void parse_command_line(int argc, char **argv)
 				add_cl_banned_module(optarg);
 				break;
 			case 'p':
-				if (!strncmp(optarg, "off", strlen(optarg)))
+				if (g_str_has_prefix(optarg, "off"))
 					power_thresh = ULONG_MAX;
 				else {
 					power_thresh = strtoull(optarg, &endptr, 10);
@@ -443,15 +443,14 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 			goto out_close;
 		}
 
-		if (!strncmp(buff, "stats", strlen("stats"))) {
+		if (g_str_has_prefix(buff, "stats")) {
 			char *stats = NULL;
 			for_each_object(numa_nodes, get_object_stat, &stats);
 			send(sock, stats, strlen(stats), 0);
 			free(stats);
 		}
-		if (!strncmp(buff, "settings ", strlen("settings "))) {
-			if (!(strncmp(buff + strlen("settings "), "sleep ",
-							strlen("sleep ")))) {
+		if (g_str_has_prefix(buff, "settings ")) {
+			if (g_str_has_prefix(buff + strlen("settings "), "sleep ")) {
 				char *sleep_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings sleep ") + 1));
 
@@ -465,8 +464,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 					sleep_interval = new_iterval;
 				}
 				free(sleep_string);
-			} else if (!(strncmp(buff + strlen("settings "), "ban irqs ",
-							strlen("ban irqs ")))) {
+			} else if (g_str_has_prefix(buff + strlen("settings "), "ban irqs ")) {
 				char *end;
 				char *irq_string = malloc(
 						sizeof(char) * (recv_size - strlen("settings ban irqs ") + 1));
@@ -479,7 +477,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				g_list_free_full(cl_banned_irqs, free);
 				cl_banned_irqs = NULL;
 				need_rescan = 1;
-				if (!strncmp(irq_string, "NONE", strlen("NONE"))) {
+				if (g_str_has_prefix(irq_string, "NONE")) {
 					free(irq_string);
 					goto out_close;
 				}
@@ -488,8 +486,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 					add_cl_banned_irq(irq);
 				} while((irq = strtoul(end, &end, 10)));
 				free(irq_string);
-			} else if (!(strncmp(buff + strlen("settings "), "cpus ",
-							strlen("cpus")))) {
+			} else if (g_str_has_prefix(buff + strlen("settings "), "cpus ")) {
 				banned_cpumask_from_ui = NULL;
 				free(cpu_ban_string);
 				cpu_ban_string = NULL;
@@ -503,7 +500,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 						recv_size - strlen("settings cpus "));
 				cpu_ban_string[recv_size - strlen("settings cpus ")] = '\0';
 				banned_cpumask_from_ui = strtok(cpu_ban_string, " ");
-				if (banned_cpumask_from_ui && !strncmp(banned_cpumask_from_ui, "NULL", strlen("NULL"))) {
+				if (banned_cpumask_from_ui && g_str_has_prefix(banned_cpumask_from_ui, "NULL")) {
 					banned_cpumask_from_ui = NULL;
 					free(cpu_ban_string);
 					cpu_ban_string = NULL;
@@ -511,7 +508,7 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 				need_rescan = 1;
 			}
 		}
-		if (!strncmp(buff, "setup", strlen("setup"))) {
+		if (g_str_has_prefix(buff, "setup")) {
 			char banned[512];
 			char *setup = calloc(strlen("SLEEP  ") + 11 + 1, 1);
 			char *newptr = NULL;

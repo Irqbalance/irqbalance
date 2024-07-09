@@ -380,7 +380,7 @@ static void do_one_cpu(char *path)
 			entry = readdir(dir);
 			if (!entry)
 				break;
-			if (strncmp(entry->d_name, "node", 4) == 0) {
+			if (g_str_has_prefix(entry->d_name, "node")) {
 				char *end;
 				int num;
 				num = strtol(entry->d_name + 4, &end, 10);

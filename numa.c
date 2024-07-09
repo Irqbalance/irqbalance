@@ -84,7 +84,7 @@ void build_numa_node_list(void)
 		if (!entry)
 			break;
 		if ((entry->d_type == DT_DIR) &&
-		    (strncmp(entry->d_name, "node", 4) == 0) &&
+		    g_str_has_prefix(entry->d_name, "node") &&
 		    isdigit(entry->d_name[4])) {
 			add_one_node(strtoul(&entry->d_name[4], NULL, 10));
 		}
