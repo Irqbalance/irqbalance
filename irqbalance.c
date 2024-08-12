@@ -122,7 +122,7 @@ static void parse_command_line(int argc, char **argv)
 				break;
 			case 'V':
 				version();
-				exit(1);
+				exit(0);
 				break;
 			case 'c':
 				deepest_cache = strtoul(optarg, &endptr, 10);
