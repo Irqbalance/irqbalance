@@ -210,6 +210,11 @@ void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info
 	to_list = to ? &to->interrupts : &rebalance_irq_list;
 
 	migrate_irq(from_list, to_list, info);
+	/*
+	 * only update list after info found
+	 */
+	if (!info->moved)
+		return;
 
 	if (from) {
 		if (from->slots_left != INT_MAX)
