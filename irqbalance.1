@@ -193,13 +193,13 @@ Forces a rescan of the available IRQs and system topology.
 irqbalance is able to communicate via socket and return it's current assignment
 tree and setup, as well as set new settings based on sent values. Socket is abstract,
 with a name in form of
-.B irqbalance<PID>.sock
-, where <PID> is the process ID of irqbalance instance to communicate with.
+.BR irqbalance<PID>.sock ,
+where <PID> is the process ID of irqbalance instance to communicate with.
 Possible values to send:
 .TP
 .B stats
 Retrieve assignment tree of IRQs to CPUs, in recursive manner. For each CPU node
-in tree, it's type, number, load and whether the save mode is active are sent. For
+in tree, its type, number, load and whether the save mode is active are sent. For
 each assigned IRQ type, it's number, load, number of IRQs since last rebalancing
 and it's class are sent. Refer to types.h file for explanation of defines.
 .TP
@@ -220,4 +220,3 @@ Based on chosen tools, ancillary message with credentials needs to be sent with 
 
 .SH "HOMEPAGE"
 https://github.com/Irqbalance/irqbalance
-
