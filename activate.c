@@ -95,6 +95,8 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	info->moved = 0; /*migration is done*/
 	return;
 error:
+	/* Use EPERM as the explaination for EIO */
+	errsave = (errsave == EIO) ? EPERM : errsave;
 	log(TO_ALL, LOG_WARNING,
 		"Cannot change IRQ %i affinity: %s\n",
 		info->irq, strerror(errsave));
