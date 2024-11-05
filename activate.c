@@ -52,6 +52,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	FILE *file;
 	int errsave, ret;
 	cpumask_t applied_mask;
+	char *env = getenv("SUPPRESS_LOG");
 
 	/*
  	 * only activate mappings for irqs that have moved
@@ -97,9 +98,11 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 error:
 	/* Use EPERM as the explaination for EIO */
 	errsave = (errsave == EIO) ? EPERM : errsave;
-	log(TO_ALL, LOG_WARNING,
-		"Cannot change IRQ %i affinity: %s\n",
-		info->irq, strerror(errsave));
+	if (!env || strcmp(env, "yes")) {
+		log(TO_ALL, LOG_WARNING,
+			"Cannot change IRQ %i affinity: %s\n",
+			info->irq, strerror(errsave));
+	}
 	switch (errsave) {
 	case EAGAIN: /* Interrupted by signal. */
 	case EBUSY: /* Affinity change already in progress. */
@@ -124,8 +127,10 @@ error:
 		/* Any other error is considered permanent. */
 		info->level = BALANCE_NONE;
 		info->moved = 0; /* migration impossible, mark as done */
-		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
-			info->irq);
+		if (!env || strcmp(env, "yes")) {
+			log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
+				info->irq);
+		}
 	}
 }
 
