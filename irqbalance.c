@@ -664,6 +664,13 @@ int main(int argc, char** argv)
 		}
 	}
 
+	g_unix_signal_add(SIGINT, handler, NULL);
+	g_unix_signal_add(SIGTERM, handler, NULL);
+	g_unix_signal_add(SIGUSR1, handler, NULL);
+	g_unix_signal_add(SIGUSR2, handler, NULL);
+	g_unix_signal_add(SIGHUP, force_rescan, NULL);
+	sigprocmask(SIG_SETMASK, &old_sigset, NULL);
+
 	build_object_tree();
 	if (debug_mode)
 		dump_object_tree();
@@ -677,14 +684,6 @@ int main(int argc, char** argv)
 		log(TO_ALL, LOG_WARNING, "%s", msg);
 		goto out;
 	}
-
-
-	g_unix_signal_add(SIGINT, handler, NULL);
-	g_unix_signal_add(SIGTERM, handler, NULL);
-	g_unix_signal_add(SIGUSR1, handler, NULL);
-	g_unix_signal_add(SIGUSR2, handler, NULL);
-	g_unix_signal_add(SIGHUP, force_rescan, NULL);
-	sigprocmask(SIG_SETMASK, &old_sigset, NULL);
 
 #ifdef HAVE_LIBCAP_NG
 	// Drop capabilities
