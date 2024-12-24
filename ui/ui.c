@@ -210,12 +210,16 @@ void display_banned_cpus(void)
 
 int toggle_cpu(GList *cpu_list, int cpu_number)
 {
+	cpu_ban_t *entry_data;
+
 	GList *entry = g_list_first(cpu_list);
-	cpu_ban_t *entry_data = (cpu_ban_t *)(entry->data);
-	while(entry_data->number != cpu_number) {
-		entry = g_list_next(entry);
+	while (entry) {
 		entry_data = (cpu_ban_t *)(entry->data);
+		if (entry_data && entry_data->number == cpu_number)
+			break;
+		entry = g_list_next(entry);
 	}
+
 	if(((cpu_ban_t *)(entry->data))->is_banned) {
 		((cpu_ban_t *)(entry->data))->is_banned = 0;
 	} else {
@@ -522,10 +526,15 @@ int toggle_irq(GList *irq_list, int position)
 {
 	GList *entry = g_list_first(irq_list);
 	int irq_node = 0;
-	while(irq_node != position) {
+
+	while(entry && irq_node != position) {
 		entry = g_list_next(entry);
 		irq_node++;
 	}
+
+	if (!entry)
+		return -1;
+
 	if(((irq_t *)(entry->data))->is_banned) {
 		((irq_t *)(entry->data))->is_banned = 0;
 	} else {

@@ -214,17 +214,18 @@ out: {
 GList * concat_child_lists(cpu_node_t *node)
 {
 	GList *new = NULL;
+	GList *cpu_entry;
 	GList *child_entry = g_list_first(node->children);
-	do {
+	while (child_entry) {
 		cpu_node_t *child = (cpu_node_t *)child_entry->data;
-		GList *cpu_entry = g_list_first(child->cpu_list);
-		do {
+		cpu_entry = g_list_first(child->cpu_list);
+		while (cpu_entry) {
 			uint64_t *cpu = (uint64_t *)cpu_entry->data;
 			new = g_list_append(new, cpu);
 			cpu_entry = g_list_next(cpu_entry);
-		} while(cpu_entry != NULL);
+		};
 		child_entry = g_list_next(child_entry);
-	} while(child_entry != NULL);
+	}
 
 	return new;
 }
@@ -253,11 +254,11 @@ void assign_cpu_mask(cpu_node_t *node, void *data __attribute__((unused)))
 	mask[0] = '\0';
 	unsigned int sum = 0;
 	GList *list_entry = g_list_first(node->cpu_list);
-	do {
+	while (list_entry) {
 		int *cpu = list_entry->data;
 		sum += 1 << (*cpu);
 		list_entry = g_list_next(list_entry);
-	} while(list_entry != NULL);
+	};
 	snprintf(mask, 15, "0x%x", sum);
 	node->cpu_mask = mask;
 
