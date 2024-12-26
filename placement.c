@@ -67,7 +67,7 @@ static void find_best_object(struct topo_obj *d, void *data)
 		best->best = d;
 		best->best_cost = newload;
 	} else if (newload == best->best_cost) {
-		if (g_list_length(d->interrupts) < g_list_length(best->best->interrupts)) {
+		if (!best->best || g_list_length(d->interrupts) < g_list_length(best->best->interrupts)) {
 			best->best = d;
 		}
 	}
