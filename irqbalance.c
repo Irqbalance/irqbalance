@@ -400,12 +400,12 @@ void get_object_stat(struct topo_obj *object, void *data)
 #ifdef HAVE_IRQBALANCEUI
 gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attribute__((unused)))
 {
-	char buff[500];
+	char buff[16384];
 	int sock;
 	int recv_size = 0;
 	int valid_user = 0;
 
-	struct iovec iov = { buff, 500 };
+	struct iovec iov = { buff, sizeof(buff) };
 	struct msghdr msg = {
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
@@ -424,6 +424,10 @@ gboolean sock_handle(gint fd, GIOCondition condition, gpointer user_data __attri
 		recv_size = recvmsg(sock, &msg, 0);
 		if (recv_size < 0) {
 			log(TO_ALL, LOG_WARNING, "Error while receiving data.\n");
+			goto out_close;
+		}
+		if (recv_size == sizeof(buff)) {
+			log(TO_ALL, LOG_WARNING, "Received command too long.\n");
 			goto out_close;
 		}
 		cmsg = CMSG_FIRSTHDR(&msg);
