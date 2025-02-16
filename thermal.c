@@ -10,70 +10,17 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/genl/ctrl.h>
+#include <linux/thermal.h>
 
 #include "irqbalance.h"
 
 cpumask_t thermal_banned_cpus;
-
-/* Events of thermal_genl_family */
-enum thermal_genl_event {
-	THERMAL_GENL_EVENT_UNSPEC,
-	THERMAL_GENL_EVENT_TZ_CREATE,		/* Thermal zone creation */
-	THERMAL_GENL_EVENT_TZ_DELETE,		/* Thermal zone deletion */
-	THERMAL_GENL_EVENT_TZ_DISABLE,		/* Thermal zone disabled */
-	THERMAL_GENL_EVENT_TZ_ENABLE,		/* Thermal zone enabled */
-	THERMAL_GENL_EVENT_TZ_TRIP_UP,		/* Trip point crossed the way up */
-	THERMAL_GENL_EVENT_TZ_TRIP_DOWN,	/* Trip point crossed the way down */
-	THERMAL_GENL_EVENT_TZ_TRIP_CHANGE,	/* Trip point changed */
-	THERMAL_GENL_EVENT_TZ_TRIP_ADD,		/* Trip point added */
-	THERMAL_GENL_EVENT_TZ_TRIP_DELETE,	/* Trip point deleted */
-	THERMAL_GENL_EVENT_CDEV_ADD,		/* Cdev bound to the thermal zone */
-	THERMAL_GENL_EVENT_CDEV_DELETE,		/* Cdev unbound */
-	THERMAL_GENL_EVENT_CDEV_STATE_UPDATE,	/* Cdev state updated */
-	THERMAL_GENL_EVENT_TZ_GOV_CHANGE,	/* Governor policy changed  */
-	THERMAL_GENL_EVENT_CAPACITY_CHANGE,	/* CPU capacity changed */
-	__THERMAL_GENL_EVENT_MAX,
-};
-#define THERMAL_GENL_EVENT_MAX (__THERMAL_GENL_EVENT_MAX - 1)
-
-/* Attributes of thermal_genl_family */
-enum thermal_genl_attr {
-	THERMAL_GENL_ATTR_UNSPEC,
-	THERMAL_GENL_ATTR_TZ,
-	THERMAL_GENL_ATTR_TZ_ID,
-	THERMAL_GENL_ATTR_TZ_TEMP,
-	THERMAL_GENL_ATTR_TZ_TRIP,
-	THERMAL_GENL_ATTR_TZ_TRIP_ID,
-	THERMAL_GENL_ATTR_TZ_TRIP_TYPE,
-	THERMAL_GENL_ATTR_TZ_TRIP_TEMP,
-	THERMAL_GENL_ATTR_TZ_TRIP_HYST,
-	THERMAL_GENL_ATTR_TZ_MODE,
-	THERMAL_GENL_ATTR_TZ_NAME,
-	THERMAL_GENL_ATTR_TZ_CDEV_WEIGHT,
-	THERMAL_GENL_ATTR_TZ_GOV,
-	THERMAL_GENL_ATTR_TZ_GOV_NAME,
-	THERMAL_GENL_ATTR_CDEV,
-	THERMAL_GENL_ATTR_CDEV_ID,
-	THERMAL_GENL_ATTR_CDEV_CUR_STATE,
-	THERMAL_GENL_ATTR_CDEV_MAX_STATE,
-	THERMAL_GENL_ATTR_CDEV_NAME,
-	THERMAL_GENL_ATTR_GOV_NAME,
-	THERMAL_GENL_ATTR_CAPACITY,
-	THERMAL_GENL_ATTR_CAPACITY_CPU_COUNT,
-	THERMAL_GENL_ATTR_CAPACITY_CPU_ID,
-	THERMAL_GENL_ATTR_CAPACITY_CPU_PERF,
-	THERMAL_GENL_ATTR_CAPACITY_CPU_EFF,
-	__THERMAL_GENL_ATTR_MAX,
-};
-#define THERMAL_GENL_ATTR_MAX (__THERMAL_GENL_ATTR_MAX - 1)
 
 #define INVALID_NL_FD		-1
 #define MAX_RECV_ERRS		2
 #define SYSCONF_ERR		-1
 #define INVALID_EVENT_VALUE	-1
 
-#define THERMAL_GENL_FAMILY_NAME	"thermal"
-#define THERMAL_GENL_EVENT_GROUP_NAME	"event"
 #define NL_FAMILY_NAME			"nlctrl"
 
 struct family_data {
@@ -361,7 +308,7 @@ static int handle_thermal_event(struct nl_msg *msg, void *arg __attribute__((unu
 
 	/* get a pointer to generic netlink header */
 	genlhdr = genlmsg_hdr(msnlh);
-	if (genlhdr->cmd != THERMAL_GENL_EVENT_CAPACITY_CHANGE) {
+	if (genlhdr->cmd != THERMAL_GENL_EVENT_CPU_CAPABILITY_CHANGE) {
 		log(TO_ALL, LOG_DEBUG, "thermal: no CPU capacity change.\n");
 		return NL_SKIP;
 	}
@@ -379,7 +326,11 @@ static int handle_thermal_event(struct nl_msg *msg, void *arg __attribute__((unu
 	}
 
 	/* get start and length of payload section */
-	cap = attrs[THERMAL_GENL_ATTR_CAPACITY];
+	cap = attrs[THERMAL_GENL_ATTR_CPU_CAPABILITY];
+	if (!cap) {
+		log(TO_ALL, LOG_ERR, "thermal: parsed attribute is null.\n");
+		return NL_SKIP;
+	}
 	pos = nla_data(cap);
 	remain = nla_len(cap);
 
