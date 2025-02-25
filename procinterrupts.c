@@ -72,7 +72,8 @@ static int check_platform_device(char *name, struct irq_info *info)
 	memset(path, 0, 512);
 
 	strcat(path, "/sys/devices/platform/");
-	strcat(path, name);
+	snprintf(path + strlen(path), sizeof(path) - strlen(path) - 1,
+		"%s", name);
 	strcat(path, "/");
 	dirfd = opendir(path);
 
