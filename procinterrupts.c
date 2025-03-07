@@ -172,9 +172,9 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 		 * /proc/interrupts format defined, after of interrupt type
 		 * the reset string is mark the irq desc name.
 		 */
-		if (!g_str_has_prefix(irq_name, "Level") ||
-                                !g_str_has_prefix(irq_name, "Edge"))
-                        break;
+		if (g_str_has_prefix(irq_name, "Level") ||
+				g_str_has_prefix(irq_name, "Edge"))
+			break;
 #endif
 	}
 
