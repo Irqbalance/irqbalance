@@ -35,6 +35,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
     'ui/ui.c',
     dependencies: [glib_dep, ncurses_dep],
     install: true,
+    install_dir : get_option('sbindir'),
   )
 
   install_man('irqbalance-ui.1')
@@ -63,6 +64,7 @@ executable(
   irqbalance_sources,
   dependencies: [glib_dep, m_dep, capng_dep, libnl_3_dep, libnl_genl_3_dep, numa_dep, systemd_dep],
   install: true,
+  install_dir : get_option('sbindir'),
 )
 
 install_man('irqbalance.1')
