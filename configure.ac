@@ -115,6 +115,24 @@ AS_IF(
   ]
 )
 
+AC_ARG_WITH([pkgconfdir],
+  [AS_HELP_STRING([--with-pkgconfdir=DIR],
+    [Systemd Environment configs sourced by irqbalanced])],
+    [pkgconfdir=$withval],
+    [pkgconfdir="$prefix/etc/default"])
+AC_SUBST([pkgconfdir])
+
+AC_ARG_WITH([usrconfdir],
+  [AS_HELP_STRING([--with-usrconfdir=DIR],
+    [Systemd Environment user configs sourced by irqbalanced])],
+    [usrconfdir=$withval],
+    [usrconfdir="${sysconfdir}/default"])
+AC_SUBST([usrconfdir])
+
+AC_CONFIG_FILES([misc/irqbalance.service])
+
+PKG_CHECK_VAR([systemdsystemunitdir], [systemd], [systemdsystemunitdir])
+
 AC_OUTPUT(Makefile tests/Makefile)
 
 AC_MSG_NOTICE()
@@ -123,3 +141,4 @@ AC_MSG_NOTICE([Target:                 $target])
 AC_MSG_NOTICE([Installation prefix:    $prefix])
 AC_MSG_NOTICE([Compiler:               $CC])
 AC_MSG_NOTICE([Compiler flags: $CFLAGS])
+AC_MSG_NOTICE([Systemdunitdir:         $systemdsystemunitdir])

@@ -22,7 +22,10 @@
 
 AUTOMAKE_OPTIONS = no-dependencies
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = COPYING autogen.sh misc/irqbalance.service misc/irqbalance.env
+EXTRA_DIST = COPYING autogen.sh
+
+systemdsystemunit_DATA = misc/irqbalance.service
+pkgconf_DATA = misc/irqbalance.env
 
 SUBDIRS = tests
 

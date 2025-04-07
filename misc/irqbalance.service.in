@@ -6,8 +6,8 @@ ConditionVirtualization=!container
 ConditionCPUs=>1
 
 [Service]
-EnvironmentFile=-/usr/lib/irqbalance/defaults.env
-EnvironmentFile=-/path/to/irqbalance.env
+EnvironmentFile=@pkgconfdir@/irqbalance.env
+EnvironmentFile=-@usrconfdir@/irqbalance
 ExecStart=/usr/sbin/irqbalance $IRQBALANCE_ARGS
 CapabilityBoundingSet=CAP_SETPCAP
 NoNewPrivileges=yes

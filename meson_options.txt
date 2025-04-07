@@ -17,3 +17,11 @@ option('thermal', type : 'feature',
 option('ui', type : 'feature',
   description : 'Build the UI component',
 )
+
+option('usrconfdir', type: 'string',
+  description: 'Directory to systemd environment file, optionally added by user'
+)
+
+option('pkgconfdir', type: 'string',
+  description: 'Directory to systemd environment file, provided by irqbalance'
+)
