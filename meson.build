@@ -14,6 +14,13 @@ numa_dep = cc.find_library('numa', required: get_option('numa'))
 libnl_3_dep = dependency('libnl-3.0', required: get_option('thermal'))
 libnl_genl_3_dep = dependency('libnl-genl-3.0', required: get_option('thermal'))
 systemd_dep = dependency('libsystemd', required: get_option('systemd'))
+systemd_dir_dep = dependency('systemd', required: get_option('systemd'))
+
+systemdsystemunitdir = systemd_dir_dep.get_variable(
+  pkgconfig: 'systemdsystemunitdir',
+  default_value: get_option('prefix') / 'lib/systemd/system'
+)
+
 
 cdata = configuration_data()
 cdata.set('HAVE_GETOPT_LONG', cc.has_function('getopt_long'))
@@ -35,6 +42,7 @@ if cdata.get('HAVE_IRQBALANCEUI')
     'ui/ui.c',
     dependencies: [glib_dep, ncurses_dep],
     install: true,
+    install_dir : get_option('sbindir'),
   )
 
   install_man('irqbalance-ui.1')
@@ -63,6 +71,37 @@ executable(
   irqbalance_sources,
   dependencies: [glib_dep, m_dep, capng_dep, libnl_3_dep, libnl_genl_3_dep, numa_dep, systemd_dep],
   install: true,
+  install_dir : get_option('sbindir'),
 )
 
 install_man('irqbalance.1')
+
+if systemd_dep.found()
+  pkgconfdir = get_option('pkgconfdir')
+  usrconfdir = get_option('usrconfdir')
+
+# Set defaults
+  if pkgconfdir == ''
+     pkgconfdir = get_option('prefix') / 'etc/default'
+  endif
+  if usrconfdir == ''
+     usrconfdir = get_option('sysconfdir') / 'default'
+  endif
+
+  idata = configuration_data()
+  idata.set('usrconfdir', usrconfdir)
+  idata.set('pkgconfdir', pkgconfdir)
+
+  configure_file(
+    input: 'misc/irqbalance.service.in',
+    output: 'irqbalance.service',
+    install_dir: systemdsystemunitdir,
+    configuration: idata
+  )
+  configure_file(
+    input: 'misc/irqbalance.env',
+    output: 'irqbalance.env',
+    install_dir: pkgconfdir,
+    configuration: idata
+  )
+endif
