@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   Linux-GCC:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         cc: ['7', '13']
@@ -27,7 +27,7 @@ jobs:
           meson compile -C "${{github.workspace}}/build"
           meson test -C "${{github.workspace}}/build"
   Linux-Clang:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         cc: ['6.0', '18']
@@ -46,7 +46,7 @@ jobs:
           meson compile -C "${{github.workspace}}/build" --verbose
           meson test -C "${{github.workspace}}/build" --verbose
   Alpine:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         platform: ['aarch64', 'armhf', 'armv7', 'ppc64le', 'riscv64', 's390x']
