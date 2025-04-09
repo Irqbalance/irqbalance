@@ -16,6 +16,7 @@ ReadOnlyPaths=/
 ReadWritePaths=/proc/irq
 RestrictAddressFamilies=AF_UNIX AF_NETLINK
 RuntimeDirectory=irqbalance/
+LimitNOFILE=4096
 IPAddressDeny=any
 ProtectHome=true
 PrivateTmp=yes 
