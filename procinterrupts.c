@@ -55,7 +55,7 @@ struct irq_match {
 static int check_platform_device(char *name, struct irq_info *info)
 {
 	DIR *dirfd;
-	char path[512];
+	char path[PATH_MAX];
 	struct dirent *ent;
 	int rc = -ENOENT, i;
 	static struct pdev_irq_info {
@@ -69,12 +69,11 @@ static int check_platform_device(char *name, struct irq_info *info)
 		{NULL},
 	};
 
-	memset(path, 0, 512);
+	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s", name) == PATH_MAX) {
+		log(TO_ALL, LOG_ERROR, "Device path in /sys exceeds maximum length");
+		return -ENAMETOOLONG;
+	}
 
-	strcat(path, "/sys/devices/platform/");
-	snprintf(path + strlen(path), sizeof(path) - strlen(path) - 1,
-		"%s", name);
-	strcat(path, "/");
 	dirfd = opendir(path);
 
 	if (!dirfd) {
