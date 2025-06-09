@@ -69,8 +69,8 @@ static int check_platform_device(char *name, struct irq_info *info)
 		{NULL},
 	};
 
-	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s", name) == PATH_MAX) {
-		log(TO_ALL, LOG_ERROR, "Device path in /sys exceeds maximum length");
+	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s/", name) == PATH_MAX) {
+		log(TO_ALL, LOG_WARNING, "WARNING: Platform device path in /sys exceeds PATH_MAX, cannot examine");
 		return -ENAMETOOLONG;
 	}
 
