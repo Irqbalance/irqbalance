@@ -191,7 +191,7 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 #endif
 	info->irq = irq;
 
-	if (strstr(irq_fullname, "-event") != NULL && is_xen_dyn == 1) {
+	if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
 		info->type = IRQ_TYPE_VIRT_EVENT;
 		info->class = IRQ_VIRT_EVENT;
 	} else {
