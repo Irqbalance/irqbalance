@@ -97,7 +97,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 error:
 	/* Use EPERM as the explaination for EIO */
 	errsave = (errsave == EIO) ? EPERM : errsave;
-	log(TO_ALL, LOG_WARNING,
+	log(TO_ALL, LOG_DEBUG,
 		"Cannot change IRQ %i affinity: %s\n",
 		info->irq, strerror(errsave));
 	switch (errsave) {
@@ -124,7 +124,7 @@ error:
 		/* Any other error is considered permanent. */
 		info->level = BALANCE_NONE;
 		info->moved = 0; /* migration impossible, mark as done */
-		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
+		log(TO_ALL, LOG_DEBUG, "IRQ %i affinity is now unmanaged\n",
 			info->irq);
 	}
 }
