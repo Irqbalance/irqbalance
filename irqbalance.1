@@ -183,6 +183,8 @@ for the consider of compatibility.
 Provides a cpulist which irqbalance should ignore and never assign interrupts to.
 If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
 system as the default value.
+Notes: Empty value as "IRQBALANCE_BANNED_CPULIST=" will result in an empty banned
+mask, effectively allowing all CPUs on the system to participate in the IRQ balancing.
 
 .SH "SIGNALS"
 .TP
