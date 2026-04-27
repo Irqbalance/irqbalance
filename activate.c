@@ -167,7 +167,7 @@ static const char *balance_level_str(int level)
  *   - BALANCE_CORE: No fallback possible (single CPU, fail immediately)
  *   - BALANCE_CACHE: Only search within same cache domain
  *   - BALANCE_PACKAGE: Only search within same package
- *   - BALANCE_NONE: Search within same NUMA node (widest scope)
+ *   - BALANCE_NONE: User opted out of balancing - decline fallback
  *
  * FIXES APPLIED:
  *   1. NUMA fallback now traverses topology tree to find actual CPUs
@@ -205,6 +205,22 @@ static int try_fallback_cpu(struct irq_info *info, cpumask_t applied_mask,
 		return -1;
 	}
 
+	/*
+	 * BALANCE_NONE means the user opted this IRQ out of balancing.
+	 * place_irq_in_node() only relocates such an IRQ when banned CPUs
+	 * forced it; we should not silently widen the scope further on
+	 * ENOSPC. Treat it like BALANCE_CORE: warn and decline.
+	 * This also avoids a NULL search_scope on non-NUMA systems where
+	 * no OBJ_TYPE_NODE ancestor exists in the topology.
+	 */
+	if (balance_level == BALANCE_NONE) {
+		log(TO_ALL, LOG_WARNING,
+			"IRQ %d: cannot fallback - balance level is 'none' "
+			"(user policy forbids relocation)\n",
+			info->irq);
+		return -1;
+	}
+
 	cpus_clear(tried_cpus);
 
 	/*
@@ -228,11 +244,6 @@ static int try_fallback_cpu(struct irq_info *info, cpumask_t applied_mask,
 		case BALANCE_PACKAGE:
 			search_scope = original->parent;
 			while (search_scope && search_scope->obj_type != OBJ_TYPE_PACKAGE)
-				search_scope = search_scope->parent;
-			break;
-		case BALANCE_NONE:
-			search_scope = original->parent;
-			while (search_scope && search_scope->obj_type != OBJ_TYPE_NODE)
 				search_scope = search_scope->parent;
 			break;
 		default:
@@ -359,6 +370,23 @@ static int try_fallback_cpu(struct irq_info *info, cpumask_t applied_mask,
 		 *
 		 */
 		migrate_irq_obj(original, fallback, info);
+		/*
+		 * migrate_irq_obj() unconditionally increments the source
+		 * object's slots_left (0 -> 1), which would make the original
+		 * CPU look eligible again. The kernel returned ENOSPC, so its
+		 * vector table is still full; re-clamp to SATURATED so we
+		 * don't immediately retry the same dead-end placement.
+		 *
+		 * Only re-clamp when the source is an actual CPU. For
+		 * domain-assigned IRQs (cache/package/NUMA), the original
+		 * is a domain object whose slots_left aggregates its CPUs
+		 * and was never marked SLOTS_SATURATED by the ENOSPC handler
+		 * (see activate_mapping(): the obj_type==CPU branch).
+		 * Force-saturating the whole domain would penalize every CPU
+		 * inside it on the next placement cycle.
+		 */
+		if (original->obj_type == OBJ_TYPE_CPU)
+			original->slots_left = SLOTS_SATURATED;
 		info->moved = 0;
 		log(TO_ALL, LOG_DEBUG,
 			"IRQ %d: successfully placed on fallback CPU %d "

@@ -125,10 +125,16 @@ static void find_best_object(struct topo_obj *d, void *data)
 		best->best_cost = newload;
 	} else if (adjusted_cost == best_adjusted_cost) {
 		/*
-		 * Tie-breaker: prefer CPU with more slots_left (more headroom).
-		 * This avoids O(n) g_list_length() calls and uses already-available data.
+		 * Tie-breaker: first prefer the CPU with more slots_left
+		 * (more headroom). During normal operation slots_left is
+		 * INT_MAX for all CPUs (see clear_slots()), so fall back to
+		 * the original interrupt-count comparison to keep IRQs
+		 * spread across CPUs that currently hold fewer interrupts.
 		 */
-		if (!best->best || d->slots_left > best->best->slots_left) {
+		if (!best->best ||
+		    d->slots_left > best->best->slots_left ||
+		    (d->slots_left == best->best->slots_left &&
+		     g_list_length(d->interrupts) < g_list_length(best->best->interrupts))) {
 			best->best = d;
 			best->best_cost = newload;
 		}
