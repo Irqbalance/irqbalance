@@ -101,7 +101,7 @@ if systemd_dep.found() or get_option('systemd-service')
   configure_file(
     input: 'misc/irqbalance.env',
     output: 'irqbalance.env',
-    install_dir: pkgconfdir,
+    install_dir: usrconfdir,
     configuration: idata
   )
 endif
