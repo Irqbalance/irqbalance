@@ -4,10 +4,13 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <assert.h>
 #include <errno.h>
 #include <libgen.h>
+#include <string.h>
 
 #include "irqbalance.h"
 #include "types.h"
@@ -454,20 +457,55 @@ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *po
 
 static int run_script_for_policy(char *script, char *path, int irq, struct user_irq_policy *pol)
 {
-	char *cmd;
 	char *brc;
 	FILE *output;
 	char buffer[128];
+	int pipefd[2];
+	pid_t pid;
+	char irq_str[16];
 
-	cmd = alloca(strlen(path)+strlen(script)+64);
-	if (!cmd)
+	if (pipe2(pipefd, O_CLOEXEC) < 0) {
+		log(TO_ALL, LOG_WARNING, "Unable to create pipe for policy script\n");
 		return -1;
+	}
 
-	sprintf(cmd, "exec %s %s %d", script, path, irq);
-	output = popen(cmd, "r");
+	pid = fork();
+	if (pid < 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		log(TO_ALL, LOG_WARNING, "Unable to fork for policy script\n");
+		return -1;
+	}
+
+	if (pid == 0) {
+		/* child: redirect stdout to pipe, exec script directly
+		 * without shell interpretation to prevent command injection */
+		close(pipefd[0]);
+		/* Clear CLOEXEC on write end so it survives exec, then dup2 */
+		fcntl(pipefd[1], F_SETFD, 0);
+		if (dup2(pipefd[1], STDOUT_FILENO) < 0) {
+			_exit(127);
+		}
+		close(pipefd[1]);
+		snprintf(irq_str, sizeof(irq_str), "%d", irq);
+		char *argv[] = { script, path, irq_str, NULL };
+		execvp(script, argv);
+		dprintf(STDERR_FILENO, "exec %s failed: %s\n", script, strerror(errno));
+		_exit(127);
+	}
+
+	/* parent: read from pipe */
+	close(pipefd[1]);
+	output = fdopen(pipefd[0], "r");
 	if (!output) {
 		log(TO_ALL, LOG_WARNING, "Unable to execute user policy script %s\n", script);
-		return 1; /* tell caller to ignore this script */
+		close(pipefd[0]);
+		/* wait for child with EINTR handling to avoid zombie */
+		int wret;
+		do {
+			wret = waitpid(pid, NULL, 0);
+		} while (wret == -1 && errno == EINTR);
+		return 1;
 	}
 
 	while(!feof(output)) {
@@ -475,7 +513,18 @@ static int run_script_for_policy(char *script, char *path, int irq, struct user_
 		if (brc)
 			parse_user_policy_key(brc, irq, pol);
 	}
-	return WEXITSTATUS(pclose(output));
+
+	fclose(output);
+
+	int status;
+	int ret;
+	do {
+		ret = waitpid(pid, &status, 0);
+	} while (ret == -1 && errno == EINTR);
+
+	if (ret == -1 || !WIFEXITED(status))
+		return -1;
+	return WEXITSTATUS(status);
 }
 
 /*
